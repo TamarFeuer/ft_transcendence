@@ -1,0 +1,59 @@
+import type { FlowGraphContext } from "../../flowGraphContext";
+import type { FlowGraphDataConnection } from "../../flowGraphDataConnection";
+import { FlowGraphExecutionBlockWithOutSignal } from "../../flowGraphExecutionBlockWithOutSignal";
+import type { IFlowGraphBlockConfiguration } from "../../flowGraphBlock";
+import { FlowGraphPathConverterComponent } from "../../flowGraphPathConverterComponent";
+import type { IPathToObjectConverter } from "../../../ObjectModel/objectModelInterfaces";
+import type { IObjectAccessor } from "../../typeDefinitions";
+/**
+ * @experimental
+ * Configuration for the set property block.
+ */
+export interface IFlowGraphSetPropertyBlockConfiguration extends IFlowGraphBlockConfiguration {
+    /**
+     * The path of the entity whose property will be set. Needs a corresponding
+     * entity on the context variables.
+     */
+    path: string;
+    /**
+     * The path converter to use to convert the path to an object accessor.
+     */
+    pathConverter: IPathToObjectConverter<IObjectAccessor>;
+}
+/**
+ * @experimental
+ * Block that sets a property on a target object.
+ */
+export declare class FlowGraphSetPropertyBlock<ValueT> extends FlowGraphExecutionBlockWithOutSignal {
+    /**
+     * the configuration of the block
+     */
+    config: IFlowGraphSetPropertyBlockConfiguration;
+    /**
+     * Input connection: The value to set on the property.
+     */
+    readonly a: FlowGraphDataConnection<ValueT>;
+    /**
+     * The component with the templated inputs for the provided path.
+     */
+    readonly templateComponent: FlowGraphPathConverterComponent;
+    constructor(
+    /**
+     * the configuration of the block
+     */
+    config: IFlowGraphSetPropertyBlockConfiguration);
+    _execute(context: FlowGraphContext): void;
+    /**
+     * Serializes the block to a JSON object.
+     * @param serializationObject the object to serialize to.
+     */
+    serialize(serializationObject?: any): void;
+    /**
+     * @returns class name of the block.
+     */
+    getClassName(): string;
+    /**
+     * Class name of the block.
+     */
+    static ClassName: string;
+}

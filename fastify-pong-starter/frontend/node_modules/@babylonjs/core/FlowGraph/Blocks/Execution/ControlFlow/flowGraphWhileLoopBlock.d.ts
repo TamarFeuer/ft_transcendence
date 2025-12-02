@@ -1,0 +1,52 @@
+import type { FlowGraphContext } from "../../../flowGraphContext";
+import type { FlowGraphDataConnection } from "../../../flowGraphDataConnection";
+import type { FlowGraphSignalConnection } from "../../../flowGraphSignalConnection";
+import type { IFlowGraphBlockConfiguration } from "../../../flowGraphBlock";
+import { FlowGraphExecutionBlockWithOutSignal } from "../../../flowGraphExecutionBlockWithOutSignal";
+/**
+ * @experimental
+ * Configuration for the while loop block.
+ */
+export interface IFlowGraphWhileLoopBlockConfiguration extends IFlowGraphBlockConfiguration {
+    /**
+     * If true, the loop body will be executed at least once.
+     */
+    isDo?: boolean;
+}
+/**
+ * @experimental
+ * A block that executes a branch while a condition is true.
+ */
+export declare class FlowGraphWhileLoopBlock extends FlowGraphExecutionBlockWithOutSignal {
+    /**
+     * the configuration of the block
+     */
+    config?: IFlowGraphWhileLoopBlockConfiguration | undefined;
+    /**
+     * Input connection: The condition to evaluate.
+     */
+    readonly condition: FlowGraphDataConnection<boolean>;
+    /**
+     * Output connection: The loop body.
+     */
+    readonly loopBody: FlowGraphSignalConnection;
+    constructor(
+    /**
+     * the configuration of the block
+     */
+    config?: IFlowGraphWhileLoopBlockConfiguration | undefined);
+    _execute(context: FlowGraphContext, _callingSignal: FlowGraphSignalConnection): void;
+    /**
+     * @returns class name of the block.
+     */
+    getClassName(): string;
+    /**
+     * the class name of the block.
+     */
+    static ClassName: string;
+    /**
+     * Serializes the block to a JSON object.
+     * @param serializationObject the object to serialize to.
+     */
+    serialize(serializationObject?: any): void;
+}
