@@ -8,22 +8,10 @@ services:
     expose:
       - "3000"
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: pong_frontend
-    depends_on:
-    - backend
-    networks:
-      - pongnet
-      # no ports exposed directly; nginx will serve it
-
   nginx:
     image: nginx:stable-alpine
     container_name: pong_nginx
     depends_on:
-    - frontend
     - backend
     ports:
     - "8080:80"
