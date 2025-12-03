@@ -1,57 +1,182 @@
 const Fastify = require('fastify');
-const websocket = require('fastify-websocket');
-
+const websocket = require('@fastify/websocket');
 
 const fastify = Fastify({ logger: true });
 fastify.register(websocket);
 
-
-// Simple HTTP health endpoint
+// simple health endpoint
 fastify.get('/api/health', async () => ({ status: 'ok' }));
 
+// game state (server authoritative)
+const state = {
+  ball: { x: 0, y: 0, vx: 3, vy: 1 },
+  paddles: { left: 0, right: 0 }, // y positions
+  score: { p1: 0, p2: 0 },
+  winningScore: 5
+};
 
-// WebSocket endpoint for realtime pong
-fastify.get('/ws', { websocket: true }, (connection /* SocketStream */, req) => {
-const { socket } = connection;
-fastify.log.info('WS connected');
+let players = { left: null, right: null }; // map socket -> role
+const clients = new Set();
 
-
-socket.on('message', (message) => {
-// Broadcast received message to all connected clients
-// fastify-websocket does not provide a server-level list; store manually
-try {
-const data = JSON.parse(message.toString());
-// attach received timestamp and echo to everyone
-const out = JSON.stringify({ ...data, ts: Date.now() });
-// naive broadcast using fastify.websocketServer.clients
-if (fastify.websocketServer && fastify.websocketServer.clients) {
-fastify.websocketServer.clients.forEach((client) => {
-if (client.readyState === 1) client.send(out);
-});
+// helper broadcast
+function broadcast(msg) {
+  const s = JSON.stringify(msg);
+  for (const c of clients) {
+    try { if (c.readyState === 1) c.send(s); } catch (e) {}
+  }
 }
-} catch (e) {
-fastify.log.error('Invalid WS message', e);
+
+// Accept websockets
+fastify.get('/ws', { websocket: true }, (connectionOrReq, maybeReqOrReply) => {
+  // The websocket plugin calls this handler with two possible signatures:
+  // - (connection, request) for a successful websocket upgrade, where
+  //   connection.socket is a WebSocket with .send/.on/.close
+  // - (request, reply) for a normal HTTP request (no upgrade)
+  // Detect which one we received and handle safely.
+  let socket = null;
+  let req = null;
+  let reply = null;
+
+  if (connectionOrReq && connectionOrReq.socket && typeof connectionOrReq.socket.send === 'function') {
+    // websocket case
+    socket = connectionOrReq.socket;
+    req = maybeReqOrReply;
+  } else {
+    // HTTP fallback: send Upgrade Required
+    req = connectionOrReq;
+    reply = maybeReqOrReply;
+    // Log headers for debugging proxy/upgrade issues
+    try {
+      fastify.log.info({
+        msg: 'Non-upgrade /ws request received',
+        remoteAddress: req.ip || (req.raw && req.raw.socket && req.raw.socket.remoteAddress),
+        upgrade: req.headers && req.headers.upgrade,
+        connectionHeader: req.headers && req.headers.connection,
+        headers: req.headers
+      });
+    } catch (e) {
+      fastify.log.warn('Failed to log /ws request headers', e);
+    }
+    try {
+      if (reply && typeof reply.code === 'function') {
+        return reply.code(426).send({ error: 'Upgrade Required' });
+      }
+    } catch (e) {
+      fastify.log.warn('Failed to send upgrade-required reply', e);
+    }
+    return;
+  }
+
+  clients.add(socket);
+  fastify.log.info('WS connected, clients:', clients.size);
+
+  // assign role if available
+  if (!players.left) {
+    players.left = socket;
+    socket.role = 'left';
+    socket.send(JSON.stringify({ type: 'assign', role: 'left' }));
+  } else if (!players.right) {
+    players.right = socket;
+    socket.role = 'right';
+    socket.send(JSON.stringify({ type: 'assign', role: 'right' }));
+  } else {
+    socket.role = 'spectator';
+    socket.send(JSON.stringify({ type: 'assign', role: 'spectator' }));
+  }
+
+  socket.on('message', (msg) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      if (data.type === 'paddleMove') {
+        // y is normalized -1..1 from client
+        const y = typeof data.y === 'number' ? data.y * 4 : 0; // scale to field range
+        if (socket.role === 'left') state.paddles.left = y;
+        else if (socket.role === 'right') state.paddles.right = y;
+      }
+
+      if (data.type === 'selectMode') {
+        // placeholder; we only have 1v1 right now
+        fastify.log.info('Mode selected:', data.mode);
+      }
+    } catch (e) {
+      fastify.log.error('Invalid WS message', e);
+    }
+  });
+
+  socket.on('close', () => {
+    clients.delete(socket);
+    fastify.log.info('WS disconnected, clients:', clients.size);
+    if (players.left === socket) players.left = null;
+    if (players.right === socket) players.right = null;
+  });
+});
+
+// Server game loop (60Hz)
+const TICK_MS = 1000 / 60;
+setInterval(() => {
+  // integrate ball
+  state.ball.x += state.ball.vx * (TICK_MS / 1000);
+  state.ball.y += state.ball.vy * (TICK_MS / 1000);
+
+  // top/bottom bounce
+  if (state.ball.y > 4 || state.ball.y < -4) state.ball.vy *= -1;
+
+  // paddle collision - simple AABB
+  // left paddle ~ x = -4
+  if (state.ball.x < -3.5) {
+    if (Math.abs(state.ball.y - state.paddles.left) < 1.2) {
+      state.ball.vx = Math.abs(state.ball.vx);
+      // small speedup
+      state.ball.vx *= 1.02;
+    }
+  }
+  // right paddle ~ x = 4
+  if (state.ball.x > 3.5) {
+    if (Math.abs(state.ball.y - state.paddles.right) < 1.2) {
+      state.ball.vx = -Math.abs(state.ball.vx);
+      state.ball.vx *= 1.02;
+    }
+  }
+
+  // scoring
+  if (state.ball.x < -6) {
+    state.score.p2 += 1;
+    resetBall();
+  }
+  if (state.ball.x > 6) {
+    state.score.p1 += 1;
+    resetBall();
+  }
+
+  // check win
+  if (state.score.p1 >= state.winningScore || state.score.p2 >= state.winningScore) {
+    broadcast({ type: 'gameOver', winner: state.score.p1 >= state.winningScore ? 'Player 1' : 'Player 2' });
+    // reset scores
+    state.score.p1 = 0;
+    state.score.p2 = 0;
+  }
+
+  // broadcast state
+  broadcast({ type: 'state', ball: { x: state.ball.x, y: state.ball.y }, paddles: state.paddles, score: state.score });
+
+}, TICK_MS);
+
+function resetBall() {
+  state.ball.x = 0;
+  state.ball.y = 0;
+  // random direction
+  const dir = Math.random() > 0.5 ? 1 : -1;
+  state.ball.vx = 3 * dir;
+  state.ball.vy = (Math.random() - 0.5) * 2.5;
 }
-});
-
-
-socket.on('close', () => fastify.log.info('WS disconnected'));
-});
-
-
-// Expose the underlying ws Server reference on ready hook
-fastify.addHook('onReady', async () => {
-// fastify.websocketServer is set by fastify-websocket plugin
-fastify.log.info('Server ready, websocket server available');
-});
-
 
 const start = async () => {
-try {
-await fastify.listen({ port: 3000, host: '0.0.0.0' });
-} catch (err) {
-fastify.log.error(err);
-process.exit(1);
-}
+  try {
+    await fastify.listen({ port: 3000, host: '0.0.0.0' });
+    fastify.log.info('Server listening 3000');
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
 };
 start();

@@ -4,9 +4,9 @@
 
 
 html, body, #renderCanvas {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  display: block;
+height: 100%;
+margin: 0;
+}
+#menuOverlay {
+  transition: opacity 0.3s ease;
 }

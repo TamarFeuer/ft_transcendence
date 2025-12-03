@@ -5,6 +5,6 @@
 "license": "MIT",
 "dependencies": {
 "fastify": "^4.23.0",
-"fastify-websocket": "^4.0.0"
+"@fastify/websocket": "^6.0.0"
 }
 }
