@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* html, body, #renderCanvas {
+height: 100%;
+margin: 0;
+}
+#menuOverlay {
+  transition: opacity 0.3s ease;
+} */

@@ -1,0 +1,28 @@
+# version: "3.8"
+services:
+  backend:
+    build: ./backend
+    container_name: pong_backend
+    networks:
+      - pongnet
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: pong_nginx
+    depends_on:
+    - backend
+    ports:
+    - "8080:80"
+    volumes:
+    - ./frontend/dist:/usr/share/nginx/html:ro
+    - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+    - pongnet
+
+networks:
+  pongnet:
+    driver: bridge

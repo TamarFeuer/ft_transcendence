@@ -1,0 +1,44 @@
+    <!-- MAIN MENU OVERLAY -->
+    <div id="menuOverlay"
+         class="absolute inset-10 flex flex-col items-center justify-center 
+                bg-black/60 backdrop-blur-sm z-20">
+
+      <h1 class="text-5xl font-bold text-white mb-12">
+        Pong Multiplayer
+      </h1>
+
+      <div class="absolute inset-10 flex flex-col space-y-6 w-72 pointer-events-auto">
+        <button id="start1v1"
+          class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xl shadow-lg">
+          Start 1 vs 1
+        </button>
+
+        <button id="absolute inset-10 startTournament"
+          class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xl shadow-lg">
+          Tournament Mode
+        </button>
+      </div>
+
+    </div>
+
+    <!-- SCORE HUD (hidden until game starts) -->
+    <div id="scoreHud"
+         class="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-3xl font-bold z-10 
+                hidden select-none">
+
+      <div class="flex flex-row space-x-10">
+        <div class="flex flex-col items-center">
+          <span class="text-lg text-gray-300">Player 1</span>
+          <span id="scoreP1" class="text-4xl">0</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+          <span class="text-lg text-gray-300">Player 2</span>
+          <span id="scoreP2" class="text-4xl">0</span>
+        </div>
+      </div>
+
+      <div class="text-center text-lg text-gray-400 mt-4">
+        First to <span id="winningScore">5</span> wins
+      </div>
+    </div>
