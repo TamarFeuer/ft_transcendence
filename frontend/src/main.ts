@@ -168,7 +168,7 @@ window.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", () => engine.resize());
 
   // UI buttons
-  let playerAliases: string[] = [];
+  let playerAliases: [string, number][] = [];
   const step1 = document.getElementById('LocalOrOnlineSelection')!;
   const localOptions = document.getElementById('localOptions')!;
   const onlineOptions = document.getElementById('onlineOptions')!;
@@ -230,15 +230,15 @@ window.addEventListener("DOMContentLoaded", () => {
     const alias = playerAliasInput.value.trim();
     if (alias.length > 0) 
     {
-      playerAliases.push(alias);
+      playerAliases.push([alias, 0]);
       const totalPlayers = parseInt(setPlayerAliasContainer.dataset.playerCount || '0');
       console.log(playerAliases.length, " total players: ", totalPlayers);
       if (playerAliases.length < totalPlayers) 
       {
         alert(`Alias "${alias}" set. Please enter alias for player ${playerAliases.length + 1}.`);
         playerAliasInput.value = '';
-      } 
-      else 
+      }
+      else
       {
         alert(`All ${totalPlayers} players registered: ${playerAliases.join(', ')}. Proceeding to game start.`);
         setPlayerAliasContainer.style.display = 'none';
@@ -280,6 +280,17 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  function startTounament(mode: string, playerCount: number, playerAliasesParam: string[] = []) {
+    const schedule: [string, string][] = [];
+    // Simple round-robin scheduling
+    for (let i = 0; i < playerCount; i++) {
+      for (let j = i + 1; j < playerCount; j++) {
+        const playerA = playerAliasesParam.length === playerCount ? playerAliasesParam[i] : `Player ${i + 1}`;
+        const playerB = playerAliasesParam.length === playerCount ? playerAliasesParam[j] : `Player ${j + 1}`;
+        schedule.push([playerA, playerB]);
+      }
+  }
+
   function startMode(mode: string, playerCount: number, playerAliasesParam: string[] = []) {
     if (mode == "onlineMultiplayer") 
     {
@@ -292,7 +303,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     else if (mode == "localTournament")
     {
-      initOfflineGame(scene, gameObjects, playerCount);
+      startTounament(mode, playerCount, playerAliasesParam);
     }
     else if (mode == "singlePlayer")
     {
