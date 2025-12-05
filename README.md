@@ -1,4 +1,7 @@
-run from frontend/ so that vite bundles everything;
+
+run from frontend/;
+npm install
+run so that vite bundles everything;
 npm run build
 
 
