@@ -52,7 +52,7 @@
     #menuOverlay button:hover {
       background: #006ad1;
     }
-        #playerCountContainer {
+    #playerCountContainer {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -61,6 +61,30 @@
 
     #playerCountContainer input {
       width: 60px;
+      text-align: center;
+      margin-top: 5px;
+    }
+    #playersTournamentRegistration {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    #playersTournamentRegistration input {
+      width: 60px;
+      text-align: center;
+      margin-top: 5px;
+    }
+
+    #setPlayerAliasContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    #setPlayerAliasContainer input {
+      width: 150px;
       text-align: center;
       margin-top: 5px;
     }
@@ -99,6 +123,16 @@
 			<input type="number" id="playerCount" min="2" value="2">
 			<button id="startGameBtn">START GAME</button>
 		</div>
+		<div id="playersTournamentRegistration" style="display:none;">
+			<label for="playerCount">Enter number of players:</label>
+			<input type="number" id="TournamentPlayerCount" min="2">
+			<button id="registerPlayersBtn">REGISTER PLAYERS</button>
+		</div>
+    <div id="setPlayerAliasContainer" style="display: none;">
+      <label for="playerAlias">Enter your alias:</label>
+      <input type="text" id="playerAlias" maxlength="20" />
+      <button id="setAliasBtn">SET ALIAS</button>
+    </div>
 	</div>
 	<div id="scoreHud" class="hidden" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: white; font-size: 24px;">
 	<span id="player1Score">0</span> - <span id="player2Score">0</span>

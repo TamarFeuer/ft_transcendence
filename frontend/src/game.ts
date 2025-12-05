@@ -9,12 +9,12 @@ import {
   Mesh
 } from "@babylonjs/core";
 
-export function initGameScene(scene: BabylonScene, canvas: HTMLCanvasElement) {
+export function initGameScene(scene: BabylonScene, canvas: HTMLCanvasElement, playerCount: number) {
   const camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.4, 12, new Vector3(0, 0, 0), scene);
   camera.attachControl(canvas, true);
   // disable rotation inputs so camera stays fixed
   camera.inputs.clear();
-
+  console.log("Player count:", playerCount);
   new HemisphericLight("light", new Vector3(0, 1, 0), scene);
 
   const paddleMat = new StandardMaterial("paddleMat", scene);

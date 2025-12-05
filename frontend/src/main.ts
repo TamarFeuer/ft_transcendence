@@ -1,6 +1,7 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game";
+import { c } from "vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf";
 
 let ws: WebSocket | null = null;
 
@@ -13,7 +14,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const engine = new Engine(canvas, true);
   const scene = new Scene(engine);
 
-  const gameObjects = initGameScene(scene, canvas);
+  const gameObjects = initGameScene(scene, canvas, 2);
 
   // connect using current host so nginx proxy works
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
@@ -75,7 +76,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 1000 / 15);
   }
 
-  function initOfflineGame(scene: Scene, gameObjects: { paddleLeft: any; paddleRight: any; ball: any; }) {
+  function initOfflineGame(scene: Scene, gameObjects: { paddleLeft: any; paddleRight: any; ball: any; }, playerCount: number) {
     let ballVX = 0.07;
     let ballVY = 0.07;
     scoreP1.textContent = "0";
@@ -167,11 +168,13 @@ window.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", () => engine.resize());
 
   // UI buttons
-
+  let playerAliases: string[] = [];
   const step1 = document.getElementById('LocalOrOnlineSelection')!;
   const localOptions = document.getElementById('localOptions')!;
   const onlineOptions = document.getElementById('onlineOptions')!;
   const playerCountContainer = document.getElementById('playerCountContainer')!;
+  const playersTournamentRegistration = document.getElementById('playersTournamentRegistration')!;
+  const setPlayerAliasContainer = document.getElementById('setPlayerAliasContainer')!;
   const localBtn = document.getElementById('localBtn')!;
   const onlineBtn = document.getElementById('onlineBtn')!;
 
@@ -182,6 +185,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const onlineMultiBtn = document.getElementById('onlineMultiBtn')!;
   const onlineTournamentBtn = document.getElementById('onlineTournamentBtn')!;
   const startGameBtn = document.getElementById('startGameBtn')!;
+  const registerPlayersBtn = document.getElementById('registerPlayersBtn')!;
   let selectedMode = '';
 
   // Step 1: choose LOCAL or ONLINE
@@ -205,7 +209,45 @@ window.addEventListener("DOMContentLoaded", () => {
   localTournamentBtn.addEventListener('click', () => {
     selectedMode = 'localTournament';
     localOptions.style.display = 'none';
-    playerCountContainer.style.display = 'flex';
+    playersTournamentRegistration.style.display = 'flex';
+  });
+
+  registerPlayersBtn.addEventListener('click', () => {
+    const playerCount = parseInt((document.getElementById('TournamentPlayerCount') as HTMLInputElement).value);
+    if (playerCount >= 2) {
+      alert(`Registered ${playerCount} players for the tournament.`);
+      playersTournamentRegistration.style.display = 'none';
+      setPlayerAliasContainer.style.display = 'flex';
+      setPlayerAliasContainer.dataset.playerCount = playerCount.toString();
+    } else {
+      alert('Number of players must be 2 or more.');
+    }
+  });
+  const setAliasBtn = document.getElementById('setAliasBtn')!;
+
+  setAliasBtn.addEventListener('click', () => {
+    const playerAliasInput = document.getElementById('playerAlias') as HTMLInputElement;
+    const alias = playerAliasInput.value.trim();
+    if (alias.length > 0) 
+    {
+      playerAliases.push(alias);
+      const totalPlayers = parseInt(setPlayerAliasContainer.dataset.playerCount || '0');
+      console.log(playerAliases.length, " total players: ", totalPlayers);
+      if (playerAliases.length < totalPlayers) 
+      {
+        alert(`Alias "${alias}" set. Please enter alias for player ${playerAliases.length + 1}.`);
+        playerAliasInput.value = '';
+      } 
+      else 
+      {
+        alert(`All ${totalPlayers} players registered: ${playerAliases.join(', ')}. Proceeding to game start.`);
+        setPlayerAliasContainer.style.display = 'none';
+        startMode(selectedMode, totalPlayers);
+      }
+    }
+    else {
+      alert('Please enter a valid alias.');
+    }
   });
 
   // Online options
@@ -225,19 +267,20 @@ window.addEventListener("DOMContentLoaded", () => {
       selectedMode = 'singlePlayer';
       alert('Starting Singleplayer Game');
   });
+
   // Player count submission
   startGameBtn.addEventListener('click', () => {
     const playerCount = parseInt(document.getElementById('playerCount')!.getAttribute('value') || '2');
     if (playerCount >= 2) {
       alert(`Starting ${selectedMode} with ${playerCount} players`);
       // start local multiplayer/tournament logic here
-      startMode(selectedMode)
+      startMode(selectedMode, playerCount)
     } else {
       alert('Number of players must be 2 or more.');
     }
   });
 
-  function startMode(mode: string) {
+  function startMode(mode: string, playerCount: number, playerAliasesParam: string[] = []) {
     if (mode == "onlineMultiplayer") 
     {
       initWebsocket();
@@ -245,9 +288,17 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     else if (mode == "localMultiplayer")
     {
-      initOfflineGame(scene, gameObjects);
+      initOfflineGame(scene, gameObjects, playerCount);
     }
-    // show score HUD
+    else if (mode == "localTournament")
+    {
+      initOfflineGame(scene, gameObjects, playerCount);
+    }
+    else if (mode == "singlePlayer")
+    {
+      initOfflineGame(scene, gameObjects, 1);
+    }
+    //show score HUD
     // scoreHud.classList.remove("hidden");
     // hide menu
     menu.classList.add("opacity-0", "pointer-events-none");
