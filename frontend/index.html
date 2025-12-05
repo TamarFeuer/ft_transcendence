@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pong</title>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: black;
+      font-family: Arial, sans-serif;
+    }
+
+    #renderCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #menuOverlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 10;
+    }
+
+    #menuOverlay h1 {
+      color: white;
+      font-size: 48px;
+      margin-bottom: 30px;
+    }
+
+    #menuOverlay button {
+      background: #1e90ff;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 20px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #menuOverlay button:hover {
+      background: #006ad1;
+    }
+        #playerCountContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    #playerCountContainer input {
+      width: 60px;
+      text-align: center;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Fullscreen game container -->
+<div class="container">
+
+	<!-- Babylon canvas -->
+	<canvas id="renderCanvas"></canvas>
+
+	<!-- Menu overlay -->
+	<div id="menuOverlay">
+		<h1>Pong</h1>
+		<!-- Step 1: Local or Online -->
+		<div id="LocalOrOnlineSelection">
+			<button id="localBtn">LOCAL</button>
+			<button id="onlineBtn">ONLINE</button>
+		</div>
+		<!-- Step 2: Mode selection -->
+		<div id="localOptions" style="display:none;">
+			<button id="singlePlayerBtn">SINGLEPLAYER</button>
+			<button id="localMultiBtn">MULTIPLAYER</button>
+			<button id="localTournamentBtn">TOURNAMENT</button>
+		</div>
+		<div id="onlineOptions" style="display:none;">
+			<button id="onlineMultiBtn">MULTIPLAYER</button>
+			<button id="onlineTournamentBtn">TOURNAMENT</button>
+		</div>
+		<!-- Step 3: Player count (for local multiplayer/tournament) -->
+		<div id="playerCountContainer" style="display:none;">
+			<label for="playerCount">Enter number of players:</label>
+			<input type="number" id="playerCount" min="2" value="2">
+			<button id="startGameBtn">START GAME</button>
+		</div>
+	</div>
+	<div id="scoreHud" class="hidden" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: white; font-size: 24px;">
+	<span id="player1Score">0</span> - <span id="player2Score">0</span>
+
+  </div>
+
+  <!-- Your JS -->
+  <script type="module" src="src/main.ts"></script>
+
+</body>
+</html>
