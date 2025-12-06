@@ -172,12 +172,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // UI buttons
   let playerAliases: [string, number][] = [];
+  const gameSelection = document.getElementById('GameSelection')!;
   const step1 = document.getElementById('LocalOrOnlineSelection')!;
   const localOptions = document.getElementById('localOptions')!;
   const onlineOptions = document.getElementById('onlineOptions')!;
   const playerCountContainer = document.getElementById('playerCountContainer')!;
   const playersTournamentRegistration = document.getElementById('playersTournamentRegistration')!;
   const setPlayerAliasContainer = document.getElementById('setPlayerAliasContainer')!;
+
+  const tttBtn = document.getElementById('tttBtn')!;
+  const mineBtn = document.getElementById('mineBtn')!;
+  const pongBtn = document.getElementById('pongBtn')!;
+
   const localBtn = document.getElementById('localBtn')!;
   const onlineBtn = document.getElementById('onlineBtn')!;
 
@@ -192,6 +198,23 @@ window.addEventListener("DOMContentLoaded", () => {
   let selectedMode = '';
 
   // Step 1: choose LOCAL or ONLINE
+
+
+  tttBtn.addEventListener('click', () => {
+    alert('Tic-Tac-Toe selected. (Not implemented yet)');
+    // Implement Tic-Tac-Toe initialization here
+  });
+
+  mineBtn.addEventListener('click', () => {
+    alert('Minesweeper selected. (Not implemented yet)');
+    // Implement Minesweeper initialization here
+  });
+
+  pongBtn.addEventListener('click', () => {
+    gameSelection.style.display = 'none';
+    step1.style.display = 'flex';
+  });
+
   localBtn.addEventListener('click', () => {
     step1.style.display = 'none';
     localOptions.style.display = 'flex';
