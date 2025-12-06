@@ -6,7 +6,10 @@ import { c } from "vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf";
 let ws: WebSocket | null = null;
 
 window.addEventListener("DOMContentLoaded", () => {
-  const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+  const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement | null;
+  if (!canvas) {
+    throw new Error("Canvas element not found");
+  }
   const menu = document.getElementById("menuOverlay") as HTMLDivElement;
   const scoreHud = document.getElementById("scoreHud") as HTMLDivElement;
   const scoreP1 = document.getElementById("player1Score") as HTMLElement;
