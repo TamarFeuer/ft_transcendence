@@ -289,6 +289,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const playerB = playerAliasesParam.length === playerCount ? playerAliasesParam[j] : `Player ${j + 1}`;
         schedule.push([playerA, playerB]);
       }
+    }
   }
 
   function startMode(mode: string, playerCount: number, playerAliasesParam: string[] = []) {
