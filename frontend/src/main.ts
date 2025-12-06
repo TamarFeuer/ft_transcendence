@@ -79,7 +79,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 1000 / 15);
   }
 
-  function initOfflineGame(scene: Scene, gameObjects: { paddleLeft: any; paddleRight: any; ball: any; }, playerCount: number) {
+  function initOfflineGame(scene: Scene, gameObjects: { paddleLeft: any; paddleRight: any; ball: any; }, playerCount: number, tournament: boolean, playerA: [string, number] = ["Player 1", 0], playerB: [string, number] = ["Player 2", 0]): Promise<void> {
+    return new Promise((resolve) => {
     let ballVX = 0.07;
     let ballVY = 0.07;
     scoreP1.textContent = "0";
@@ -149,21 +150,42 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       if (scoreP1int >= 10)
       {
+        if (tournament)
+        {
+          playerA[1] += 1;
+          // alert(`${playerA[0]} wins this match! Current score: ${scoreP1int} - ${scoreP2int}`);
+          console.log("Player A score:", playerA[1]);
+          scene.onBeforeRenderObservable.remove(renderObserver);
+          resolve();
+          return;
+        }
         scene.onBeforeRenderObservable.remove(renderObserver);
         alert("Player 1 wins!");
+        resolve();
         location.reload();
         return;
       }
       else if (scoreP2int >= 10)
       {
+        if (tournament)
+        {
+          playerB[1] += 1;
+          // alert(`${playerB[0]} wins this match! Current score: ${scoreP2int} - ${scoreP1int}`);
+          console.log("Player B score:", playerB[1]);
+          scene.onBeforeRenderObservable.remove(renderObserver);
+          resolve();
+          return;
+        }
         scene.onBeforeRenderObservable.remove(renderObserver);
         alert("Player 2 wins!");
+        resolve();
         location.reload();
         return;
 
       }
       // simple AI for right paddle
       // gameObjects.paddleRight.position.y += (gameObjects.ball.position.y - gameObjects.paddleRight.position.y) * 0.3;
+    });
     });
   }
 
@@ -173,7 +195,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // UI buttons
   let playerAliases: [string, number][] = [];
   const gameSelection = document.getElementById('GameSelection')!;
-  const step1 = document.getElementById('LocalOrOnlineSelection')!;
+  const LocalOrOnlineSelection = document.getElementById('LocalOrOnlineSelection')!;
   const localOptions = document.getElementById('localOptions')!;
   const onlineOptions = document.getElementById('onlineOptions')!;
   const playerCountContainer = document.getElementById('playerCountContainer')!;
@@ -212,16 +234,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
   pongBtn.addEventListener('click', () => {
     gameSelection.style.display = 'none';
-    step1.style.display = 'flex';
+    LocalOrOnlineSelection.style.display = 'flex';
   });
 
   localBtn.addEventListener('click', () => {
-    step1.style.display = 'none';
+    LocalOrOnlineSelection.style.display = 'none';
     localOptions.style.display = 'flex';
   });
 
   onlineBtn.addEventListener('click', () => {
-    step1.style.display = 'none';
+    LocalOrOnlineSelection.style.display = 'none';
     onlineOptions.style.display = 'flex';
   });
 
@@ -306,16 +328,30 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  function startTounament(mode: string, playerCount: number, playerAliasesParam: string[] = []) {
-    const schedule: [string, string][] = [];
+  async function startTounament(mode: string, playerCount: number) {
+    const schedule: [[string, number], [string, number]][] = [];
     // Simple round-robin scheduling
     for (let i = 0; i < playerCount; i++) {
       for (let j = i + 1; j < playerCount; j++) {
-        const playerA = playerAliasesParam.length === playerCount ? playerAliasesParam[i] : `Player ${i + 1}`;
-        const playerB = playerAliasesParam.length === playerCount ? playerAliasesParam[j] : `Player ${j + 1}`;
-        schedule.push([playerA, playerB]);
+        // const playerA = playerAliases[i];
+        // const playerA = playerAliasesParam.length === playerCount ? playerAliasesParam[i] : `Player ${i + 1}`;
+        // const playerB = playerAliasesParam.length === playerCount ? playerAliasesParam[j] : `Player ${j + 1}`;
+        schedule.push([playerAliases[i], playerAliases[j]]);
       }
     }
+    console.log("Tournament Schedule:", schedule);
+
+    for (const [playerA, playerB] of schedule) {
+      alert(`Starting match: ${playerA} vs ${playerB}`);
+      // await the match to finish (initOfflineGame now returns a Promise)
+      await initOfflineGame(scene, gameObjects, 2, true, playerA, playerB);
+      // In a real implementation, you'd record the result here (playerA/playerB scores were updated in-place)
+    }
+    console.log("Tournament over! Final scores:");
+    for (const [alias, score] of playerAliases) {
+      console.log(`${alias}: ${score}`);
+    }
+    location.reload()
   }
 
   function startMode(mode: string, playerCount: number, playerAliasesParam: string[] = []) {
@@ -326,15 +362,15 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     else if (mode == "localMultiplayer")
     {
-      initOfflineGame(scene, gameObjects, playerCount);
+      initOfflineGame(scene, gameObjects, playerCount, false, ["Player 1", 0], ["Player 2", 0]);
     }
     else if (mode == "localTournament")
     {
-      startTounament(mode, playerCount, playerAliasesParam);
+      startTounament(mode, playerCount);
     }
     else if (mode == "singlePlayer")
     {
-      initOfflineGame(scene, gameObjects, 1);
+      initOfflineGame(scene, gameObjects, 1, false, ["Player 1", 0], ["Player 2", 0]);
     }
     //show score HUD
     // scoreHud.classList.remove("hidden");
