@@ -2,6 +2,8 @@ import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game";
 import { c } from "vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf";
+import "./tictactoe";
+import "./mine";
 
 let ws: WebSocket | null = null;
 
@@ -10,6 +12,17 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!canvas) {
     throw new Error("Canvas element not found");
   }
+  const tictactoeCanvas = document.getElementById("tictactoeCanvas") as HTMLCanvasElement;
+  if (!tictactoeCanvas) {
+    throw new Error("TicTacToe Canvas element not found");
+  }
+  const minesweeperCanvas = document.getElementById("minesweeperCanvas") as HTMLCanvasElement;
+  if (!minesweeperCanvas) {
+    throw new Error("Minesweeper Canvas element not found");
+  }
+  const tictactoeReturnBtn = document.getElementById("tictactoeReturnBtn") as HTMLButtonElement;
+  const minesweeperReturnBtn = document.getElementById("minesweeperReturnBtn") as HTMLButtonElement;
+  const pongReturnBtn = document.getElementById("pongReturnBtn") as HTMLButtonElement;
   const menu = document.getElementById("menuOverlay") as HTMLDivElement;
   const scoreHud = document.getElementById("scoreHud") as HTMLDivElement;
   const scoreP1 = document.getElementById("player1Score") as HTMLElement;
@@ -201,13 +214,48 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
   tttBtn.addEventListener('click', () => {
-    alert('Tic-Tac-Toe selected. (Not implemented yet)');
-    // Implement Tic-Tac-Toe initialization here
+    // Hide menu and pong canvas
+    menu.style.display = 'none';
+    scoreHud.style.display = 'none';
+    canvas.style.display = 'none';
+    minesweeperCanvas.style.display = 'none';
+    minesweeperReturnBtn.style.display = 'none';
+    pongReturnBtn.style.display = 'none';
+    // Show tictactoe canvas and return button
+    tictactoeCanvas.style.display = 'block';
+    tictactoeReturnBtn.style.display = 'block';
+    // Trigger the tictactoe initialization by dispatching custom event
+    window.dispatchEvent(new CustomEvent('initTicTacToe'));
   });
 
   mineBtn.addEventListener('click', () => {
-    alert('Minesweeper selected. (Not implemented yet)');
-    // Implement Minesweeper initialization here
+    // Hide menu and pong canvas
+    menu.style.display = 'none';
+    scoreHud.style.display = 'none';
+    canvas.style.display = 'none';
+    tictactoeCanvas.style.display = 'none';
+    tictactoeReturnBtn.style.display = 'none';
+    pongReturnBtn.style.display = 'none';
+    // Show minesweeper canvas and return button
+    minesweeperCanvas.style.display = 'block';
+    minesweeperReturnBtn.style.display = 'block';
+    // Trigger the minesweeper initialization by dispatching custom event
+    window.dispatchEvent(new CustomEvent('initMinesweeper'));
+  });
+
+  // Return button handlers
+  tictactoeReturnBtn.addEventListener('click', () => {
+    tictactoeCanvas.style.display = 'none';
+    tictactoeReturnBtn.style.display = 'none';
+    canvas.style.display = 'block';
+    menu.style.display = 'flex';
+  });
+
+  minesweeperReturnBtn.addEventListener('click', () => {
+    minesweeperCanvas.style.display = 'none';
+    minesweeperReturnBtn.style.display = 'none';
+    canvas.style.display = 'block';
+    menu.style.display = 'flex';
   });
 
   pongBtn.addEventListener('click', () => {
@@ -343,6 +391,18 @@ window.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       menu.style.display = "none";
       scoreHud.classList.remove("hidden");
+      pongReturnBtn.style.display = "block";
     }, 260);
   }
+
+  // Pong return button handler
+  pongReturnBtn.addEventListener('click', () => {
+    // Hide pong game and return button
+    pongReturnBtn.style.display = 'none';
+    scoreHud.classList.add("hidden");
+    // Show menu
+    menu.style.display = 'flex';
+    menu.classList.remove("opacity-0", "pointer-events-none");
+    // Reset game state if needed
+  });
 });

@@ -22,6 +22,15 @@
       height: 100%;
     }
 
+    #tictactoeCanvas, #minesweeperCanvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      border: 2px solid #333;
+    }
+
     #menuOverlay {
       position: absolute;
       inset: 0;
@@ -88,6 +97,25 @@
       text-align: center;
       margin-top: 5px;
     }
+
+    .gameReturnBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #1e90ff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 100;
+      display: none;
+    }
+
+    .gameReturnBtn:hover {
+      background: #006ad1;
+    }
   </style>
 </head>
 
@@ -96,8 +124,19 @@
 <!-- Fullscreen game container -->
 <div class="container">
 
+	<!-- Return buttons for games -->
+	<button id="tictactoeReturnBtn" class="gameReturnBtn">← Return</button>
+	<button id="minesweeperReturnBtn" class="gameReturnBtn">← Return</button>
+	<button id="pongReturnBtn" class="gameReturnBtn">← Return</button>
+
 	<!-- Babylon canvas -->
 	<canvas id="renderCanvas"></canvas>
+
+	<!-- Minesweeper canvas -->
+	<canvas id="minesweeperCanvas" style="display:none;"></canvas>
+
+	<!-- Tic-Tac-Toe canvas -->
+	<canvas id="tictactoeCanvas" style="display:none;"></canvas>
 
 	<!-- Menu overlay -->
 	<div id="menuOverlay">
