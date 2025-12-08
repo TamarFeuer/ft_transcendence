@@ -428,4 +428,3 @@ window.addEventListener("DOMContentLoaded", () => {
     // Reset game state if needed
   });
 });
-us
