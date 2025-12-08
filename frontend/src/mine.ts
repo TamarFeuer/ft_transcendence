@@ -1,4 +1,6 @@
 // Constants from Python
+import { t, TranslationKey } from './i18n';
+
 const HEIGHT = 8;
 const WIDTH = 8;
 const MINES_COUNT = 8;
@@ -285,13 +287,13 @@ function initMinesweeper() {
       ctx.fillStyle = WHITE;
       ctx.font = '40px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Play Minesweeper', width / 2, 50);
+      ctx.fillText(t(TranslationKey.MINE_TITLE), width / 2, 50);
 
       // Rules
       const rules = [
-        'Click a cell to reveal it.',
-        'Right-click a cell to mark it as a mine.',
-        'Mark all mines successfully to win!'
+        t(TranslationKey.MINE_RULE_1),
+        t(TranslationKey.MINE_RULE_2),
+        t(TranslationKey.MINE_RULE_3)
       ];
       ctx.font = '20px Arial';
       for (let i = 0; i < rules.length; i++) {
@@ -305,7 +307,7 @@ function initMinesweeper() {
       ctx.fillStyle = BLACK;
       ctx.font = '28px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('PLAY', playButton.x + playButton.width / 2, playButton.y + playButton.height / 2 + 10);
+      ctx.fillText(t(TranslationKey.MINE_PLAY_GAME), playButton.x + playButton.width / 2, playButton.y + playButton.height / 2 + 10);
     } else {
       // Draw board
       for (let i = 0; i < HEIGHT; i++) {
@@ -361,18 +363,18 @@ function initMinesweeper() {
       ctx.fillStyle = BLACK;
       ctx.font = '28px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('AI Help', aiButtonX + buttonWidth / 2, aiButtonY + buttonHeight / 2 + 10);
+      ctx.fillText(t(TranslationKey.MINE_AI_HELP), aiButtonX + buttonWidth / 2, aiButtonY + buttonHeight / 2 + 10);
 
       // Restart button
       const resetButtonY = (1 / 3) * height + 20;
       ctx.fillStyle = WHITE;
       ctx.fillRect(aiButtonX, resetButtonY, buttonWidth, buttonHeight);
       ctx.fillStyle = BLACK;
-      ctx.fillText('Restart', aiButtonX + buttonWidth / 2, resetButtonY + buttonHeight / 2 + 10);
+      ctx.fillText(t(TranslationKey.MINE_RESTART), aiButtonX + buttonWidth / 2, resetButtonY + buttonHeight / 2 + 10);
 
       // Display game status
       const won = game.won(flags);
-      const statusText = lost ? 'Lost' : won ? 'Won' : '';
+      const statusText = lost ? t(TranslationKey.MINE_LOST) : won ? t(TranslationKey.MINE_WON) : '';
       if (statusText) {
         ctx.fillStyle = WHITE;
         ctx.font = '28px Arial';

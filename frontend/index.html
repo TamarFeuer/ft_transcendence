@@ -116,10 +116,50 @@
     .gameReturnBtn:hover {
       background: #006ad1;
     }
+
+    #languageSelector {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+
+    #languageSelector select {
+      background: #1e90ff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #languageSelector select:hover {
+      background: #006ad1;
+    }
   </style>
 </head>
 
 <body>
+
+<!-- Language selector -->
+<div id="languageSelector">
+  <label data-i18n="LABEL_LANGUAGE">Language:</label>
+  <select id="languageSelect">
+    <option value="en">English</option>
+    <option value="es">Español</option>
+    <option value="fr">Français</option>
+    <option value="tr">Türkçe</option>
+    <option value="nl">Nederlands</option>
+  </select>
+</div>
 
 <!-- Fullscreen game container -->
 <div class="container">
@@ -140,43 +180,43 @@
 
 	<!-- Menu overlay -->
 	<div id="menuOverlay">
-		<h1>Pong</h1>
+		<h1 data-i18n="MAIN_TITLE">Pong</h1>
 		<!-- Step 1: Game Selection -->
 		<div id="GameSelection">
-			<button id="tttBtn">Tic-Tac-Toe</button>
-			<button id="mineBtn">Minesweeper</button>
-      <button id="pongBtn">Pong</button>
+			<button id="tttBtn" data-i18n="BTN_TIC_TAC_TOE">Tic-Tac-Toe</button>
+			<button id="mineBtn" data-i18n="BTN_MINESWEEPER">Minesweeper</button>
+      <button id="pongBtn" data-i18n="BTN_PONG">Pong</button>
 		</div>
     <!-- Step 2: Local or Online -->
 		<div id="LocalOrOnlineSelection" style="display:none;">
-			<button id="localBtn">LOCAL</button>
-			<button id="onlineBtn">ONLINE</button>
+			<button id="localBtn" data-i18n="BTN_LOCAL">LOCAL</button>
+			<button id="onlineBtn" data-i18n="BTN_ONLINE">ONLINE</button>
 		</div>
 		<!-- Step 3: Mode selection -->
 		<div id="localOptions" style="display:none;">
-			<button id="singlePlayerBtn">SINGLEPLAYER</button>
-			<button id="localMultiBtn">MULTIPLAYER</button>
-			<button id="localTournamentBtn">TOURNAMENT</button>
+			<button id="singlePlayerBtn" data-i18n="BTN_SINGLEPLAYER">SINGLEPLAYER</button>
+			<button id="localMultiBtn" data-i18n="BTN_MULTIPLAYER">MULTIPLAYER</button>
+			<button id="localTournamentBtn" data-i18n="BTN_TOURNAMENT">TOURNAMENT</button>
 		</div>
 		<div id="onlineOptions" style="display:none;">
-			<button id="onlineMultiBtn">MULTIPLAYER</button>
-			<button id="onlineTournamentBtn">TOURNAMENT</button>
+			<button id="onlineMultiBtn" data-i18n="BTN_MULTIPLAYER">MULTIPLAYER</button>
+			<button id="onlineTournamentBtn" data-i18n="BTN_TOURNAMENT">TOURNAMENT</button>
 		</div>
 		<!-- Step 4: Player count (for local multiplayer/tournament) -->
 		<div id="playerCountContainer" style="display:none;">
-			<label for="playerCount">Enter number of players:</label>
+			<label for="playerCount" data-i18n="LABEL_PLAYER_COUNT">Enter number of players:</label>
 			<input type="number" id="playerCount" min="2" value="2">
-			<button id="startGameBtn">START GAME</button>
+			<button id="startGameBtn" data-i18n="BTN_START_GAME">START GAME</button>
 		</div>
 		<div id="playersTournamentRegistration" style="display:none;">
-			<label for="playerCount">Enter number of players:</label>
+			<label for="playerCount" data-i18n="LABEL_PLAYER_COUNT">Enter number of players:</label>
 			<input type="number" id="TournamentPlayerCount" min="2">
-			<button id="registerPlayersBtn">REGISTER PLAYERS</button>
+			<button id="registerPlayersBtn" data-i18n="BTN_REGISTER_PLAYERS">REGISTER PLAYERS</button>
 		</div>
     <div id="setPlayerAliasContainer" style="display: none;">
-      <label for="playerAlias">Enter your alias:</label>
+      <label for="playerAlias" data-i18n="LABEL_PLAYER_ALIAS">Enter your alias:</label>
       <input type="text" id="playerAlias" maxlength="20" />
-      <button id="setAliasBtn">SET ALIAS</button>
+      <button id="setAliasBtn" data-i18n="BTN_SET_ALIAS">SET ALIAS</button>
     </div>
 	</div>
 	<div id="scoreHud" class="hidden" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: white; font-size: 24px;">

@@ -4,10 +4,31 @@ import { initGameScene } from "./game";
 import { c } from "vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf";
 import "./tictactoe";
 import "./mine";
+import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 
 let ws: WebSocket | null = null;
 
 window.addEventListener("DOMContentLoaded", () => {
+  // Initialize i18n
+  initI18n();
+  
+  // Update page translations
+  updatePageTranslations();
+  
+  // Setup language selector
+  const languageSelect = document.getElementById("languageSelect") as HTMLSelectElement;
+  languageSelect.value = getCurrentLanguage();
+  languageSelect.addEventListener("change", (e) => {
+    const target = e.target as HTMLSelectElement;
+    setLanguage(target.value as Language);
+    updatePageTranslations();
+  });
+  
+  // Listen for language change events
+  window.addEventListener("languagechange", () => {
+    updatePageTranslations();
+  });
+  
   const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement | null;
   if (!canvas) {
     throw new Error("Canvas element not found");
@@ -39,13 +60,13 @@ window.addEventListener("DOMContentLoaded", () => {
   {
     ws = new WebSocket(`${proto}//${location.host}/ws`);
 
-    ws.onopen = () => console.log("WS connected");
-    ws.onerror = (e) => console.error("WS error", e);
+    ws.onopen = () => console.log(t(TranslationKey.WS_CONNECTED));
+    ws.onerror = (e) => console.error(t(TranslationKey.WS_ERROR), e);
 
     ws.onmessage = (ev) => {
       try {
         const data = JSON.parse(ev.data);
-        console.log("WS message", data);
+        console.log(t(TranslationKey.WS_MESSAGE), data);
         if (data.type === "state") {
           const { ball, paddles, score } = data;
           gameObjects.ball.position.x = ball.x;
@@ -56,10 +77,10 @@ window.addEventListener("DOMContentLoaded", () => {
           (document.getElementById("scoreP2") as HTMLElement).textContent = String(score.p2);
         }
         if (data.type === "assign") {
-          console.log("role:", data.role);
+          console.log(t(TranslationKey.WS_ROLE), data.role);
         }
         if (data.type === "gameOver") {
-          alert(`${data.winner} wins!`);
+          alert(t(TranslationKey.MSG_PLAYER_WINS, { player: data.winner }));
           location.reload();
         }
       } catch (e) {}
@@ -163,14 +184,14 @@ window.addEventListener("DOMContentLoaded", () => {
       if (scoreP1int >= 10)
       {
         scene.onBeforeRenderObservable.remove(renderObserver);
-        alert("Player 1 wins!");
+        alert(t(TranslationKey.MSG_PLAYER_WINS, { player: t(TranslationKey.PLAYER_1) }));
         location.reload();
         return;
       }
       else if (scoreP2int >= 10)
       {
         scene.onBeforeRenderObservable.remove(renderObserver);
-        alert("Player 2 wins!");
+        alert(t(TranslationKey.MSG_PLAYER_WINS, { player: t(TranslationKey.PLAYER_2) }));
         location.reload();
         return;
 
@@ -289,12 +310,12 @@ window.addEventListener("DOMContentLoaded", () => {
   registerPlayersBtn.addEventListener('click', () => {
     const playerCount = parseInt((document.getElementById('TournamentPlayerCount') as HTMLInputElement).value);
     if (playerCount >= 2) {
-      alert(`Registered ${playerCount} players for the tournament.`);
+      alert(t(TranslationKey.MSG_PLAYERS_REGISTERED, { count: playerCount.toString() }));
       playersTournamentRegistration.style.display = 'none';
       setPlayerAliasContainer.style.display = 'flex';
       setPlayerAliasContainer.dataset.playerCount = playerCount.toString();
     } else {
-      alert('Number of players must be 2 or more.');
+      alert(t(TranslationKey.MSG_MIN_PLAYERS_ERROR));
     }
   });
   const setAliasBtn = document.getElementById('setAliasBtn')!;
@@ -309,48 +330,49 @@ window.addEventListener("DOMContentLoaded", () => {
       console.log(playerAliases.length, " total players: ", totalPlayers);
       if (playerAliases.length < totalPlayers) 
       {
-        alert(`Alias "${alias}" set. Please enter alias for player ${playerAliases.length + 1}.`);
+        alert(t(TranslationKey.MSG_ALIAS_SET, { alias, next: (playerAliases.length + 1).toString() }));
         playerAliasInput.value = '';
       }
       else
       {
-        alert(`All ${totalPlayers} players registered: ${playerAliases.join(', ')}. Proceeding to game start.`);
+        const playerNames = playerAliases.map(([name]) => name).join(', ');
+        alert(t(TranslationKey.MSG_ALL_PLAYERS_REGISTERED, { count: totalPlayers.toString(), players: playerNames }));
         setPlayerAliasContainer.style.display = 'none';
         startMode(selectedMode, totalPlayers);
       }
     }
     else {
-      alert('Please enter a valid alias.');
+      alert(t(TranslationKey.MSG_VALID_ALIAS_ERROR));
     }
   });
 
   // Online options
   onlineMultiBtn.addEventListener('click', () => {
     selectedMode = 'onlineMultiplayer';
-    alert('Starting Online Multiplayer Game');
+    alert(t(TranslationKey.MSG_STARTING_ONLINE_MULTIPLAYER));
     // start online multiplayer logic here
   });
 
   onlineTournamentBtn.addEventListener('click', () => {
     selectedMode = 'onlineTournament';
-    alert('Starting Online Tournament');
+    alert(t(TranslationKey.MSG_STARTING_ONLINE_TOURNAMENT));
     // start online tournament logic here
   });
 
   singlePlayerBtn.addEventListener('click', () => {
       selectedMode = 'singlePlayer';
-      alert('Starting Singleplayer Game');
+      alert(t(TranslationKey.MSG_STARTING_SINGLEPLAYER));
   });
 
   // Player count submission
   startGameBtn.addEventListener('click', () => {
     const playerCount = parseInt(document.getElementById('playerCount')!.getAttribute('value') || '2');
     if (playerCount >= 2) {
-      alert(`Starting ${selectedMode} with ${playerCount} players`);
+      alert(t(TranslationKey.MSG_STARTING_GAME_WITH_PLAYERS, { mode: selectedMode, count: playerCount.toString() }));
       // start local multiplayer/tournament logic here
       startMode(selectedMode, playerCount)
     } else {
-      alert('Number of players must be 2 or more.');
+      alert(t(TranslationKey.MSG_MIN_PLAYERS_ERROR));
     }
   });
 
@@ -406,3 +428,4 @@ window.addEventListener("DOMContentLoaded", () => {
     // Reset game state if needed
   });
 });
+us

@@ -1,4 +1,6 @@
 // Constants from tictactoe.py
+import { t, TranslationKey } from './i18n';
+
 const X = "X";
 const O = "O";
 const EMPTY = null;
@@ -164,7 +166,7 @@ function initTicTacToe() {
       ctx.fillStyle = white;
       ctx.font = '40px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Play Tic-Tac-Toe', width / 2, 50);
+      ctx.fillText(t(TranslationKey.TTT_TITLE), width / 2, 50);
 
       // Draw player selection buttons
       const playXButton = { x: width / 8, y: height / 2, width: width / 4, height: 50 };
@@ -176,13 +178,13 @@ function initTicTacToe() {
       ctx.fillStyle = black;
       ctx.font = '24px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Play as X', playXButton.x + playXButton.width / 2, playXButton.y + playXButton.height / 2 + 8);
+      ctx.fillText(t(TranslationKey.TTT_PLAY_AS_X), playXButton.x + playXButton.width / 2, playXButton.y + playXButton.height / 2 + 8);
 
       // Draw Play as O button
       ctx.fillStyle = white;
       ctx.fillRect(playOButton.x, playOButton.y, playOButton.width, playOButton.height);
       ctx.fillStyle = black;
-      ctx.fillText('Play as O', playOButton.x + playOButton.width / 2, playOButton.y + playOButton.height / 2 + 8);
+      ctx.fillText(t(TranslationKey.TTT_PLAY_AS_O), playOButton.x + playOButton.width / 2, playOButton.y + playOButton.height / 2 + 8);
       
     } else {
       // Draw game board
@@ -228,14 +230,14 @@ function initTicTacToe() {
       if (gameOver) {
         const gameWinner = winner(board);
         if (gameWinner === null) {
-          title = "Game Over: Tie.";
+          title = t(TranslationKey.TTT_GAME_OVER_TIE);
         } else {
-          title = `Game Over: ${gameWinner} wins.`;
+          title = t(TranslationKey.TTT_GAME_OVER_WINS, { winner: gameWinner });
         }
       } else if (user === currentPlayer) {
-        title = `Play as ${user}`;
+        title = t(TranslationKey.TTT_PLAY_AS, { player: user });
       } else {
-        title = "Computer thinking...";
+        title = t(TranslationKey.TTT_COMPUTER_THINKING);
       }
       
       ctx.fillStyle = white;
@@ -251,7 +253,7 @@ function initTicTacToe() {
         ctx.fillStyle = black;
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Play Again', againButton.x + againButton.width / 2, againButton.y + againButton.height / 2 + 8);
+        ctx.fillText(t(TranslationKey.TTT_PLAY_AGAIN), againButton.x + againButton.width / 2, againButton.y + againButton.height / 2 + 8);
       }
     }
   };
