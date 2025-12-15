@@ -302,6 +302,8 @@ window.addEventListener("DOMContentLoaded", () => {
   onlineMultiBtn.addEventListener('click', () => {
     selectedMode = 'onlineMultiplayer';
     alert('Starting Online Multiplayer Game');
+    onlineOptions.style.display = 'none';
+    startMode(selectedMode, 2);
     // start online multiplayer logic here
   });
 
