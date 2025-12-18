@@ -1,127 +1,346 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game";
-import { c } from "vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf";
 
 let ws: WebSocket | null = null;
+let currentGameId: string | null = null;
 
-window.addEventListener("DOMContentLoaded", () => {
-  const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement | null;
-  if (!canvas) {
-    throw new Error("Canvas element not found");
+// Simple client-side router
+type RouteHandler = () => void;
+const routes: Record<string, RouteHandler> = {};
+
+function navigate(path: string) {
+  window.history.pushState({}, path, window.location.origin + path);
+  handleRoute(path);
+}
+
+function handleRoute(path: string) {
+  const handler = routes[path];
+  if (handler) {
+    handler();
+  } else {
+    routes['/']?.(); // fallback to home
   }
-  const menu = document.getElementById("menuOverlay") as HTMLDivElement;
-  const scoreHud = document.getElementById("scoreHud") as HTMLDivElement;
-  const scoreP1 = document.getElementById("player1Score") as HTMLElement;
-  const scoreP2 = document.getElementById("player2Score") as HTMLElement;
+}
+
+window.addEventListener('popstate', () => {
+  handleRoute(window.location.pathname);
+});
+
+// Route: Home/Menu
+routes['/'] = () => {
+  document.body.innerHTML = `
+    <div id="menuOverlay" class="menu-overlay">
+      <h1>Pong Game</h1>
+      <div class="menu-buttons">
+        <button id="tttBtn" class="menu-btn">Tic-Tac-Toe</button>
+        <button id="mineBtn" class="menu-btn">Minesweeper</button>
+        <button id="pongBtn" class="menu-btn">Pong</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('tttBtn')!.addEventListener('click', () => {
+    navigate('/ttt');
+  });
+
+  document.getElementById('mineBtn')!.addEventListener('click', () => {
+    navigate('/mine');
+  });
+
+  document.getElementById('pongBtn')!.addEventListener('click', () => {
+    navigate('/pong');
+  });
+};
+
+// Route: Home/Menu
+routes['/pong'] = () => {
+  document.body.innerHTML = `
+    <div id="menuOverlay" class="menu-overlay">
+      <h1>Pong Game</h1>
+      <div class="menu-buttons">
+        <button id="localBtn" class="menu-btn">Local Game</button>
+        <button id="onlineBtn" class="menu-btn">Online Game</button>
+        <button id="tournamentBtn" class="menu-btn">Local Tournament</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('localBtn')!.addEventListener('click', () => {
+    navigate('/local');
+  });
+
+  document.getElementById('onlineBtn')!.addEventListener('click', () => {
+    navigate('/online');
+  });
+
+  document.getElementById('tournamentBtn')!.addEventListener('click', () => {
+    navigate('/tournament');
+  });
+};
+
+// Route: Local Game
+routes['/local'] = () => {
+  document.body.innerHTML = `
+    <div id="gameContainer">
+      <canvas id="renderCanvas"></canvas>
+      <div id="scoreHud" class="score-hud">
+        <div>Player 1: <span id="scoreP1">0</span></div>
+        <div>Player 2: <span id="scoreP2">0</span></div>
+      </div>
+    </div>
+  `;
+
+  const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
   const engine = new Engine(canvas, true);
   const scene = new Scene(engine);
-
   const gameObjects = initGameScene(scene, canvas, 2);
 
-  // connect using current host so nginx proxy works
+  initOfflineGame(scene, gameObjects, false);
+
+  engine.runRenderLoop(() => scene.render());
+  window.addEventListener("resize", () => engine.resize());
+};
+
+// Route: Online Game
+routes['/online'] = () => {
+  document.body.innerHTML = `
+    <div id="menuOverlay" class="menu-overlay">
+      <h1>Online Game</h1>
+      <div id="lobbyStatus">
+        <p>Waiting for game...</p>
+        <button id="createGameBtn" class="menu-btn">Create Game</button>
+        <button id="backBtn" class="menu-btn">Back</button>
+        # list of available games to join could go here
+        <div id="availableGames"></div>
+        <div id="refreshGamesContainer">
+          <button id="refreshGamesBtn" class="menu-btn">Refresh Games</button>
+        </div>
+      </div>
+      <div id="gameContainer" style="display: none;">
+        <canvas id="renderCanvas"></canvas>
+        <div id="scoreHud" class="score-hud">
+          <div>Player 1: <span id="scoreP1">0</span></div>
+          <div>Player 2: <span id="scoreP2">0</span></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('backBtn')!.addEventListener('click', () => {
+    navigate('/');
+  });
+
+  document.getElementById('refreshGamesBtn')!.addEventListener('click', async () => {
+      const response = await fetch('/api/games', {
+        method: 'GET',
+      });
+      const data = await response.json();
+      const availableGamesDiv = document.getElementById('availableGames')!;
+      availableGamesDiv.innerHTML = '<h3>Available Games:</h3>';
+      if (data.games.length === 0) {
+        availableGamesDiv.innerHTML += '<p>No available games.</p>';
+      } else {
+        data.games.forEach((game: any) => {
+          const gameBtn = document.createElement('button');
+          gameBtn.textContent = `Join Game ${game.id}`;
+          gameBtn.className = 'menu-btn';
+          gameBtn.addEventListener('click', () => {
+            joinGame(game.id);
+          });
+          const gameStatusDiv = document.createElement('gameStatus')!;
+          gameStatusDiv.innerHTML = `<p>Status: ${game.status}</p>`;
+          availableGamesDiv.appendChild(gameBtn);
+          availableGamesDiv.appendChild(gameStatusDiv);
+        });
+      }
+  });
+
+  document.getElementById('createGameBtn')!.addEventListener('click', async () => {
+    try {
+      const response = await fetch('/api/game/create', {
+        method: 'POST',
+        // headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      currentGameId = data.gameId;
+      
+      document.getElementById('lobbyStatus')!.innerHTML = `
+        <p>Game ID: ${data.gameId}</p>
+        <p>Waiting for opponent...</p>
+        <button id="joinGameBtn" class="menu-btn">Join as Player 2</button>
+        <button id="backBtn" class="menu-btn">Cancel</button>
+      `;
+
+      document.getElementById('joinGameBtn')!.addEventListener('click', () => {
+        joinGame(currentGameId!);
+      });
+
+      document.getElementById('backBtn')!.addEventListener('click', () => {
+        navigate('/');
+      });
+
+      // Auto-join as player 1
+      // joinGame(currentGameId);
+    } catch (error) {
+      console.error('Failed to create game:', error);
+      alert('Failed to create game. Please try again.');
+    }
+  });
+};
+
+// Route: Tournament
+routes['/tournament'] = () => {
+  document.body.innerHTML = `
+    <div id="menuOverlay" class="menu-overlay">
+      <h1>Tournament</h1>
+      <div class="menu-buttons">
+        <input type="number" id="tournamentPlayerCount" min="2" value="4" placeholder="Number of players">
+        <button id="startTournamentBtn" class="menu-btn">Start Tournament</button>
+        <button id="backBtn" class="menu-btn">Back</button>
+      </div>
+      <div id="tournamentStatus" style="margin-top: 20px;"></div>
+    </div>
+  `;
+
+  document.getElementById('backBtn')!.addEventListener('click', () => {
+    navigate('/');
+  });
+
+  document.getElementById('startTournamentBtn')!.addEventListener('click', () => {
+    const count = parseInt((document.getElementById('tournamentPlayerCount') as HTMLInputElement).value);
+    if (count >= 2) {
+      startTournament(count);
+    } else {
+      alert('Need at least 2 players');
+    }
+  });
+};
+
+// WebSocket connection for online games
+function joinGame(gameId: string) {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  ws = new WebSocket(`${proto}//${location.host}/ws?gameId=${gameId}`);
 
-  function initWebsocket()
-  {
-    ws = new WebSocket(`${proto}//${location.host}/ws`);
+  ws.onopen = () => {
+    console.log("WS connected to game:", gameId);
+  };
 
-    ws.onopen = () => console.log("WS connected");
-    ws.onerror = (e) => console.error("WS error", e);
+  ws.onerror = (e) => console.error("WS error", e);
 
-    ws.onmessage = (ev) => {
-      try {
-        const data = JSON.parse(ev.data);
-        console.log("WS message", data);
-        if (data.type === "state") {
-          const { ball, paddles, score } = data;
+  ws.onmessage = (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      console.log("WS message", data);
+
+      if (data.type === "gameStart") {
+        // Game is starting, show canvas
+        document.getElementById('menuOverlay')!.style.display = 'none';
+        document.getElementById('gameContainer')!.style.display = 'block';
+
+        const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+        const engine = new Engine(canvas, true);
+        const scene = new Scene(engine);
+        const gameObjects = initGameScene(scene, canvas, 2);
+
+        engine.runRenderLoop(() => scene.render());
+        window.addEventListener("resize", () => engine.resize());
+
+        // Set up input
+        window.addEventListener("pointermove", (e) => {
+          const normalized = 1 - (e.clientY / window.innerHeight);
+          const mapped = (normalized - 0.5) * 2;
+          ws?.send(JSON.stringify({ type: "paddleMove", y: mapped }));
+        });
+
+        const keys: Record<string, boolean> = {};
+        window.addEventListener("keydown", (e) => keys[e.key] = true);
+        window.addEventListener("keyup", (e) => keys[e.key] = false);
+        setInterval(() => {
+          if (keys['w'] || keys['s']) {
+            let y = 0;
+            if (keys['w']) y = 1;
+            if (keys['s']) y = -1;
+            ws?.send(JSON.stringify({ type: "paddleMove", y }));
+          }
+        }, 1000 / 15);
+      }
+
+      if (data.type === "state") {
+        const { ball, paddles, score } = data;
+        const gameObjects = (window as any).gameObjects;
+        if (gameObjects) {
           gameObjects.ball.position.x = ball.x;
           gameObjects.ball.position.y = ball.y;
           gameObjects.paddleLeft.position.y = paddles.left;
           gameObjects.paddleRight.position.y = paddles.right;
-          (document.getElementById("scoreP1") as HTMLElement).textContent = String(score.p1);
-          (document.getElementById("scoreP2") as HTMLElement).textContent = String(score.p2);
         }
-        if (data.type === "assign") {
-          console.log("role:", data.role);
-        }
-        if (data.type === "gameOver") {
-          alert(`${data.winner} wins!`);
-          location.reload();
-        }
-      } catch (e) {}
-    };
-
-    // input sending: use mouse or touch to set paddle y for your role
-    function sendPaddle(yNorm: number) {
-      ws?.send(JSON.stringify({ type: "paddleMove", y: yNorm }));
-    }
-
-    // mouse/touch
-    window.addEventListener("pointermove", (e) => {
-      const normalized = 1 - (e.clientY / window.innerHeight); // 0..1
-      const mapped = (normalized - 0.5) * 2; // -1..1
-      sendPaddle(mapped);
-    });
-
-    // keyboard for convenience
-    const keys: Record<string, boolean> = {};
-    window.addEventListener("keydown", (e) => keys[e.key] = true);
-    window.addEventListener("keyup", (e) => keys[e.key] = false);
-    setInterval(() => {
-      // keyboard controlling: W/S -> -1..1 mapping
-      if (keys['w'] || keys['s']) {
-        let y = 0;
-        if (keys['w']) y = 1;
-        if (keys['s']) y = -1;
-        sendPaddle(y);
+        const scoreP1 = document.getElementById("scoreP1");
+        const scoreP2 = document.getElementById("scoreP2");
+        if (scoreP1) scoreP1.textContent = String(score.p1);
+        if (scoreP2) scoreP2.textContent = String(score.p2);
       }
-    }, 1000 / 15);
-  }
 
-  function initOfflineGame(scene: Scene, gameObjects: { paddleLeft: any; paddleRight: any; ball: any; }, playerCount: number, tournament: boolean, playerA: [string, number] = ["Player 1", 0], playerB: [string, number] = ["Player 2", 0]): Promise<void> {
-    return new Promise((resolve) => {
+      if (data.type === "assign") {
+        console.log("Assigned role:", data.role);
+      }
+
+      if (data.type === "gameOver") {
+        alert(`${data.winner} wins!`);
+        navigate('/');
+      }
+    } catch (e) {
+      console.error("Failed to parse message:", e);
+    }
+  };
+
+  ws.onclose = () => {
+    console.log("WS disconnected");
+  };
+}
+
+// Offline game logic
+function initOfflineGame(scene: Scene, gameObjects: any, tournament: boolean): Promise<void> {
+  return new Promise((resolve) => {
     let ballVX = 0.07;
     let ballVY = 0.07;
-    scoreP1.textContent = "0";
     let scoreP1int = 0;
-    scoreP2.textContent = "0";
     let scoreP2int = 0;
+
+    const scoreP1 = document.getElementById("scoreP1")!;
+    const scoreP2 = document.getElementById("scoreP2")!;
+    scoreP1.textContent = "0";
+    scoreP2.textContent = "0";
+
     const keys: Record<string, boolean> = {};
     window.addEventListener("keydown", (e) => keys[e.key] = true);
     window.addEventListener("keyup", (e) => keys[e.key] = false);
 
     setInterval(() => {
-      // keyboard controlling: W/S -> -1..1 mapping
       if (keys['w'] || keys['s']) {
         let y = 0;
         if (keys['w']) y = 0.8;
         if (keys['s']) y = -0.8;
         gameObjects.paddleLeft.position.y += y;
-        console.log(gameObjects.paddleLeft.position.y);
       }
       if (keys['ArrowUp'] || keys['ArrowDown']) {
         let y = 0;
         if (keys['ArrowUp']) y = 0.8;
         if (keys['ArrowDown']) y = -0.8;
         gameObjects.paddleRight.position.y += y;
-        console.log(gameObjects.paddleRight.position.y);
       }
     }, 1000 / 15);
-  
+
     const renderObserver = scene.onBeforeRenderObservable.add(() => {
-      // move ball
       gameObjects.ball.position.x += ballVX;
       gameObjects.ball.position.y += ballVY;
-      ballVX *= 1.00005; // gradually speed up
-      ballVY *= 1.00005; // gradually speed up
+      ballVX *= 1.00005;
+      ballVY *= 1.00005;
 
-      // simple wall collision
       if (gameObjects.ball.position.y > 5 || gameObjects.ball.position.y < -5) {
         ballVY = -ballVY;
       }
 
-      // simple paddle collision
       if (gameObjects.ball.position.x < gameObjects.paddleLeft.position.x + 0.25 &&
           gameObjects.ball.position.x > gameObjects.paddleLeft.position.x &&
           Math.abs(gameObjects.ball.position.y - gameObjects.paddleLeft.position.y) < 0.75) {
@@ -133,254 +352,94 @@ window.addEventListener("DOMContentLoaded", () => {
         ballVX = -ballVX;
       }
 
-      // reset if out of bounds
-      if (gameObjects.ball.position.x < -6)
-      {
+      if (gameObjects.ball.position.x < -6) {
         scoreP2int++;
         scoreP2.textContent = scoreP2int.toString();
         gameObjects.ball.position.x = 0;
         gameObjects.ball.position.y = 0;
-      }
-      else if (gameObjects.ball.position.x > 6)
-      {
+      } else if (gameObjects.ball.position.x > 6) {
         scoreP1int++;
         scoreP1.textContent = scoreP1int.toString();
         gameObjects.ball.position.x = 0;
         gameObjects.ball.position.y = 0;
       }
-      if (scoreP1int >= 10)
-      {
-        if (tournament)
-        {
-          playerA[1] += 1;
-          // alert(`${playerA[0]} wins this match! Current score: ${scoreP1int} - ${scoreP2int}`);
-          console.log("Player A score:", playerA[1]);
-          scene.onBeforeRenderObservable.remove(renderObserver);
-          resolve();
-          return;
-        }
+
+      if (scoreP1int >= 10) {
         scene.onBeforeRenderObservable.remove(renderObserver);
-        alert("Player 1 wins!");
-        resolve();
-        location.reload();
-        return;
-      }
-      else if (scoreP2int >= 10)
-      {
-        if (tournament)
-        {
-          playerB[1] += 1;
-          // alert(`${playerB[0]} wins this match! Current score: ${scoreP2int} - ${scoreP1int}`);
-          console.log("Player B score:", playerB[1]);
-          scene.onBeforeRenderObservable.remove(renderObserver);
-          resolve();
-          return;
+        if (!tournament) {
+          alert("Player 1 wins!");
+          navigate('/');
         }
-        scene.onBeforeRenderObservable.remove(renderObserver);
-        alert("Player 2 wins!");
         resolve();
-        location.reload();
-        return;
-
+      } else if (scoreP2int >= 10) {
+        scene.onBeforeRenderObservable.remove(renderObserver);
+        if (!tournament) {
+          alert("Player 2 wins!");
+          navigate('/');
+        }
+        resolve();
       }
-      // simple AI for right paddle
-      // gameObjects.paddleRight.position.y += (gameObjects.ball.position.y - gameObjects.paddleRight.position.y) * 0.3;
     });
-    });
+  });
+}
+
+async function startTournament(playerCount: number) {
+  const players: string[] = [];
+  for (let i = 0; i < playerCount; i++) {
+    const name = prompt(`Enter name for Player ${i + 1}:`) || `Player ${i + 1}`;
+    players.push(name);
   }
 
-  engine.runRenderLoop(() => scene.render());
-  window.addEventListener("resize", () => engine.resize());
-
-  // UI buttons
-  let playerAliases: [string, number][] = [];
-  const gameSelection = document.getElementById('GameSelection')!;
-  const LocalOrOnlineSelection = document.getElementById('LocalOrOnlineSelection')!;
-  const localOptions = document.getElementById('localOptions')!;
-  const onlineOptions = document.getElementById('onlineOptions')!;
-  const playerCountContainer = document.getElementById('playerCountContainer')!;
-  const playersTournamentRegistration = document.getElementById('playersTournamentRegistration')!;
-  const setPlayerAliasContainer = document.getElementById('setPlayerAliasContainer')!;
-
-  const tttBtn = document.getElementById('tttBtn')!;
-  const mineBtn = document.getElementById('mineBtn')!;
-  const pongBtn = document.getElementById('pongBtn')!;
-
-  const localBtn = document.getElementById('localBtn')!;
-  const onlineBtn = document.getElementById('onlineBtn')!;
-
-  const singlePlayerBtn = document.getElementById('singlePlayerBtn')!;
-  const localMultiBtn = document.getElementById('localMultiBtn')!;
-  const localTournamentBtn = document.getElementById('localTournamentBtn')!;
-
-  const onlineMultiBtn = document.getElementById('onlineMultiBtn')!;
-  const onlineTournamentBtn = document.getElementById('onlineTournamentBtn')!;
-  const startGameBtn = document.getElementById('startGameBtn')!;
-  const registerPlayersBtn = document.getElementById('registerPlayersBtn')!;
-  let selectedMode = '';
-
-  // Step 1: choose LOCAL or ONLINE
-
-
-  tttBtn.addEventListener('click', () => {
-    alert('Tic-Tac-Toe selected. (Not implemented yet)');
-    // Implement Tic-Tac-Toe initialization here
-  });
-
-  mineBtn.addEventListener('click', () => {
-    alert('Minesweeper selected. (Not implemented yet)');
-    // Implement Minesweeper initialization here
-  });
-
-  pongBtn.addEventListener('click', () => {
-    gameSelection.style.display = 'none';
-    LocalOrOnlineSelection.style.display = 'flex';
-  });
-
-  localBtn.addEventListener('click', () => {
-    LocalOrOnlineSelection.style.display = 'none';
-    localOptions.style.display = 'flex';
-  });
-
-  onlineBtn.addEventListener('click', () => {
-    LocalOrOnlineSelection.style.display = 'none';
-    onlineOptions.style.display = 'flex';
-  });
-
-  // Local options
-  localMultiBtn.addEventListener('click', () => {
-    selectedMode = 'localMultiplayer';
-    localOptions.style.display = 'none';
-    playerCountContainer.style.display = 'flex';
-  });
-
-  localTournamentBtn.addEventListener('click', () => {
-    selectedMode = 'localTournament';
-    localOptions.style.display = 'none';
-    playersTournamentRegistration.style.display = 'flex';
-  });
-
-  registerPlayersBtn.addEventListener('click', () => {
-    const playerCount = parseInt((document.getElementById('TournamentPlayerCount') as HTMLInputElement).value);
-    if (playerCount >= 2) {
-      alert(`Registered ${playerCount} players for the tournament.`);
-      playersTournamentRegistration.style.display = 'none';
-      setPlayerAliasContainer.style.display = 'flex';
-      setPlayerAliasContainer.dataset.playerCount = playerCount.toString();
-    } else {
-      alert('Number of players must be 2 or more.');
+  const schedule: [number, number][] = [];
+  for (let i = 0; i < playerCount; i++) {
+    for (let j = i + 1; j < playerCount; j++) {
+      schedule.push([i, j]);
     }
-  });
-  const setAliasBtn = document.getElementById('setAliasBtn')!;
-
-  setAliasBtn.addEventListener('click', () => {
-    const playerAliasInput = document.getElementById('playerAlias') as HTMLInputElement;
-    const alias = playerAliasInput.value.trim();
-    if (alias.length > 0) 
-    {
-      playerAliases.push([alias, 0]);
-      const totalPlayers = parseInt(setPlayerAliasContainer.dataset.playerCount || '0');
-      console.log(playerAliases.length, " total players: ", totalPlayers);
-      if (playerAliases.length < totalPlayers) 
-      {
-        alert(`Alias "${alias}" set. Please enter alias for player ${playerAliases.length + 1}.`);
-        playerAliasInput.value = '';
-      }
-      else
-      {
-        alert(`All ${totalPlayers} players registered: ${playerAliases.join(', ')}. Proceeding to game start.`);
-        setPlayerAliasContainer.style.display = 'none';
-        startMode(selectedMode, totalPlayers);
-      }
-    }
-    else {
-      alert('Please enter a valid alias.');
-    }
-  });
-
-  // Online options
-  onlineMultiBtn.addEventListener('click', () => {
-    selectedMode = 'onlineMultiplayer';
-    alert('Starting Online Multiplayer Game');
-    onlineOptions.style.display = 'none';
-    startMode(selectedMode, 2);
-    // start online multiplayer logic here
-  });
-
-  onlineTournamentBtn.addEventListener('click', () => {
-    selectedMode = 'onlineTournament';
-    alert('Starting Online Tournament');
-    // start online tournament logic here
-  });
-
-  singlePlayerBtn.addEventListener('click', () => {
-      selectedMode = 'singlePlayer';
-      alert('Starting Singleplayer Game');
-  });
-
-  // Player count submission
-  startGameBtn.addEventListener('click', () => {
-    const playerCount = parseInt(document.getElementById('playerCount')!.getAttribute('value') || '2');
-    if (playerCount >= 2) {
-      alert(`Starting ${selectedMode} with ${playerCount} players`);
-      // start local multiplayer/tournament logic here
-      startMode(selectedMode, playerCount)
-    } else {
-      alert('Number of players must be 2 or more.');
-    }
-  });
-
-  async function startTounament(mode: string, playerCount: number) {
-    const schedule: [[string, number], [string, number]][] = [];
-    // Simple round-robin scheduling
-    for (let i = 0; i < playerCount; i++) {
-      for (let j = i + 1; j < playerCount; j++) {
-        // const playerA = playerAliases[i];
-        // const playerA = playerAliasesParam.length === playerCount ? playerAliasesParam[i] : `Player ${i + 1}`;
-        // const playerB = playerAliasesParam.length === playerCount ? playerAliasesParam[j] : `Player ${j + 1}`;
-        schedule.push([playerAliases[i], playerAliases[j]]);
-      }
-    }
-    console.log("Tournament Schedule:", schedule);
-
-    for (const [playerA, playerB] of schedule) {
-      alert(`Starting match: ${playerA} vs ${playerB}`);
-      // await the match to finish (initOfflineGame now returns a Promise)
-      await initOfflineGame(scene, gameObjects, 2, true, playerA, playerB);
-      // In a real implementation, you'd record the result here (playerA/playerB scores were updated in-place)
-    }
-    console.log("Tournament over! Final scores:");
-    for (const [alias, score] of playerAliases) {
-      console.log(`${alias}: ${score}`);
-    }
-    location.reload()
   }
 
-  function startMode(mode: string, playerCount: number, playerAliasesParam: string[] = []) {
-    if (mode == "onlineMultiplayer") 
-    {
-      initWebsocket();
-      ws?.send(JSON.stringify({ type: "selectMode", mode }));
-    }
-    else if (mode == "localMultiplayer")
-    {
-      initOfflineGame(scene, gameObjects, playerCount, false, ["Player 1", 0], ["Player 2", 0]);
-    }
-    else if (mode == "localTournament")
-    {
-      startTounament(mode, playerCount);
-    }
-    else if (mode == "singlePlayer")
-    {
-      initOfflineGame(scene, gameObjects, 1, false, ["Player 1", 0], ["Player 2", 0]);
-    }
-    //show score HUD
-    // scoreHud.classList.remove("hidden");
-    // hide menu
-    menu.classList.add("opacity-0", "pointer-events-none");
-    setTimeout(() => {
-      menu.style.display = "none";
-      scoreHud.classList.remove("hidden");
-    }, 260);
+  const scores = new Array(playerCount).fill(0);
+
+  for (const [i, j] of schedule) {
+    alert(`Match: ${players[i]} vs ${players[j]}`);
+    
+    document.body.innerHTML = `
+      <div id="gameContainer">
+        <canvas id="renderCanvas"></canvas>
+        <div id="scoreHud" class="score-hud">
+          <div>${players[i]}: <span id="scoreP1">0</span></div>
+          <div>${players[j]}: <span id="scoreP2">0</span></div>
+        </div>
+      </div>
+    `;
+
+    const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+    const engine = new Engine(canvas, true);
+    const scene = new Scene(engine);
+    const gameObjects = initGameScene(scene, canvas, 2);
+
+    engine.runRenderLoop(() => scene.render());
+    
+    await initOfflineGame(scene, gameObjects, true);
+    
+    const p1Score = parseInt(document.getElementById("scoreP1")!.textContent || "0");
+    const p2Score = parseInt(document.getElementById("scoreP2")!.textContent || "0");
+    
+    if (p1Score > p2Score) scores[i]++;
+    else scores[j]++;
+
+    engine.dispose();
   }
+
+  let winner = 0;
+  for (let i = 1; i < playerCount; i++) {
+    if (scores[i] > scores[winner]) winner = i;
+  }
+
+  alert(`Tournament Winner: ${players[winner]} with ${scores[winner]} wins!`);
+  navigate('/');
+}
+
+// Initialize on load
+window.addEventListener("DOMContentLoaded", () => {
+  handleRoute(window.location.pathname);
 });
