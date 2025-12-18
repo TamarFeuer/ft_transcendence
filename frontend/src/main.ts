@@ -9,6 +9,9 @@ let currentGameId: string | null = null;
 type RouteHandler = () => void;
 export const routes: Record<string, RouteHandler> = {};
 
+// Initialize routes after routes object is defined
+import { setupRoutes } from "./routes";
+
 export function navigate(path: string) {
   window.history.pushState({}, path, window.location.origin + path);
   handleRoute(path);
@@ -261,6 +264,9 @@ export async function startTournament(playerCount: number) {
   alert(`Tournament Winner: ${players[winner]} with ${scores[winner]} wins!`);
   navigate('/');
 }
+
+// Initialize routes
+setupRoutes();
 
 // Initialize on load
 window.addEventListener("DOMContentLoaded", () => {
