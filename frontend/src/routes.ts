@@ -106,13 +106,12 @@ routes['/tournament'] = () => {
   });
 };
 
-
 // Route: Online Game
 routes['/online'] = () => {
   document.body.innerHTML = `
     <div id="menuOverlay" class="menu-overlay">
       <h1>Online Game</h1>
-      <div id="lobbyStatus">
+      <div id="lobbyStatus"></div>
         <p>Waiting for game...</p>
         <button id="createGameBtn" class="menu-btn">Create Game</button>
         <button id="backBtn" class="menu-btn">Back</button>
@@ -121,55 +120,6 @@ routes['/online'] = () => {
         <div id="refreshGamesContainer">
           <button id="refreshGamesBtn" class="menu-btn">Refresh Games</button>
         </div>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('backBtn')!.addEventListener('click', () => {
-    navigate('/');
-  });
-
-  document.getElementById('refreshGamesBtn')!.addEventListener('click', async () => {
-      const response = await fetch('/api/games', {
-        method: 'GET',
-      });
-      const data = await response.json();
-      const availableGamesDiv = document.getElementById('availableGames')!;
-      availableGamesDiv.innerHTML = '<h3>Available Games:</h3>';
-      if (data.games.length === 0) {
-        availableGamesDiv.innerHTML += '<p>No available games.</p>';
-      } else {
-        data.games.forEach((game: any) => {
-          const gameBtn = document.createElement('button');
-          gameBtn.textContent = `Join Game ${game.id}`;
-          gameBtn.className = 'menu-btn';
-          gameBtn.addEventListener('click', () => {
-            joinGame(game.id);
-          });
-          const gameStatusDiv = document.createElement('gameStatus')!;
-          gameStatusDiv.innerHTML = `<p>Status: ${game.status}</p>`;
-          availableGamesDiv.appendChild(gameBtn);
-          availableGamesDiv.appendChild(gameStatusDiv);
-        });
-      }
-  });
-};
-
-// Route: Online Game
-routes['/online'] = () => {
-  document.body.innerHTML = `
-    <div id="menuOverlay" class="menu-overlay">
-      <h1>Online Game</h1>
-      <div id="lobbyStatus">
-        <p>Waiting for game...</p>
-        <button id="createGameBtn" class="menu-btn">Create Game</button>
-        <button id="backBtn" class="menu-btn">Back</button>
-        # list of available games to join could go here
-        <div id="availableGames"></div>
-        <div id="refreshGamesContainer">
-          <button id="refreshGamesBtn" class="menu-btn">Refresh Games</button>
-        </div>
-      </div>
     </div>
   `;
 
@@ -212,23 +162,12 @@ routes['/online'] = () => {
       
       document.getElementById('lobbyStatus')!.innerHTML = `
         <p>Game ID: ${data.gameId}</p>
-        <p>Waiting for opponent...</p>
-        <button id="joinGameBtn" class="menu-btn">Join as Player 2</button>
-        <button id="backBtn" class="menu-btn">Cancel</button>
+        <p>Game created...</p>
       `;
 
-      document.getElementById('joinGameBtn')!.addEventListener('click', () => {
-        joinGame(data.gameId!);
-      });
-
-      document.getElementById('backBtn')!.addEventListener('click', () => {
-        navigate('/');
-      });
-
-      // Auto-join as player 1
-      // joinGame(currentGameId);
     } catch (error) {
       console.error('Failed to create game:', error);
+      document.getElementById('lobbyStatus')!.innerHTML = `<p style="color: red;">Failed to create game. Please try again.</p>`;
       alert('Failed to create game. Please try again.');
     }
   });
