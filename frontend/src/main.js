@@ -1,28 +1,24 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
-import { initGameScene } from "./game";
+import { initGameScene } from "./game.js";
 
-let ws: WebSocket | null = null;
-let currentGameId: string | null = null;
+let ws = null;
+let currentGameId = null;
 
-// Simple client-side router
-type RouteHandler = () => void;
-export const routes: Record<string, RouteHandler> = {};
+export const routes = {};
+import { setupRoutes } from "./routes.js";
 
-// Initialize routes after routes object is defined
-import { setupRoutes } from "./routes";
-
-export function navigate(path: string) {
+export function navigate(path) {
   window.history.pushState({}, path, window.location.origin + path);
   handleRoute(path);
 }
 
-function handleRoute(path: string) {
+function handleRoute(path) {
   const handler = routes[path];
   if (handler) {
     handler();
   } else {
-    routes['/']?.(); // fallback to home
+    routes['/']?.();
   }
 }
 
@@ -30,8 +26,7 @@ window.addEventListener('popstate', () => {
   handleRoute(window.location.pathname);
 });
 
-// WebSocket connection for online games
-export function joinGame(gameId: string) {
+export function joinGame(gameId) {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
   ws = new WebSocket(`${proto}//${location.host}/ws/${gameId}`);
 
@@ -47,39 +42,31 @@ export function joinGame(gameId: string) {
       console.log("WS message", data);
 
       if (data.type === "gameStart") {
-        // // Game is starting, show canvas
-        document.getElementById('menuOverlay')!.style.display = 'none';
-        // document.getElementById('gameContainer')!.style.display = 'block';
-        // document.getElementById('scoreHud')!.style.display = 'block';
-
-        document.body.innerHTML = `
+        const containerHtml = `
         <div id="gameContainer">
           <canvas id="renderCanvas"></canvas>
           <div id="scoreHud" class="score-hud" style="display: block; position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; z-index: 100;">
             <div>Player 1: <span id="scoreP1">0</span></div>
             <div>Player 2: <span id="scoreP2">0</span></div>
           </div>
-        </div>
-      `;
+        </div>`;
+        document.body.innerHTML = containerHtml;
 
-        const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+        const canvas = document.getElementById("renderCanvas");
         const engine = new Engine(canvas, true);
         const scene = new Scene(engine);
-        (window as any).gameObjects = initGameScene(scene, canvas, 2);
-        
-        // Store gameObjects in window so websocket handler can access it
+        window.gameObjects = initGameScene(scene, canvas, 2);
 
         engine.runRenderLoop(() => scene.render());
         window.addEventListener("resize", () => engine.resize());
 
-        // Set up input
         window.addEventListener("pointermove", (e) => {
           const normalized = 1 - (e.clientY / window.innerHeight);
           const mapped = (normalized - 0.5) * 2;
           ws?.send(JSON.stringify({ type: "paddleMove", y: mapped }));
         });
 
-        const keys: Record<string, boolean> = {};
+        const keys = {};
         window.addEventListener("keydown", (e) => keys[e.key] = true);
         window.addEventListener("keyup", (e) => keys[e.key] = false);
         setInterval(() => {
@@ -94,12 +81,11 @@ export function joinGame(gameId: string) {
 
       if (data.type === "state") {
         const { ball, paddles, score } = data;
-        console.log("Updating game state:", data);
-        if ((window as any).gameObjects) {
-          (window as any).gameObjects.ball.position.x = ball.x;
-          (window as any).gameObjects.ball.position.y = ball.y;
-          (window as any).gameObjects.paddleLeft.position.y = paddles.left;
-          (window as any).gameObjects.paddleRight.position.y = paddles.right;
+        if (window.gameObjects) {
+          window.gameObjects.ball.position.x = ball.x;
+          window.gameObjects.ball.position.y = ball.y;
+          window.gameObjects.paddleLeft.position.y = paddles.left;
+          window.gameObjects.paddleRight.position.y = paddles.right;
         }
         const scoreP1 = document.getElementById("scoreP1");
         const scoreP2 = document.getElementById("scoreP2");
@@ -125,20 +111,19 @@ export function joinGame(gameId: string) {
   };
 }
 
-// Offline game logic
-export function initOfflineGame(scene: Scene, gameObjects: any, tournament: boolean): Promise<void> {
+export function initOfflineGame(scene, gameObjects, tournament) {
   return new Promise((resolve) => {
     let ballVX = 0.07;
     let ballVY = 0.07;
     let scoreP1int = 0;
     let scoreP2int = 0;
 
-    const scoreP1 = document.getElementById("scoreP1")!;
-    const scoreP2 = document.getElementById("scoreP2")!;
+    const scoreP1 = document.getElementById("scoreP1");
+    const scoreP2 = document.getElementById("scoreP2");
     scoreP1.textContent = "0";
     scoreP2.textContent = "0";
 
-    const keys: Record<string, boolean> = {};
+    const keys = {};
     window.addEventListener("keydown", (e) => keys[e.key] = true);
     window.addEventListener("keyup", (e) => keys[e.key] = false);
 
@@ -209,14 +194,14 @@ export function initOfflineGame(scene: Scene, gameObjects: any, tournament: bool
   });
 }
 
-export async function startTournament(playerCount: number) {
-  const players: string[] = [];
+export async function startTournament(playerCount) {
+  const players = [];
   for (let i = 0; i < playerCount; i++) {
     const name = prompt(`Enter name for Player ${i + 1}:`) || `Player ${i + 1}`;
     players.push(name);
   }
 
-  const schedule: [number, number][] = [];
+  const schedule = [];
   for (let i = 0; i < playerCount; i++) {
     for (let j = i + 1; j < playerCount; j++) {
       schedule.push([i, j]);
@@ -227,7 +212,7 @@ export async function startTournament(playerCount: number) {
 
   for (const [i, j] of schedule) {
     alert(`Match: ${players[i]} vs ${players[j]}`);
-    
+
     document.body.innerHTML = `
       <div id="gameContainer">
         <canvas id="renderCanvas"></canvas>
@@ -238,18 +223,18 @@ export async function startTournament(playerCount: number) {
       </div>
     `;
 
-    const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+    const canvas = document.getElementById("renderCanvas");
     const engine = new Engine(canvas, true);
     const scene = new Scene(engine);
     const gameObjects = initGameScene(scene, canvas, 2);
 
     engine.runRenderLoop(() => scene.render());
-    
+
     await initOfflineGame(scene, gameObjects, true);
-    
-    const p1Score = parseInt(document.getElementById("scoreP1")!.textContent || "0");
-    const p2Score = parseInt(document.getElementById("scoreP2")!.textContent || "0");
-    
+
+    const p1Score = parseInt(document.getElementById("scoreP1").textContent || "0");
+    const p2Score = parseInt(document.getElementById("scoreP2").textContent || "0");
+
     if (p1Score > p2Score) scores[i]++;
     else scores[j]++;
 
@@ -265,10 +250,8 @@ export async function startTournament(playerCount: number) {
   navigate('/');
 }
 
-// Initialize routes
 setupRoutes();
 
-// Initialize on load
 window.addEventListener("DOMContentLoaded", () => {
   handleRoute(window.location.pathname);
 });

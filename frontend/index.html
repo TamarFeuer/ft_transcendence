@@ -5,148 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pong</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background: black;
-      font-family: Arial, sans-serif;
-    }
-
-    #renderCanvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-    }
-
-    #menuOverlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 10;
-    }
-
-    #menuOverlay h1 {
-      color: white;
-      font-size: 48px;
-      margin-bottom: 30px;
-    }
-
-    #menuOverlay button {
-      background: #1e90ff;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 20px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    #menuOverlay button:hover {
-      background: #006ad1;
-    }
-    #playerCountContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    #playerCountContainer input {
-      width: 60px;
-      text-align: center;
-      margin-top: 5px;
-    }
-    #playersTournamentRegistration {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    #playersTournamentRegistration input {
-      width: 60px;
-      text-align: center;
-      margin-top: 5px;
-    }
-
-    #setPlayerAliasContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-    #setPlayerAliasContainer input {
-      width: 150px;
-      text-align: center;
-      margin-top: 5px;
-    }
-  </style>
+  
 </head>
 
-<body>
+<body class="m-0 p-0 h-screen overflow-hidden bg-black font-sans">
 
 <!-- Fullscreen game container -->
-<div class="container">
+<div class="relative w-screen h-screen">
 
 	<!-- Babylon canvas -->
-	<canvas id="renderCanvas"></canvas>
+  <canvas id="renderCanvas" class="absolute inset-0 w-full h-full bg-black/60"></canvas>
 
 	<!-- Menu overlay -->
-	<div id="menuOverlay">
-		<h1>Pong</h1>
+  <div id="menuOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10">
+    	<h1 class="text-white text-5xl font-bold mb-8">Pong</h1>
 		<!-- Step 1: Game Selection -->
 		<div id="GameSelection">
-			<button id="tttBtn">Tic-Tac-Toe</button>
-			<button id="mineBtn">Minesweeper</button>
-      <button id="pongBtn">Pong</button>
+      <button id="tttBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mr-2">Tic-Tac-Toe</button>
+      <button id="mineBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mr-2">Minesweeper</button>
+      <button id="pongBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Pong</button>
 		</div>
     <!-- Step 2: Local or Online -->
-		<div id="LocalOrOnlineSelection" style="display:none;">
-			<button id="localBtn">LOCAL</button>
-			<button id="onlineBtn">ONLINE</button>
+    <div id="LocalOrOnlineSelection" class="hidden mt-4">
+      <button id="localBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mr-2">LOCAL</button>
+      <button id="onlineBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">ONLINE</button>
 		</div>
 		<!-- Step 3: Mode selection -->
-		<div id="localOptions" style="display:none;">
-			<button id="singlePlayerBtn">SINGLEPLAYER</button>
-			<button id="localMultiBtn">LOCAL MULTIPLAYER</button>
-			<button id="localTournamentBtn">LOCAL TOURNAMENT</button>
+    <div id="localOptions" class="hidden mt-4">
+      <button id="singlePlayerBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mr-2">SINGLEPLAYER</button>
+      <button id="localMultiBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mr-2">LOCAL MULTIPLAYER</button>
+      <button id="localTournamentBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">LOCAL TOURNAMENT</button>
 		</div>
-		<div id="onlineOptions" style="display:none;">
-			<button id="onlineMultiBtn">ONLINE MULTIPLAYER</button>
-			<button id="onlineTournamentBtn">ONLINE TOURNAMENT</button>
+    <div id="onlineOptions" class="hidden mt-4">
+      <button id="onlineMultiBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg mr-2">ONLINE MULTIPLAYER</button>
+      <button id="onlineTournamentBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">ONLINE TOURNAMENT</button>
 		</div>
 		<!-- Step 4: Player count (for local multiplayer/tournament) -->
-		<div id="playerCountContainer" style="display:none;">
-			<label for="playerCount">Enter number of players:</label>
-			<input type="number" id="playerCount" min="2" value="2">
-			<button id="startGameBtn">START GAME</button>
+    <div id="playerCountContainer" class="hidden mt-4 flex flex-col items-center">
+      <label for="playerCount" class="text-white mb-2">Enter number of players:</label>
+      <input type="number" id="playerCount" min="2" value="2" class="w-16 text-center mb-2 rounded px-2 py-1">
+      <button id="startGameBtn" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg">START GAME</button>
 		</div>
-		<div id="playersTournamentRegistration" style="display:none;">
-			<label for="playerCount">Enter number of players:</label>
-			<input type="number" id="TournamentPlayerCount" min="2">
-			<button id="registerPlayersBtn">REGISTER PLAYERS</button>
+    <div id="playersTournamentRegistration" class="hidden mt-4 flex flex-col items-center">
+      <label for="playerCount" class="text-white mb-2">Enter number of players:</label>
+      <input type="number" id="TournamentPlayerCount" min="2" class="w-16 text-center mb-2 rounded px-2 py-1">
+      <button id="registerPlayersBtn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">REGISTER PLAYERS</button>
 		</div>
-    <div id="setPlayerAliasContainer" style="display: none;">
-      <label for="playerAlias">Enter your alias:</label>
-      <input type="text" id="playerAlias" maxlength="20" />
-      <button id="setAliasBtn">SET ALIAS</button>
+    <div id="setPlayerAliasContainer" class="hidden mt-4 flex flex-col items-center">
+      <label for="playerAlias" class="text-white mb-2">Enter your alias:</label>
+      <input type="text" id="playerAlias" maxlength="20" class="w-40 text-center mb-2 rounded px-2 py-1" />
+      <button id="setAliasBtn" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">SET ALIAS</button>
     </div>
 	</div>
-	<div id="scoreHud" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: white; font-size: 24px;">
+  <div id="scoreHud" class="absolute top-2 left-1/2 -translate-x-1/2 text-white text-2xl">
 	<span id="player1Score">0</span> - <span id="player2Score">0</span>
   </div>
 
   <!-- Your JS -->
-  <script type="module" src="src/main.ts"></script>
+  <script type="module" src="src/main.js"></script>
 
 </body>
 </html>

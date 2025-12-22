@@ -1,0 +1,11 @@
+<div id="menuOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10">
+  <h1 class="text-white text-4xl font-bold mb-6">Tournament</h1>
+  <div class="flex flex-col gap-4 items-center">
+    <input type="number" id="tournamentPlayerCount" min="2" value="4" class="px-3 py-2 rounded w-24 text-center" placeholder="Players" />
+    <div class="flex gap-3">
+      <button id="startTournamentBtn" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded">Start Tournament</button>
+      <button id="backBtn" class="px-5 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded">Back</button>
+    </div>
+    <div id="tournamentStatus" class="text-white mt-4"></div>
+  </div>
+</div>
