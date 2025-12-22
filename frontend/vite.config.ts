@@ -4,7 +4,7 @@ export default defineConfig({
   root: '.',
   build: {
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
   },
   server: {
     host: '0.0.0.0',
