@@ -33,7 +33,7 @@ window.addEventListener('popstate', () => {
 // WebSocket connection for online games
 export function joinGame(gameId: string) {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
-  ws = new WebSocket(`${proto}//${location.host}/ws?gameId=${gameId}`);
+  ws = new WebSocket(`${proto}//${location.host}/ws/${gameId}`);
 
   ws.onopen = () => {
     console.log("WS connected to game:", gameId);
