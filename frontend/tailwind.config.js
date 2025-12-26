@@ -6,8 +6,11 @@ module.exports = {
     './public/**/*.html',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        comic: ['"ComicNeue"', 'cursive'], // <-- local font key
+      },
+    },
   },
   plugins: [],
 }
-

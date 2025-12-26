@@ -2,11 +2,20 @@ import { routes, navigate, joinGame, startTournament, initOfflineGame } from './
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 
+// async function loadTemplate(name) {
+//   const url = `/routes/${name}.html`;
+//   const res = await fetch(url);
+//   const html = await res.text();
+//   document.body.innerHTML = html;
+// }
+
 async function loadTemplate(name) {
   const url = `/routes/${name}.html`;
   const res = await fetch(url);
   const html = await res.text();
-  document.body.innerHTML = html;
+
+  const appRoot = document.getElementById("app-root");
+  appRoot.innerHTML = html;
 }
 
 export function setupRoutes() {

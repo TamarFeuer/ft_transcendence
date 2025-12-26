@@ -1,4 +1,5 @@
 import "./styles.css";
+import bgImage from '../assets/background.jpg'; 
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 
@@ -7,6 +8,9 @@ let currentGameId = null;
 
 export const routes = {};
 import { setupRoutes } from "./routes.js";
+
+document.body.style.backgroundImage = `url(${bgImage})`;
+document.body.classList.add('bg-cover', 'bg-no-repeat');
 
 export function navigate(path) {
   window.history.pushState({}, path, window.location.origin + path);
@@ -37,74 +41,79 @@ export function joinGame(gameId) {
   ws.onerror = (e) => console.error("WS error", e);
 
   ws.onmessage = (ev) => {
-    try {
-      const data = JSON.parse(ev.data);
-      console.log("WS message", data);
+  try {
+    const data = JSON.parse(ev.data);
+    console.log("WS message", data);
 
-      if (data.type === "gameStart") {
-        const containerHtml = `
+    if (data.type === "gameStart") {
+      const appRoot = document.getElementById("app-root");
+
+      appRoot.innerHTML = `
         <div id="gameContainer">
           <canvas id="renderCanvas"></canvas>
           <div id="scoreHud" class="score-hud" style="display: block; position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; z-index: 100;">
             <div>Player 1: <span id="scoreP1">0</span></div>
             <div>Player 2: <span id="scoreP2">0</span></div>
           </div>
-        </div>`;
-        document.body.innerHTML = containerHtml;
+        </div>
+      `;
 
-        const canvas = document.getElementById("renderCanvas");
-        const engine = new Engine(canvas, true);
-        const scene = new Scene(engine);
-        window.gameObjects = initGameScene(scene, canvas, 2);
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new Engine(canvas, true);
+      const scene = new Scene(engine);
+      window.gameObjects = initGameScene(scene, canvas, 2);
 
-        engine.runRenderLoop(() => scene.render());
-        window.addEventListener("resize", () => engine.resize());
+      engine.runRenderLoop(() => scene.render());
+      window.addEventListener("resize", () => engine.resize());
 
-        window.addEventListener("pointermove", (e) => {
-          const normalized = 1 - (e.clientY / window.innerHeight);
-          const mapped = (normalized - 0.5) * 2;
-          ws?.send(JSON.stringify({ type: "paddleMove", y: mapped }));
-        });
+      // Paddle movement with mouse
+      window.addEventListener("pointermove", (e) => {
+        const normalized = 1 - (e.clientY / window.innerHeight);
+        const mapped = (normalized - 0.5) * 2;
+        ws?.send(JSON.stringify({ type: "paddleMove", y: mapped }));
+      });
 
-        const keys = {};
-        window.addEventListener("keydown", (e) => keys[e.key] = true);
-        window.addEventListener("keyup", (e) => keys[e.key] = false);
-        setInterval(() => {
-          if (keys['w'] || keys['s']) {
-            let y = 0;
-            if (keys['w']) y = 1;
-            if (keys['s']) y = -1;
-            ws?.send(JSON.stringify({ type: "paddleMove", y }));
-          }
-        }, 1000 / 15);
-      }
-
-      if (data.type === "state") {
-        const { ball, paddles, score } = data;
-        if (window.gameObjects) {
-          window.gameObjects.ball.position.x = ball.x;
-          window.gameObjects.ball.position.y = ball.y;
-          window.gameObjects.paddleLeft.position.y = paddles.left;
-          window.gameObjects.paddleRight.position.y = paddles.right;
+      // Paddle movement with keyboard
+      const keys = {};
+      window.addEventListener("keydown", (e) => keys[e.key] = true);
+      window.addEventListener("keyup", (e) => keys[e.key] = false);
+      setInterval(() => {
+        if (keys['w'] || keys['s']) {
+          let y = 0;
+          if (keys['w']) y = 1;
+          if (keys['s']) y = -1;
+          ws?.send(JSON.stringify({ type: "paddleMove", y }));
         }
-        const scoreP1 = document.getElementById("scoreP1");
-        const scoreP2 = document.getElementById("scoreP2");
-        if (scoreP1) scoreP1.textContent = String(score.p1);
-        if (scoreP2) scoreP2.textContent = String(score.p2);
-      }
-
-      if (data.type === "assign") {
-        console.log("Assigned role:", data.role);
-      }
-
-      if (data.type === "gameOver") {
-        alert(`${data.winner} wins!`);
-        navigate('/');
-      }
-    } catch (e) {
-      console.error("Failed to parse message:", e);
+      }, 1000 / 15);
     }
-  };
+
+    if (data.type === "state") {
+      const { ball, paddles, score } = data;
+      if (window.gameObjects) {
+        window.gameObjects.ball.position.x = ball.x;
+        window.gameObjects.ball.position.y = ball.y;
+        window.gameObjects.paddleLeft.position.y = paddles.left;
+        window.gameObjects.paddleRight.position.y = paddles.right;
+      }
+      const scoreP1 = document.getElementById("scoreP1");
+      const scoreP2 = document.getElementById("scoreP2");
+      if (scoreP1) scoreP1.textContent = String(score.p1);
+      if (scoreP2) scoreP2.textContent = String(score.p2);
+    }
+
+    if (data.type === "assign") {
+      console.log("Assigned role:", data.role);
+    }
+
+    if (data.type === "gameOver") {
+      alert(`${data.winner} wins!`);
+      navigate('/');
+    }
+
+  } catch (e) {
+    console.error("Failed to parse message:", e);
+  }
+};
 
   ws.onclose = () => {
     console.log("WS disconnected");
@@ -213,7 +222,19 @@ export async function startTournament(playerCount) {
   for (const [i, j] of schedule) {
     alert(`Match: ${players[i]} vs ${players[j]}`);
 
-    document.body.innerHTML = `
+    // document.body.innerHTML = `
+    //   <div id="gameContainer">
+    //     <canvas id="renderCanvas"></canvas>
+    //     <div id="scoreHud" class="score-hud">
+    //       <div>${players[i]}: <span id="scoreP1">0</span></div>
+    //       <div>${players[j]}: <span id="scoreP2">0</span></div>
+    //     </div>
+    //   </div>
+    // `;
+    
+    const appRoot = document.getElementById("app-root");
+
+    appRoot.innerHTML = `
       <div id="gameContainer">
         <canvas id="renderCanvas"></canvas>
         <div id="scoreHud" class="score-hud">
@@ -221,7 +242,7 @@ export async function startTournament(playerCount) {
           <div>${players[j]}: <span id="scoreP2">0</span></div>
         </div>
       </div>
-    `;
+  `;
 
     const canvas = document.getElementById("renderCanvas");
     const engine = new Engine(canvas, true);

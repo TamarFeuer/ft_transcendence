@@ -10,3 +10,27 @@ margin: 0;
 #menuOverlay {
   transition: opacity 0.3s ease;
 } */
+
+
+#gameContainer {
+  @apply absolute inset-0;
+  width: 100%;
+  height: 100%;
+}
+
+#renderCanvas {
+  @apply w-full h-full block;
+}
+
+#scoreHud {
+  @apply absolute top-2 left-2 text-white text-lg z-20;
+  pointer-events: none; /* so buttons like chat can still be clicked */
+}
+
+#chatBtn {
+  @apply fixed bottom-8 right-8 z-[9999] py-4 px-6 bg-[#ff1493] text-slate-200 font-extrabold text-lg rounded-lg font-comic
+  border-4 border-pink-300 shadow-lg
+  hover:bg-[#ff4da6] hover:border-pink-400
+  transition-transform transition-colors duration-150
+  active:scale-95 active:shadow-inner;
+}
