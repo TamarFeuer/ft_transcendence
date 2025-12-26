@@ -5,89 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pong</title>
   <style>
-    #renderCanvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-    }
-    /* html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background: black;
-      font-family: Arial, sans-serif;
-    }
-
-
-    #menuOverlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 10;
-    }
-
-    #menuOverlay h1 {
-      color: white;
-      font-size: 48px;
-      margin-bottom: 30px;
-    }
-
-    #menuOverlay button {
-      background: #1e90ff;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 20px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    #menuOverlay button:hover {
-      background: #006ad1;
-    }
-    #playerCountContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    #playerCountContainer input {
-      width: 60px;
-      text-align: center;
-      margin-top: 5px;
-    }
-    #playersTournamentRegistration {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    #playersTournamentRegistration input {
-      width: 60px;
-      text-align: center;
-      margin-top: 5px;
-    }
-
-    #setPlayerAliasContainer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 10px;
-    }
-    #setPlayerAliasContainer input {
-      width: 150px;
-      text-align: center;
-      margin-top: 5px;
-    } */
+  
   </style>
 </head>
 
@@ -95,16 +13,25 @@
 
 <!-- Fullscreen game container -->
 <div class="container">
+  <!-- Babylon canvas -->
+  <canvas id="renderCanvas" class="absolute inset-0 w-full h-full"></canvas>
 
-	<!-- Babylon canvas -->
-  <canvas id="renderCanvas" class="absolute inset-0 w-full h-full bg-black/60"></canvas>
+  <!-- Game root for dynamic content -->
+  <div id="app-root"></div>
 
-	 <!-- Persistent Chat Button -->
-  <button id="chatBtn">
-    Chat
-  </button>
-  
-  <div id="app-root"></div> 
+  <!-- Persistent Chat Window -->
+  <div id="chatContainer" class="fixed bottom-8 right-8 w-80 max-h-96 bg-black/70 text-white rounded-lg shadow-lg flex flex-col overflow-hidden hidden z-50">
+    <div id="chatHeader" class="flex justify-between items-center p-2 bg-pink-600 cursor-pointer">
+      <span>Chat</span>
+      <span id="newMsgCount" class="bg-white text-black text-xs px-2 py-0.5 rounded-full hidden">0</span>
+    </div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto p-2 space-y-1 text-sm"></div>
+    <div class="p-2 bg-black/80 flex">
+      <input id="chatInput" type="text" class="flex-1 px-2 py-1 rounded bg-gray-800 text-white text-sm" placeholder="Type a message...">
+      <button id="chatBtn" class="ml-2 px-3 py-1 rounded bg-pink-500 hover:bg-pink-400 text-white text-sm">Send</button>
+    </div>
+  </div>
+</div>
   
   <script type="module" src="src/main.js"></script>
 

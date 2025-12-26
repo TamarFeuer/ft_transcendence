@@ -1,7 +1,9 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
+import { initChat, sendChatMessage } from './chat.js';
 
+// --- Game Variables ---
 let ws = null;
 let currentGameId = null;
 
@@ -77,7 +79,7 @@ export function joinOnlineGame(gameId) {
 
 				// Paddle movement with keyboard
 				const keys = {};
-				
+
 				keyDownHandler = (e) => keys[e.key] = true;
 				keyUpHandler = (e) => keys[e.key] = false;
 				window.addEventListener("keydown", keyDownHandler);
@@ -113,7 +115,7 @@ export function joinOnlineGame(gameId) {
 
 			if (data.type === "gameOver") {
 				alert(`${data.winner} wins!`);
-				
+
 				// Clean up event listeners and intervals
 				clearInterval(keyboardInterval);
 				window.removeEventListener("pointermove", pointerHandler);
@@ -291,5 +293,36 @@ export async function startTournament(playerCount) {
 setupRoutes();
 
 window.addEventListener("DOMContentLoaded", () => {
-	handleRoute(window.location.pathname);
+    handleRoute(window.location.pathname);
+
+    initChat();
+
+    // Show chat container
+    const container = document.getElementById("chatContainer");
+    if (container) container.style.display = "flex";
+
+    const chatBtn = document.getElementById("chatBtn");
+    const chatInput = document.getElementById("chatInput");
+
+    if (chatBtn && chatInput) {
+        chatBtn.addEventListener("click", () => {
+            const message = chatInput.value.trim();
+            if (message) {
+                sendChatMessage(message);  // send the input value
+                chatInput.value = "";      // clear the input
+            }
+        });
+    }
+
+    if (chatInput) {
+        chatInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                const message = chatInput.value.trim();
+                if (message) {
+                    sendChatMessage(message);
+                    chatInput.value = "";
+                }
+            }
+        });
+    }
 });

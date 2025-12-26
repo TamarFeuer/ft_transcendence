@@ -26,6 +26,9 @@ margin: 0;
 
 #renderCanvas {
   @apply w-full h-full block;
+  position: absolute;
+  inset: 0;
+  background: transparent;
 }
 
 #scoreHud {
