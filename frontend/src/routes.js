@@ -1,6 +1,7 @@
-import { routes, navigate, joinGame, startTournament, initOfflineGame } from './main.js';
+import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame } from './main.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
+import bgImage from '../assets/background.jpg';
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -72,7 +73,7 @@ export function setupRoutes() {
           const gameBtn = document.createElement('button');
           gameBtn.textContent = `Join Game ${game.id}`;
           gameBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded m-1';
-          gameBtn.addEventListener('click', () => joinGame(game.id));
+          gameBtn.addEventListener('click', () => joinOnlineGame(game.id));
           const gameStatusDiv = document.createElement('div');
           gameStatusDiv.className = 'text-white';
           gameStatusDiv.innerHTML = `<p>Status: ${game.status}</p>`;

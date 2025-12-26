@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        comic: ['"ComicNeue"', 'cursive'], // <-- local font key
+        comic: ['"ComicNeue"', 'cursive'],
       },
     },
   },

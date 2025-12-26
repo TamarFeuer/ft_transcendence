@@ -11,6 +11,12 @@ margin: 0;
   transition: opacity 0.3s ease;
 } */
 
+@font-face {
+  font-family: "ComicNeue";
+  src: url("../assets/ComicNeue.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
 
 #gameContainer {
   @apply absolute inset-0;
