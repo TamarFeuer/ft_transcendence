@@ -19,17 +19,33 @@
   <!-- Game root for dynamic content -->
   <div id="app-root"></div>
 
-  <!-- Persistent Chat Window -->
-  <div id="chatContainer" class="fixed bottom-8 right-8 w-80 max-h-96 bg-black/70 text-white rounded-lg shadow-lg flex flex-col overflow-hidden hidden z-50">
-    <div id="chatHeader" class="flex justify-between items-center p-2 bg-pink-600 cursor-pointer">
-      <span>Chat</span>
-      <span id="newMsgCount" class="bg-white text-black text-xs px-2 py-0.5 rounded-full hidden">0</span>
+<!-- Chat container -->
+<div id="chatContainer" style="display: none;" 
+     class="fixed bottom-10 right-10 w-[18rem] h-[12rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col overflow-hidden z-50">
+
+  <!-- Header with Send button -->
+  <div id="chatHeader" class="flex items-center bg-pink-600" style="padding: 0.5rem 0.5rem;">
+    <span class="flex-1 ml-2">Chat</span>
+
+    <!-- Right side: badge + send button -->
+    <div class="flex items-center space-x-1 mr-2">
+      <span id="newMsgCount" class="bg-white text-black text-xs px-2 py-0.5 rounded-full font-bold hidden">1</span>
+      <button id="chatBtn" class="w-11 h-8 flex items-center justify-center text-sm leading-none rounded bg-pink-500 hover:bg-pink-400">
+        Send
+      </button>
     </div>
-    <div id="chatMessages" class="flex-1 overflow-y-auto p-2 space-y-1 text-sm"></div>
-    <div class="p-2 bg-black/80 flex">
-      <input id="chatInput" type="text" class="flex-1 px-2 py-1 rounded bg-gray-800 text-white text-sm" placeholder="Type a message...">
-      <button id="chatBtn" class="ml-2 px-3 py-1 rounded bg-pink-500 hover:bg-pink-400 text-white text-sm">Send</button>
-    </div>
+  </div>
+
+  <!-- Messages container -->
+  <div id="chatMessages" class="flex-1 overflow-y-auto p-2 space-y-1 text-sm"></div>
+
+  <!-- Text input area -->
+  <div class="p-2 bg-black/80 flex">
+    <textarea
+      id="chatInput"
+      rows="2"
+      class="flex-1 px-2 py-1 rounded bg-gray-800 text-white text-sm resize-none"
+      placeholder="Type a message..."></textarea>
   </div>
 </div>
   

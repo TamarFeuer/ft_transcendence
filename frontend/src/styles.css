@@ -2,22 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-/* html, body, #renderCanvas {
-height: 100%;
-margin: 0;
-}
-#menuOverlay {
-  transition: opacity 0.3s ease;
-} */
-
-@font-face {
-  font-family: "ComicNeue";
-  src: url("../assets/ComicNeue.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-}
-
 #gameContainer {
   @apply absolute inset-0;
   width: 100%;
@@ -36,10 +20,35 @@ margin: 0;
   pointer-events: none; /* so buttons like chat can still be clicked */
 }
 
+@font-face {
+  font-family: "ComicNeue";
+  src: url("../assets/ComicNeue.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+#chatMessages::-webkit-scrollbar {
+  width: 8px;
+  background-color: #ff4da6;
+}
+
+#chatMessages::-webkit-scrollbar-thumb:hover {
+  background-color: #ff4da6;
+}
+
+#chatMessages {
+  scrollbar-width: thin;
+  scrollbar-color: #4bed89 rgba(0, 0, 0, 0.25);
+}
+  
+#chatContainer {
+  font-family: "ComicNeue", system-ui, sans-serif;
+}
+
 #chatBtn {
-  @apply fixed bottom-8 right-8 z-[9999] py-4 px-6 bg-[#ff1493] text-slate-200 font-extrabold text-lg rounded-lg font-comic
-  border-4 border-pink-300 shadow-lg
-  hover:bg-[#ff4da6] hover:border-pink-400
+  @apply fixed bottom-7 right-5 z-[9999]  bg-[#ff1493] 
+  border-2 border-pink-300 shadow-lg
+  hover:border-pink-400
   transition-transform transition-colors duration-150
   active:scale-95 active:shadow-inner;
 }
