@@ -52,3 +52,29 @@
   transition-transform transition-colors duration-150
   active:scale-95 active:shadow-inner;
 }
+
+/* User manager panel */
+#userManager {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 99999;
+  font-family: system-ui, sans-serif;
+}
+
+#userManager .manager-btn {
+  @apply bg-white border border-gray-200 text-gray-800 px-3 py-2 rounded shadow hover:shadow-md;
+}
+
+#userManager .manager-panel {
+  @apply mt-2 bg-white border border-gray-200 rounded shadow-lg p-4 w-64;
+}
+
+#userManager input[type="text"], #userManager input[type="password"] {
+  @apply w-full border border-gray-300 rounded px-2 py-1 mb-2;
+}
+
+#userManager .small {
+  font-size: 0.85rem;
+  color: #555;
+}

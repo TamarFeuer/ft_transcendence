@@ -17,6 +17,8 @@ INSTALLED_APPS = [
     'chat',
 ]
 
+print("Based dir:", BASE_DIR)
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',

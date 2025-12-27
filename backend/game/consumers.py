@@ -2,6 +2,9 @@ import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import GameSession
+import logging
+
+logger = logging.getLogger(__name__)
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -14,10 +17,20 @@ class GameConsumer(AsyncWebsocketConsumer):
         if not self.game:
             await self.close(code=4004)
             return
+
+        # Check for duplicate connections
+
+        logger.warning(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
+        logger.warning(f"Current players: {self.game.get_players()}")
+
+        if self.game.get_players()['left'] == self.scope['user'] or \
+           self.game.get_players()['right'] == self.scope['user']:
+            await self.close(code=4005)
+            return
         
         # Add player to game
-        self.role = self.game.add_player(self.channel_name)
-        
+        self.role = self.game.add_player(self.scope['user'])
+
         # Join game group
         await self.channel_layer.group_add(
             self.game_group_name,
@@ -44,7 +57,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     async def disconnect(self, close_code):
         if hasattr(self, 'game') and self.game:
-            self.game.remove_player(self.channel_name)
+            self.game.remove_player(self.scope['user'])
             
             if self.game.status == 'finished':
                 await self.channel_layer.group_send(

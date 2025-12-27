@@ -21,6 +21,12 @@ class GameSession:
         self.status = 'waiting'  # waiting, active, finished
         self.last_tick = time.time()
         
+    def get_players(self):
+        """Return current players"""
+        return {
+            'left':  self.players['left'],
+            'right': self.players['right']
+        }
     @classmethod
     def create_game(cls):
         """Create a new game session"""
