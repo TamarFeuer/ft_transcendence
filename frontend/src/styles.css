@@ -52,3 +52,11 @@
   transition-transform transition-colors duration-150
   active:scale-95 active:shadow-inner;
 }
+
+.tab-btn {
+  @apply px-2 py-1 text-sm text-white rounded hover:bg-pink-500;
+}
+
+.tab-btn.active {
+  @apply bg-pink-700;
+}

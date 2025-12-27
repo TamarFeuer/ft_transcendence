@@ -293,36 +293,78 @@ export async function startTournament(playerCount) {
 setupRoutes();
 
 window.addEventListener("DOMContentLoaded", () => {
-    handleRoute(window.location.pathname);
+	handleRoute(window.location.pathname);
 
-    initChat();
+	initChat();
 
-    // Show chat container
-    const container = document.getElementById("chatContainer");
-    if (container) container.style.display = "flex";
+	const chatContainer = document.getElementById("chatContainer");
+	const openSocialsBtn = document.getElementById("openSocialsBtn");
+	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
+	const chatBtn = document.getElementById("chatBtn");
+	const panels = document.querySelectorAll(".panel");
+	const tabButtons = document.querySelectorAll(".tab-btn");
 
-    const chatBtn = document.getElementById("chatBtn");
-    const chatInput = document.getElementById("chatInput");
+	function showPanel(name) {
+		panels.forEach(p => p.classList.add("hidden"));
+		document.getElementById(`panel-${name}`)?.classList.remove("hidden");
 
-    if (chatBtn && chatInput) {
-        chatBtn.addEventListener("click", () => {
-            const message = chatInput.value.trim();
-            if (message) {
-                sendChatMessage(message);  // send the input value
-                chatInput.value = "";      // clear the input
-            }
-        });
-    }
+		tabButtons.forEach(b => b.classList.remove("active"));
+		document.querySelector(`[data-panel="${name}"]`)?.classList.add("active");
 
-    if (chatInput) {
-        chatInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                const message = chatInput.value.trim();
-                if (message) {
-                    sendChatMessage(message);
-                    chatInput.value = "";
-                }
-            }
-        });
-    }
+		// show/hide the Send button only if Chat panel is active
+		const chatBtn = document.getElementById("chatBtn");
+		if (chatBtn) {
+			if (name === "chat") chatBtn.classList.remove("hidden");
+			else chatBtn.classList.add("hidden");
+		}
+	}
+
+	// open socials
+	if (openSocialsBtn && chatContainer) {
+		openSocialsBtn.addEventListener("click", () => {
+			chatContainer.classList.remove("hidden");
+			openSocialsBtn.classList.add("hidden"); 
+			showPanel("chat");
+		});
+	}
+	
+	// close socials
+	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
+		closeSocialsBtn.addEventListener("click", () => {
+			chatContainer.classList.add("hidden");   // hide the container
+			openSocialsBtn.classList.remove("hidden"); // show the launcher button
+		});
+	}
+
+	// handles clicks on the tabs inside the Socials
+	tabButtons.forEach(btn => {
+		btn.addEventListener("click", () => {
+			showPanel(btn.dataset.panel);
+			chatContainer.classList.remove("hidden");
+		});
+	});
+	
+	// chat
+	const chatInput = document.getElementById("chatInput");
+
+	if (chatBtn && chatInput) {
+		chatBtn.addEventListener("click", () => {
+			const message = chatInput.value.trim();
+			if (message) {
+				sendChatMessage(message);
+				chatInput.value = "";
+			}
+		});
+
+		chatInput.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				const message = chatInput.value.trim();
+				if (message) {
+					sendChatMessage(message);
+					chatInput.value = "";
+				}
+			}
+		});
+	}
 });

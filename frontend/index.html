@@ -19,34 +19,68 @@
   <!-- Game root for dynamic content -->
   <div id="app-root"></div>
 
-<!-- Chat container -->
-<div id="chatContainer" style="display: none;" 
-     class="fixed bottom-10 right-10 w-[18rem] h-[12rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col overflow-hidden z-50">
+  <button id="openSocialsBtn"
+    class="fixed bottom-8 right-8 px-6 py-6 bg-pink-600 text-white font-comic rounded shadow-lg z-50">
+  Socials
+  </button>
+  
+<!-- Chat window container -->
+<div id="chatContainer"
+     class="fixed bottom-10 right-10 w-[18rem] h-[50rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col overflow-hidden z-50 hidden">
 
-  <!-- Header with Send button -->
-  <div id="chatHeader" class="flex items-center bg-pink-600" style="padding: 0.5rem 0.5rem;">
-    <span class="flex-1 ml-2">Chat</span>
+  <!-- HEADER (always visible) -->
+  <div id="chatHeader" class="flex items-center gap-1 bg-pink-600 p-2">
 
-    <!-- Right side: badge + send button -->
-    <div class="flex items-center space-x-1 mr-2">
-      <span id="newMsgCount" class="bg-white text-black text-xs px-2 py-0.5 rounded-full font-bold hidden">1</span>
-      <button id="chatBtn" class="w-11 h-8 flex items-center justify-center text-sm leading-none rounded bg-pink-500 hover:bg-pink-400">
+    <!-- Tab buttons -->
+    <button data-panel="chat" class="tab-btn active">Chat</button>
+    <button data-panel="profiles" class="tab-btn">Profiles</button>
+    <button data-panel="friends" class="tab-btn">Friends</button>
+    <!-- Close button -->
+    <button id="closeSocialsBtn"
+        class="absolute top-3 right-0 text-red font-comic font-bold px-2 py-1 hover:text-pink-400">
+        X
+    </button>
+
+    <!-- Right side -->
+    <div class="ml-auto flex items-center space-x-1">
+      <span id="newMsgCount"
+            class="bg-white text-black text-xs px-2 py-0.5 rounded-full font-bold hidden">
+        1
+      </span>
+
+      <!-- Send button -->
+      <button id="chatBtn"
+        class="w-11 h-8 flex items-center justify-center text-sm rounded bg-pink-500 hover:bg-pink-400">
         Send
       </button>
     </div>
   </div>
 
-  <!-- Messages container -->
-  <div id="chatMessages" class="flex-1 overflow-y-auto p-2 space-y-1 text-sm"></div>
+ 
+  <!-- CHAT PANEL -->
+  <div id="panel-chat" class="panel flex-1 flex flex-col">
+    <div id="chatMessages"
+         class="flex-1 overflow-y-auto p-2 space-y-1 text-sm">
+    </div>
 
-  <!-- Text input area -->
-  <div class="p-2 bg-black/80 flex">
-    <textarea
-      id="chatInput"
-      rows="2"
-      class="flex-1 px-2 py-1 rounded bg-gray-800 text-white text-sm resize-none"
-      placeholder="Type a message..."></textarea>
+    <div class="p-2 bg-black/80 flex">
+      <textarea id="chatInput"
+        rows="2"
+        class="flex-1 px-2 py-1 rounded bg-gray-800 text-white text-sm resize-none"
+        placeholder="Type a message..."></textarea>
+    </div>
   </div>
+
+  <!-- PROFILES PANEL -->
+  <div id="panel-profiles" class="panel hidden p-2">
+    Profiles content goes here
+  </div>
+
+  <!-- FRIENDS PANEL -->
+  <div id="panel-friends" class="panel hidden p-2">
+    Friends list goes here
+  </div>
+
 </div>
   
   <script type="module" src="src/main.js"></script>
