@@ -3,27 +3,47 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class ChatConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
-		self.room_group_name = "global_chat"
-		await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+		self.group_name = "global_chat"
+		await self.channel_layer.group_add(self.group_name, self.channel_name)
 		await self.accept()
-		await self.send(json.dumps({"type": "chat", "message": "Welcome to chat!"}))
 
-	async def broadcast_chat(self, message):
-		await self.channel_layer.group_send(
-			self.room_group_name,
-			{
-				"type": "chat_message",
-				"message": message,
-			}
-		)
-		
+		# Tell the client its own channel_name
+		await self.send(text_data=json.dumps({
+			"type": "self_id",
+			"channel_name": self.channel_name
+		}))
+
+	async def disconnect(self, close_code):
+		await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
 	async def receive(self, text_data):
 		data = json.loads(text_data)
 		message = data.get("message", "")
-		await self.broadcast_chat(message)
+		target = data.get("target")  # optional: channel_name or list of channel_names
 
-	async def disconnect(self, close_code):
-		await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+		if target:
+			# Send to specific client(s)
+			if isinstance(target, str):
+				target = [target]
+
+			for channel in target:
+				await self.channel_layer.send(channel, {
+					"type": "chat.message",
+					"message": message,
+					"sender": self.channel_name
+				})
+		else:
+			# Broadcast to everyone (including self)
+			await self.channel_layer.group_send(self.group_name, {
+				"type": "chat.message",
+				"message": message,
+				"sender": self.channel_name
+			})
 
 	async def chat_message(self, event):
-		await self.send(text_data=json.dumps({"type": "chat", "message": event["message"]}))
+		# This runs for messages sent to this client
+		await self.send(text_data=json.dumps({
+			"type": "chat",
+			"message": event["message"],
+			"sender": event["sender"]
+		}))
