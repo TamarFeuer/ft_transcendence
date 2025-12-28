@@ -299,6 +299,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	const chatContainer = document.getElementById("chatContainer");
 	const openSocialsBtn = document.getElementById("openSocialsBtn");
+	if (openSocialsBtn) {
+        openSocialsBtn.style.display = "block";
+	}
 	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
 	const chatBtn = document.getElementById("chatBtn");
 	const panels = document.querySelectorAll(".panel");
@@ -322,8 +325,8 @@ window.addEventListener("DOMContentLoaded", () => {
 	// open socials
 	if (openSocialsBtn && chatContainer) {
 		openSocialsBtn.addEventListener("click", () => {
-			chatContainer.classList.remove("hidden");
-			openSocialsBtn.classList.add("hidden"); 
+			chatContainer.style.display = "flex";
+			openSocialsBtn.classList.add("hidden");
 			showPanel("chat");
 		});
 	}
@@ -331,7 +334,7 @@ window.addEventListener("DOMContentLoaded", () => {
 	// close socials
 	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
 		closeSocialsBtn.addEventListener("click", () => {
-			chatContainer.classList.add("hidden");   // hide the container
+			chatContainer.style.display = "none";   // hide the container
 			openSocialsBtn.classList.remove("hidden"); // show the launcher button
 		});
 	}
@@ -340,7 +343,7 @@ window.addEventListener("DOMContentLoaded", () => {
 	tabButtons.forEach(btn => {
 		btn.addEventListener("click", () => {
 			showPanel(btn.dataset.panel);
-			chatContainer.classList.remove("hidden");
+			chatContainer.style.display = "flex";
 		});
 	});
 	

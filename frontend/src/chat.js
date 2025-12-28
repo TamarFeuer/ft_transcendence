@@ -30,7 +30,9 @@ export function initChat() {
 					idDiv.style.color = "lightgray";
 					container.prepend(idDiv);
 				}
-				idDiv.innerHTML = `<span style="color:#00FF00"> ID: ${displayId}</span>`;
+				idDiv.innerHTML = `<span style="color:#00FF00; font-size: 0.9rem; margin-left: 8px;">
+					ID: ${displayId}
+				</span>`;
 			}
 		}
 
@@ -47,7 +49,7 @@ export function initChat() {
 			let sender = data.sender.replace(/^specific\.\.inmemory!/, "");
 			if (data.sender === myChannelId) {
 				sender = "Me";
-				msgDiv.style.color = "#00FF00";;
+				msgDiv.style.color = "#00FF00";
 			}
 			
 			msgDiv.textContent = `${sender}: ${data.message}`;
@@ -63,6 +65,6 @@ export function sendChatMessage(message, target = null) {
 		return;
 	}
 	const payload = { message };
-	if (target) payload.target = target;  // optional
+	if (target) payload.target = target;
 	chatSocket.send(JSON.stringify(payload));
 }

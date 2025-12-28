@@ -20,13 +20,19 @@
   <div id="app-root"></div>
 
   <button id="openSocialsBtn"
-    class="fixed bottom-8 right-8 px-6 py-6 bg-pink-600 text-white font-comic rounded shadow-lg z-50">
-  Socials
-  </button>
+    style="display: none;"
+    class="fixed bottom-16 right-16 px-6 py-6 text-xl font-extrabold font-comic
+    bg-black text-white rounded-xl shadow-[0_0_15px_rgba(0,255,100,0.8)]
+    border-2 border-lime-400
+    tracking-wider
+    transition-colors duration-200 ease-in-out z-50">
+    Socials
+</button>
   
 <!-- Chat window container -->
 <div id="chatContainer"
-     class="fixed bottom-10 right-10 w-[18rem] h-[50rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col overflow-hidden z-50 hidden">
+    class="fixed bottom-10 right-10 w-[18rem] h-[52rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col overflow-hidden z-50"
+  style="display:none;">
 
   <!-- HEADER (always visible) -->
   <div id="chatHeader" class="flex items-center gap-1 bg-pink-600 p-2">
@@ -37,7 +43,7 @@
     <button data-panel="friends" class="tab-btn">Friends</button>
     <!-- Close button -->
     <button id="closeSocialsBtn"
-        class="absolute top-3 right-0 text-red font-comic font-bold px-2 py-1 hover:text-pink-400">
+        class="absolute top-5 right-1 text-red font-comic font-extrabold px-2 py-1 hover:text-pink-400">
         X
     </button>
 
@@ -56,7 +62,6 @@
     </div>
   </div>
 
- 
   <!-- CHAT PANEL -->
   <div id="panel-chat" class="panel flex-1 flex flex-col">
     <div id="chatMessages"
