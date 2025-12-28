@@ -326,7 +326,7 @@ window.addEventListener("DOMContentLoaded", () => {
 	if (openSocialsBtn && chatContainer) {
 		openSocialsBtn.addEventListener("click", () => {
 			chatContainer.style.display = "flex";
-			openSocialsBtn.classList.add("hidden");
+			openSocialsBtn.style.display = "none";
 			showPanel("chat");
 		});
 	}
@@ -335,7 +335,7 @@ window.addEventListener("DOMContentLoaded", () => {
 	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
 		closeSocialsBtn.addEventListener("click", () => {
 			chatContainer.style.display = "none";   // hide the container
-			openSocialsBtn.classList.remove("hidden"); // show the launcher button
+			openSocialsBtn.style.display = "block"; // show the launcher button
 		});
 	}
 
