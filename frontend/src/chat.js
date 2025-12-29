@@ -1,11 +1,11 @@
 let chatSocket = null;
-let myChannelId = null;
+let myUserId = null;
 
 export function initChat() {
 	console.log("initChat() called");
 
 	chatSocket = new WebSocket(
-		`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/chat/`
+		`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/chat/?userId=${CURRENT_USER.id}`
 	);
 
 	chatSocket.onopen = () => console.log("Connected to chat");
@@ -15,30 +15,27 @@ export function initChat() {
 		const data = JSON.parse(ev.data);
 
 		if (data.type === "self_id") {
-			myChannelId = data.channel_name; // store full ID for logic
-			
-			// Strip the "specific..inmemory!" prefix for display
-			const displayId = data.channel_name.replace(/^specific\.\.inmemory!/, "");
+			myUserId = data.user_id; // store full ID for logic
 			
 			const container = document.getElementById("chatContainer");
 			if (container) {
-				let idDiv = document.getElementById("myChannelId");
+				let idDiv = document.getElementById("myUserId");
 				if (!idDiv) {
 					idDiv = document.createElement("div");
-					idDiv.id = "myChannelId";
+					idDiv.id = "myUserId";
 					idDiv.style.fontSize = "10px";
 					idDiv.style.color = "lightgray";
 					container.prepend(idDiv);
 				}
 				idDiv.innerHTML = `<span style="color:#00FF00; font-size: 0.9rem; margin-left: 8px;">
-					ID: ${displayId}
+					ID: ${myUserId}
 				</span>`;
 			}
 		}
 
 		if (data.type === "chat") {
 			console.log("Incoming chat message:", data);
-   			console.log("My channel ID:", myChannelId);
+   			console.log("My user ID:", myUserId);
 			
 			const chatMessages = document.getElementById("chatMessages");
 			if (!chatMessages) return;
@@ -46,8 +43,8 @@ export function initChat() {
 			const msgDiv = document.createElement("div");
 			
 			// Decide sender display
-			let sender = data.sender.replace(/^specific\.\.inmemory!/, "");
-			if (data.sender === myChannelId) {
+			let sender = data.sender
+			if (data.sender === myUserId) {
 				sender = "Me";
 				msgDiv.style.color = "#00FF00";
 			}

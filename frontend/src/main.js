@@ -2,6 +2,23 @@ import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import { initChat, sendChatMessage } from './chat.js';
+import { FAKE_USERS } from "./fakeUsers.js";
+
+function getUserFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const key = params.get("user");
+
+  if (key && FAKE_USERS[key]) {
+    return FAKE_USERS[key];
+  }
+
+  return { id: "u-guest", name: "Guest", avatar: "💕", createdAt: Date.now(), loggedIn: false };
+}
+
+export const CURRENT_USER = getUserFromURL();
+window.CURRENT_USER = CURRENT_USER; // <--- attach to global
+console.log("Current user:", CURRENT_USER);
+
 
 // --- Game Variables ---
 let ws = null;
@@ -371,3 +388,4 @@ window.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 });
+
