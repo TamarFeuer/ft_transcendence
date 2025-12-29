@@ -6,3 +6,11 @@ export const FAKE_USERS = {
 
 };
 
+export function getNameFromId(userId) {
+  for (const key in FAKE_USERS) {
+    if (FAKE_USERS[key].id === userId) {
+      return FAKE_USERS[key].name;
+    }
+  }
+  return "Guest"; // fallback if not found
+}

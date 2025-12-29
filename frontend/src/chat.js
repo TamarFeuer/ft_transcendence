@@ -1,5 +1,8 @@
+import { getNameFromId } from "./fakeUsers.js"; 
+
 let chatSocket = null;
 let myUserId = null;
+let myUserName = null;
 
 export function initChat() {
 	console.log("initChat() called");
@@ -16,6 +19,7 @@ export function initChat() {
 
 		if (data.type === "self_id") {
 			myUserId = data.user_id; // store full ID for logic
+			myUserName = getNameFromId(myUserId); // lookup name from ID, for display
 			
 			const container = document.getElementById("chatContainer");
 			if (container) {
@@ -28,7 +32,7 @@ export function initChat() {
 					container.prepend(idDiv);
 				}
 				idDiv.innerHTML = `<span style="color:#00FF00; font-size: 0.9rem; margin-left: 8px;">
-					ID: ${myUserId}
+					${myUserName}
 				</span>`;
 			}
 		}
@@ -43,7 +47,7 @@ export function initChat() {
 			const msgDiv = document.createElement("div");
 			
 			// Decide sender display
-			let sender = data.sender
+			let sender = getNameFromId(data.sender);
 			if (data.sender === myUserId) {
 				sender = "Me";
 				msgDiv.style.color = "#00FF00";
