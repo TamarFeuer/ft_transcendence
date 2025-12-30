@@ -3,6 +3,7 @@ import { getNameFromId } from "./fakeUsers.js";
 let chatSocket = null;
 let myUserId = null;
 let myUserName = null;
+export let onlineUsers = [];
 
 export function initChat() {
 	console.log("initChat() called");
@@ -39,7 +40,7 @@ export function initChat() {
 
 		if (data.type === "chat") {
 			console.log("Incoming chat message:", data);
-   			console.log("My user ID:", myUserId);
+			console.log("My user ID:", myUserId);
 			
 			const chatMessages = document.getElementById("chatMessages");
 			if (!chatMessages) return;
@@ -56,6 +57,11 @@ export function initChat() {
 			msgDiv.textContent = `${sender}: ${data.message}`;
 			chatMessages.appendChild(msgDiv);
 			chatMessages.scrollTop = chatMessages.scrollHeight;
+		}
+	
+		if (data.type === "online_users") {
+		onlineUsers = data.users; // store current online users
+		console.log("Online users updated:", onlineUsers);
 		}
 	};
 }

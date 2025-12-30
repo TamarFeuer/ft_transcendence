@@ -1,18 +1,18 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
-import { initChat, sendChatMessage } from './chat.js';
-import { FAKE_USERS } from "./fakeUsers.js";
+import { initChat, sendChatMessage, onlineUsers } from './chat.js';
+import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
 
 function getUserFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  const key = params.get("user");
+	const params = new URLSearchParams(window.location.search);
+	const key = params.get("user");
 
-  if (key && FAKE_USERS[key]) {
-    return FAKE_USERS[key];
-  }
+	if (key && FAKE_USERS[key]) {
+		return FAKE_USERS[key];
+	}
 
-  return { id: "u-guest", name: "Guest", avatar: "💕", createdAt: Date.now(), loggedIn: false };
+	return { id: "u-guest", name: "Guest", avatar: "💕", createdAt: Date.now(), loggedIn: false };
 }
 
 export const CURRENT_USER = getUserFromURL();
@@ -316,14 +316,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	const chatContainer = document.getElementById("chatContainer");
 	const openSocialsBtn = document.getElementById("openSocialsBtn");
-	if (openSocialsBtn) {
-        openSocialsBtn.style.display = "block";
-	}
 	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
 	const chatBtn = document.getElementById("chatBtn");
 	const panels = document.querySelectorAll(".panel");
 	const tabButtons = document.querySelectorAll(".tab-btn");
 
+	// show the open socials button initially
+	if (openSocialsBtn) {
+		openSocialsBtn.style.display = "block";
+	}
+
+	// function to show a specific panel
 	function showPanel(name) {
 		panels.forEach(p => p.classList.add("hidden"));
 		document.getElementById(`panel-${name}`)?.classList.remove("hidden");
@@ -347,7 +350,7 @@ window.addEventListener("DOMContentLoaded", () => {
 			showPanel("chat");
 		});
 	}
-	
+
 	// close socials
 	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
 		closeSocialsBtn.addEventListener("click", () => {
@@ -363,8 +366,8 @@ window.addEventListener("DOMContentLoaded", () => {
 			chatContainer.style.display = "flex";
 		});
 	});
-	
-	// chat
+
+	// chat functionality
 	const chatInput = document.getElementById("chatInput");
 
 	if (chatBtn && chatInput) {
@@ -387,5 +390,32 @@ window.addEventListener("DOMContentLoaded", () => {
 			}
 		});
 	}
-});
 
+	// profiles tab functionality
+	const profilesBtn = document.querySelector('button[data-panel="profiles"]');
+	const profilesPanel = document.getElementById('panel-profiles');
+
+	if (profilesBtn && profilesPanel) {
+		profilesBtn.addEventListener("click", () => {
+			profilesPanel.innerHTML = ""; // clear previous list
+
+			if (onlineUsers.length === 0) {
+				profilesPanel.textContent = "No users online";
+				return;
+			}
+
+			onlineUsers.forEach(userId => {
+				const div = document.createElement("div");
+				div.textContent = getNameFromId(userId);
+				div.className = "py-1 px-2 border-b border-gray-700";
+
+				// Add click listener
+				div.addEventListener("click", () => {
+					alert(`You clicked on ${getNameFromId(userId)}!`);
+
+				});
+				profilesPanel.appendChild(div);
+			});
+		});
+	}
+});

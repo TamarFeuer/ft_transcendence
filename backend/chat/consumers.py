@@ -1,7 +1,14 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+import logging
+
+logger = logging.getLogger(__name__)
+
+ONLINE_USERS = set()
 
 class ChatConsumer(AsyncWebsocketConsumer):
+	
+	online_users = set()
 	async def connect(self):
 
 		# Called when a client opens a WebSocket connection.
@@ -10,7 +17,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		# 1. Parse user ID from query string (e.g., ws://.../ws/chat/?userId=u-alice)
 		query = self.scope['query_string'].decode()  # e.g., "userId=u-alice"
-		self.user_id = None
+		self.user_id = "u-guest"
 		
 		# 2. Look for 'userId' in the query string
 		for part in query.split('&'):
@@ -31,14 +38,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# 6. Accept the WebSocket connection
 		await self.accept()
 
+		# 6.5 Add user to online list
+		ONLINE_USERS.add(self.user_id)
+
 		# 7. Send the client its own user_id (so client knows who they are)
 		await self.send(text_data=json.dumps({
 			"type": "self_id",
 			"user_id": self.user_id
 		}))
 
+		# Notify all clients of updated online users
+		# will be looking for the function online_users
+		await self.channel_layer.group_send(
+			self.group_name,
+			{
+				"type": "online.users",
+				"users": list(ONLINE_USERS)
+			}
+		)
+
 	async def disconnect(self, close_code):
+		logger.info("WebSocket disconnected, code: %s", close_code)
+
 		await self.channel_layer.group_discard(self.group_name, self.channel_name)
+		ONLINE_USERS.discard(self.user_id)
+		
+		# Notify remaining clients
+		await self.channel_layer.group_send(
+			self.group_name,
+			{
+				"type": "online.users",
+				"users": list(ONLINE_USERS)
+			}
+		)
 
 	async def receive(self, text_data):
 		data = json.loads(text_data)
@@ -46,12 +78,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		target = data.get("target")  # optional: user_id or list of user_ids
 
 		if target:
-			
 			# 1. If target is a single string, convert to a list
 			if isinstance(target, str):
-				target = [target]
+				target = [target] #making the string a list
 			
 			# 2. Send message to each specific user
+			# will need a chat_message function
 			for channel in target:
 				await self.channel_layer.send(channel, {
 					"type": "chat.message",
@@ -72,4 +104,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"type": "chat",
 			"message": event["message"],
 			"sender": event["sender"]
+		}))
+
+	async def online_users(self, event):
+		# Send updated online users to the client
+		await self.send(text_data=json.dumps({
+			"type": "online_users",
+			"users": event["users"]
 		}))
