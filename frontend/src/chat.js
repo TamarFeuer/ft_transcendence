@@ -4,7 +4,6 @@ let chatSocket = null;
 let myUserId = null;
 let myUserName = null;
 export let onlineUsers = [];
-let typingTimeout = null;
 let typingUsers = new Set();
 
 export function initChat() {
