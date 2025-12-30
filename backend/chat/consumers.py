@@ -74,6 +74,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def receive(self, text_data):
 		data = json.loads(text_data)
+		message_type = data.get("type", "message")
+		
+		# Handle typing indicator
+		if message_type == "typing":
+			is_typing = data.get("typing", False)
+			await self.channel_layer.group_send(self.group_name, {
+				"type": "typing.indicator",
+				"user_id": self.user_id,
+				"typing": is_typing
+			})
+			return
+		
 		message = data.get("message", "")
 		target = data.get("target")  # optional: user_id or list of user_ids
 
@@ -111,4 +123,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": "online_users",
 			"users": event["users"]
+		}))
+
+	async def typing_indicator(self, event):
+		# Send typing indicator to the client
+		await self.send(text_data=json.dumps({
+			"type": "typing_indicator",
+			"user_id": event["user_id"],
+			"typing": event["typing"]
 		}))

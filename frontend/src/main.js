@@ -1,7 +1,7 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
-import { initChat, sendChatMessage, onlineUsers } from './chat.js';
+import { initChat, sendChatMessage, onlineUsers, sendTypingIndicator } from './chat.js';
 import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
 
 function getUserFromURL() {
@@ -369,6 +369,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	// chat functionality
 	const chatInput = document.getElementById("chatInput");
+	let typingTimeout = null;
 
 	if (chatBtn && chatInput) {
 		chatBtn.addEventListener("click", () => {
@@ -376,6 +377,9 @@ window.addEventListener("DOMContentLoaded", () => {
 			if (message) {
 				sendChatMessage(message);
 				chatInput.value = "";
+				// Stop typing indicator when message is sent
+				sendTypingIndicator(false);
+				clearTimeout(typingTimeout);
 			}
 		});
 
@@ -386,8 +390,25 @@ window.addEventListener("DOMContentLoaded", () => {
 				if (message) {
 					sendChatMessage(message);
 					chatInput.value = "";
+					// Stop typing indicator when message is sent
+					sendTypingIndicator(false);
+					clearTimeout(typingTimeout);
 				}
 			}
+		});
+		
+		// Handle typing indicator
+		chatInput.addEventListener("input", () => {
+			// Send typing indicator
+			sendTypingIndicator(true);
+			
+			// Clear existing timeout
+			clearTimeout(typingTimeout);
+			
+			// Set timeout to hide typing indicator after 2 seconds of inactivity
+			typingTimeout = setTimeout(() => {
+				sendTypingIndicator(false);
+			}, 2000);
 		});
 	}
 

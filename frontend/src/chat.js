@@ -4,6 +4,8 @@ let chatSocket = null;
 let myUserId = null;
 let myUserName = null;
 export let onlineUsers = [];
+let typingTimeout = null;
+let typingUsers = new Set();
 
 export function initChat() {
 	console.log("initChat() called");
@@ -63,6 +65,10 @@ export function initChat() {
 		onlineUsers = data.users; // store current online users
 		console.log("Online users updated:", onlineUsers);
 		}
+		
+		if (data.type === "typing_indicator") {
+			handleTypingIndicator(data.user_id, data.typing);
+		}
 	};
 }
 
@@ -74,4 +80,63 @@ export function sendChatMessage(message, target = null) {
 	const payload = { message };
 	if (target) payload.target = target;
 	chatSocket.send(JSON.stringify(payload));
+}
+
+export function sendTypingIndicator(isTyping) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+		return;
+	}
+	chatSocket.send(JSON.stringify({
+		type: "typing",
+		typing: isTyping
+	}));
+}
+
+function handleTypingIndicator(userId, isTyping) {
+	// Don't show typing indicator for self
+	if (userId === myUserId) {
+		return;
+	}
+	
+	if (isTyping) {
+		typingUsers.add(userId);
+	} else {
+		typingUsers.delete(userId);
+	}
+	
+	updateTypingIndicatorUI();
+}
+
+function updateTypingIndicatorUI() {
+	const chatMessages = document.getElementById("chatMessages");
+	if (!chatMessages) return;
+	
+	let typingDiv = document.getElementById("typingIndicator");
+	
+	if (typingUsers.size === 0) {
+		// Hide typing indicator
+		if (typingDiv) {
+			typingDiv.remove();
+		}
+		return;
+	}
+	
+	// Show typing indicator
+	if (!typingDiv) {
+		typingDiv = document.createElement("div");
+		typingDiv.id = "typingIndicator";
+		typingDiv.style.color = "#888";
+		typingDiv.style.fontStyle = "italic";
+		typingDiv.style.fontSize = "0.85rem";
+		typingDiv.style.padding = "4px 0";
+		chatMessages.appendChild(typingDiv);
+	}
+	
+	const userNames = Array.from(typingUsers).map(id => getNameFromId(id));
+	const text = userNames.length === 1 
+		? `${userNames[0]} is typing...`
+		: `${userNames.join(", ")} are typing...`;
+	
+	typingDiv.textContent = text;
+	chatMessages.scrollTop = chatMessages.scrollHeight;
 }
