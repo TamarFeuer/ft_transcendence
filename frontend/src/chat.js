@@ -21,6 +21,8 @@ export function initChat() {
 		if (data.type === "self_id") {
 			myUserId = data.user_id; // store full ID for logic
 			myUserName = getNameFromId(myUserId); // lookup name from ID, for display
+			console.log("User ID:", myUserId);
+			console.log("User name:", myUserName);
 
 			const container = document.getElementById("chatContainer");
 			if (container) {
@@ -40,7 +42,6 @@ export function initChat() {
 
 		if (data.type === "chat") {
 			console.log("Incoming chat message:", data);
-			console.log("My user ID:", myUserId);
 
 			const chatMessages = document.getElementById("chatMessages");
 			if (!chatMessages) return;
@@ -61,7 +62,6 @@ export function initChat() {
 
 		if (data.type === "online_users") {
 			onlineUsers = data.users; // store current online users
-			console.log("Online users updated:", onlineUsers);
 		}
 		
 		if (data.type === "typing") {
@@ -81,7 +81,7 @@ export function sendChatMessage(message, target = null) {
 		console.warn("Chat socket not ready");
 		return;
 	}
-	const payload = { message };
+	const payload = { type: "chat", message };
 	if (target) payload.target = target;
 	chatSocket.send(JSON.stringify(payload));
 }

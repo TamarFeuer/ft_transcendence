@@ -6,13 +6,14 @@ import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
 
 function getUserFromURL() {
 	const params = new URLSearchParams(window.location.search);
-	const key = params.get("user");
+	const key = params.get("user"); // e.g., "alice"
+	const userKey = key ? `u-${key}` : null; // "u-alice
 
-	if (key && FAKE_USERS[key]) {
-		return FAKE_USERS[key];
+	if (userKey && FAKE_USERS[userKey]) {
+		return FAKE_USERS[userKey];
 	}
 
-	return { id: "u-guest", name: "Guest", avatar: "💕", createdAt: Date.now(), loggedIn: false };
+	return FAKE_USERS["u-guest"];
 }
 
 export const CURRENT_USER = getUserFromURL();
@@ -313,13 +314,14 @@ window.addEventListener("DOMContentLoaded", () => {
 	handleRoute(window.location.pathname);
 
 	initChat();
-	
+
 	const chatContainer = document.getElementById("chatContainer");
 	const openSocialsBtn = document.getElementById("openSocialsBtn");
 	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
 	const chatBtn = document.getElementById("chatBtn");
 	const panels = document.querySelectorAll(".panel");
 	const tabButtons = document.querySelectorAll(".tab-btn");
+
 
 	// show the open socials button initially
 	if (openSocialsBtn) {
@@ -328,17 +330,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	// function to show a specific panel
 	function showPanel(name) {
-		panels.forEach(p => p.classList.add("hidden"));
-		document.getElementById(`panel-${name}`)?.classList.remove("hidden");
+		panels.forEach(p => {
+			// hide all panels
+			p.style.display = "none";
+		});
+
+		const panelToShow = document.getElementById(`panel-${name}`);
+		if (panelToShow) panelToShow.style.display = "block";
 
 		tabButtons.forEach(b => b.classList.remove("active"));
 		document.querySelector(`[data-panel="${name}"]`)?.classList.add("active");
 
 		// show/hide the Send button only if Chat panel is active
 		const chatBtn = document.getElementById("chatBtn");
+		const chatInputWrapper = document.getElementById("chatInputWrapper");
 		if (chatBtn) {
-			if (name === "chat") chatBtn.classList.remove("hidden");
-			else chatBtn.classList.add("hidden");
+			if (name === "chat") {
+				chatBtn.classList.remove("hidden");
+				chatInputWrapper.classList.remove("hidden")
+			}
+			else {
+				chatBtn.classList.add("hidden");
+				chatInputWrapper.classList.add("hidden")
+			}
 		}
 	}
 
@@ -394,30 +408,59 @@ window.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
-	// profiles tab functionality
-	const profilesBtn = document.querySelector('button[data-panel="profiles"]');
-	const profilesPanel = document.getElementById('panel-profiles');
+	// users tab functionality
+	const usersBtn = document.querySelector('button[data-panel="users"]');
+	const userDetails = document.getElementById("userDetails");
 
-	if (profilesBtn && profilesPanel) {
-		profilesBtn.addEventListener("click", () => {
-			profilesPanel.innerHTML = ""; // clear previous list
+	const usersList = document.getElementById("usersList");
+
+	if (usersBtn && usersList) {
+		usersBtn.addEventListener("click", () => {
+			usersList.innerHTML = ""; // clear previous list
+			userDetails.style.display = "none";
+			userDetails.innerHTML = "";
 
 			if (onlineUsers.length === 0) {
-				profilesPanel.textContent = "No users online";
+				usersList.textContent = "No users online";
 				return;
 			}
 
 			onlineUsers.forEach(userId => {
+				const user = FAKE_USERS[userId];
+				if (!user.loggedIn) return;
+
 				const div = document.createElement("div");
-				div.textContent = getNameFromId(userId);
-				div.className = "py-1 px-2 border-b border-gray-700";
+				div.className = "py-1 px-2"; // keeps vertical spacing
+				// no hover on div, just padding
 
-				// Add click listener
-				div.addEventListener("click", () => {
-					alert(`You clicked on ${getNameFromId(userId)}!`);
+				const span = document.createElement("span");
+				span.textContent = getNameFromId(userId);
+				span.className = "cursor-pointer hover:text-pink-500 transition-colors text-lg"; // hover only affects text
 
+				// Add click listener on span
+				span.addEventListener("click", () => {
+					userDetails.innerHTML = `
+					<h3 class="text-lg font-bold">${user.name} ${user.avatar}</h3>
+					<p>ID: ${user.id}</p>
+					<p>Joined: ${new Date(user.createdAt).toLocaleString()}</p>
+					<button id="closeDetails"
+						class="mt-2 px-3 py-1 rounded border-2 border-red-500
+						text-red-500 font-semibold
+						hover:bg-red-500 hover:text-white
+						transition-colors duration-200 shadow-sm">
+					Close
+					</button>
+					`;
+					userDetails.style.display = "block";
+
+					document.getElementById("closeDetails").addEventListener("click", () => {
+						userDetails.style.display = "none";
+						userDetails.innerHTML = "";
+					});
 				});
-				profilesPanel.appendChild(div);
+
+				div.appendChild(span); // text inside div, only text changes on hover
+				usersList.appendChild(div);
 			});
 		});
 	}

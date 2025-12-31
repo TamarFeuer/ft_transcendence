@@ -1,16 +1,13 @@
 export const FAKE_USERS = {
-  alice: { id: "u-alice", name: "Alice", avatar: "🏓", createdAt: Date.now(), loggedIn: true},
-  bob: { id: "u-bob", name: "Bob", avatar: "🔝", createdAt: Date.now(), loggedIn: true},
-  charlie: { id: "u-tamar", name: "Tamar", avatar: "⭐", createdAt: Date.now(), loggedIn: true},
-  guest: { id: "u-guest", name: "Guest", avatar: "💕", createdAt: Date.now(), loggedIn: false },
+  "u-alice": { id: "u-alice", name: "Alice", avatar: "🏓", createdAt: Date.now(), loggedIn: true },
+  "u-bob": { id: "u-bob", name: "Bob", avatar: "👻", createdAt: Date.now(), loggedIn: true },
+  "u-tamar": { id: "u-tamar", name: "Tamar", avatar: "⭐", createdAt: Date.now(), loggedIn: true },
+  "u-noam" : { id: "u-noam", name: "Noam", avatar : "🐱", createdAt: Date.now(), loggedIn: true },
+  "u-yaara" : { id: "u-yaara", name: "Yaara", avatar : "💕", createdAt: Date.now(), loggedIn: true },
+  "u-guest": { id: "u-guest", name: "Guest", avatar: "👤", createdAt: Date.now(), loggedIn: false },
 
 };
 
 export function getNameFromId(userId) {
-  for (const key in FAKE_USERS) {
-    if (FAKE_USERS[key].id === userId) {
-      return FAKE_USERS[key].name;
-    }
-  }
-  return "Guest"; // fallback if not found
+  return FAKE_USERS[userId]?.name ?? "Guest";
 }
