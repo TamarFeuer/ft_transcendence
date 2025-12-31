@@ -74,29 +74,44 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def receive(self, text_data):
 		data = json.loads(text_data)
-		message = data.get("message", "")
-		target = data.get("target")  # optional: user_id or list of user_ids
+		msg_type = data.get("type")
+		
+		if msg_type in ["typing", "stop_typing"]:
+			# Handle typing notifications
+			await self.channel_layer.group_send(
+				self.group_name,
+				{
+					"type": "typing.notification",
+					"action": msg_type,
+					"user": self.user_id,
+				}
+			)
 
-		if target:
-			# 1. If target is a single string, convert to a list
-			if isinstance(target, str):
-				target = [target] #making the string a list
-			
-			# 2. Send message to each specific user
-			# will need a chat_message function
-			for channel in target:
-				await self.channel_layer.send(channel, {
+		elif msg_type == "chat":
+			# Handle regular chat message (with optional target)
+			message = data.get("message", "")
+			target = data.get("target")  # optional: user_id or list of user_ids
+
+			if target:
+				# 1. If target is a single string, convert to a list
+				if isinstance(target, str):
+					target = [target] #making the string a list
+				
+				# 2. Send message to each specific user
+				# will need a chat_message function
+				for channel in target:
+					await self.channel_layer.send(channel, {
+						"type": "chat.message",
+						"message": message,
+						"sender": self.user_id
+					})
+			else:
+				# 3. Broadcast to the whole group
+				await self.channel_layer.group_send(self.group_name, {
 					"type": "chat.message",
 					"message": message,
 					"sender": self.user_id
 				})
-		else:
-			# 3. Broadcast to the whole group
-			await self.channel_layer.group_send(self.group_name, {
-				"type": "chat.message",
-				"message": message,
-				"sender": self.user_id
-			})
 
 	async def chat_message(self, event):
 		# This runs for messages sent to this client
@@ -111,4 +126,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": "online_users",
 			"users": event["users"]
+		}))
+
+	async def typing_notification(self, event):
+		await self.send(text_data=json.dumps({
+			"type": event["action"],  # "typing" or "stop_typing"
+			"user": event["user"]
 		}))

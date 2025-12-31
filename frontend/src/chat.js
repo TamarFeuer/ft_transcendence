@@ -1,4 +1,4 @@
-import { getNameFromId } from "./fakeUsers.js"; 
+import { getNameFromId } from "./fakeUsers.js";
 
 let chatSocket = null;
 let myUserId = null;
@@ -21,7 +21,7 @@ export function initChat() {
 		if (data.type === "self_id") {
 			myUserId = data.user_id; // store full ID for logic
 			myUserName = getNameFromId(myUserId); // lookup name from ID, for display
-			
+
 			const container = document.getElementById("chatContainer");
 			if (container) {
 				let idDiv = document.getElementById("myUserId");
@@ -41,27 +41,37 @@ export function initChat() {
 		if (data.type === "chat") {
 			console.log("Incoming chat message:", data);
 			console.log("My user ID:", myUserId);
-			
+
 			const chatMessages = document.getElementById("chatMessages");
 			if (!chatMessages) return;
-			
+
 			const msgDiv = document.createElement("div");
-			
+
 			// Decide sender display
 			let sender = getNameFromId(data.sender);
 			if (data.sender === myUserId) {
 				sender = "Me";
 				msgDiv.style.color = "#00FF00";
 			}
-			
+
 			msgDiv.textContent = `${sender}: ${data.message}`;
 			chatMessages.appendChild(msgDiv);
 			chatMessages.scrollTop = chatMessages.scrollHeight;
 		}
-	
+
 		if (data.type === "online_users") {
-		onlineUsers = data.users; // store current online users
-		console.log("Online users updated:", onlineUsers);
+			onlineUsers = data.users; // store current online users
+			console.log("Online users updated:", onlineUsers);
+		}
+		
+		if (data.type === "typing") {
+			console.log(`${getNameFromId(data.user)} is typing...`);
+			// TODO: show typing indicator in UI
+		}
+
+		if (data.type === "stop_typing") {
+			console.log(`${getNameFromId(data.user)} stopped typing`);
+			// TODO: hide typing indicator in UI
 		}
 	};
 }
@@ -74,4 +84,33 @@ export function sendChatMessage(message, target = null) {
 	const payload = { message };
 	if (target) payload.target = target;
 	chatSocket.send(JSON.stringify(payload));
+}
+
+// Typing indicator
+export function initTyping(chatInput) {
+	if (!chatInput) return;
+	if (!chatSocket) {
+		console.warn("Typing init: chatSocket not ready yet");
+		return;
+	}
+
+	let typingTimeout;
+
+	// Only attach after socket is open
+	chatSocket.addEventListener("open", () => {
+		chatInput.addEventListener("input", () => {
+			if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+
+			// Notify server that user is typing
+			chatSocket.send(JSON.stringify({ type: "typing", user: CURRENT_USER.id }));
+
+			// Reset timeout
+			clearTimeout(typingTimeout);
+			typingTimeout = setTimeout(() => {
+				if (chatSocket.readyState === WebSocket.OPEN) {
+					chatSocket.send(JSON.stringify({ type: "stop_typing", user: CURRENT_USER.id }));
+				}
+			}, 1000); // 1 second after last keystroke
+		});
+	});
 }

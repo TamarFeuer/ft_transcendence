@@ -1,7 +1,7 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
-import { initChat, sendChatMessage, onlineUsers } from './chat.js';
+import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
 import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
 
 function getUserFromURL() {
@@ -313,7 +313,7 @@ window.addEventListener("DOMContentLoaded", () => {
 	handleRoute(window.location.pathname);
 
 	initChat();
-
+	
 	const chatContainer = document.getElementById("chatContainer");
 	const openSocialsBtn = document.getElementById("openSocialsBtn");
 	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
@@ -369,8 +369,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
 	// chat functionality
 	const chatInput = document.getElementById("chatInput");
+	initTyping(chatInput);
 
 	if (chatBtn && chatInput) {
+		// Send message on click
 		chatBtn.addEventListener("click", () => {
 			const message = chatInput.value.trim();
 			if (message) {
@@ -379,6 +381,7 @@ window.addEventListener("DOMContentLoaded", () => {
 			}
 		});
 
+		// Send message on Enter
 		chatInput.addEventListener("keypress", (e) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
@@ -419,3 +422,5 @@ window.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 });
+
+
