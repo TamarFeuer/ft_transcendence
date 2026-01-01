@@ -6,6 +6,9 @@ logger = logging.getLogger(__name__)
 
 ONLINE_USERS = set()
 
+# A dictionary because a user might have multiple tabs open, for private messages
+CONNECTED_USERS = {}  # maps user_id -> set of channel_names
+
 class ChatConsumer(AsyncWebsocketConsumer):
 	
 	online_users = set()
@@ -41,6 +44,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# 6.5 Add user to online list
 		ONLINE_USERS.add(self.user_id)
 
+		# --- store channel_name for private messages ---
+		if self.user_id not in CONNECTED_USERS:
+			CONNECTED_USERS[self.user_id] = set()
+		CONNECTED_USERS[self.user_id].add(self.channel_name)
+
 		# 7. Send the client its own user_id (so client knows who they are)
 		await self.send(text_data=json.dumps({
 			"type": "self_id",
@@ -61,7 +69,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		logger.info("WebSocket disconnected, code: %s", close_code)
 
 		await self.channel_layer.group_discard(self.group_name, self.channel_name)
-		ONLINE_USERS.discard(self.user_id)
+		if self.user_id in CONNECTED_USERS:
+			CONNECTED_USERS[self.user_id].discard(self.channel_name)
+			if not CONNECTED_USERS[self.user_id]:
+				del CONNECTED_USERS[self.user_id]
+				ONLINE_USERS.discard(self.user_id)
 		
 		# Notify remaining clients
 		await self.channel_layer.group_send(
@@ -95,18 +107,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			if target:
 				# 1. If target is a single string, convert to a list
 				if isinstance(target, str):
-					target = [target] #making the string a list
+					target = [target] # convert single user ID to a list
 				
-				# 2. Send message to each specific user
+				# 2. Send message to a specific user on all its clients
 				# will need a chat_message function
-				for channel in target:
-					await self.channel_layer.send(channel, {
+				for user_id in target:
+
+					# get all active channels for this user
+					for channel_name in CONNECTED_USERS.get(user_id, set()):
+						await self.channel_layer.send(channel_name, {
 						"type": "chat.message",
 						"message": message,
 						"sender": self.user_id
 					})
 			else:
-				# 3. Broadcast to the whole group
+				# If no target specified, broadcast the message to everyone in the group
 				await self.channel_layer.group_send(self.group_name, {
 					"type": "chat.message",
 					"message": message,

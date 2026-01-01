@@ -427,7 +427,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 			onlineUsers.forEach(userId => {
 				const user = FAKE_USERS[userId];
-				if (!user.loggedIn) return;
+				if (user.socket === null) return; //not logged in
 
 				const div = document.createElement("div");
 				div.className = "py-1 px-2"; // keeps vertical spacing

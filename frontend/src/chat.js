@@ -1,4 +1,4 @@
-import { getNameFromId } from "./fakeUsers.js";
+import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
 
 let chatSocket = null;
 let myUserId = null;
@@ -6,14 +6,21 @@ let myUserName = null;
 export let onlineUsers = [];
 
 export function initChat() {
-	console.log("initChat() called");
-
+	
+	// Create WebSocket
 	chatSocket = new WebSocket(
 		`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/chat/?userId=${CURRENT_USER.id}`
 	);
-
+	
+	// Store it
+	FAKE_USERS[CURRENT_USER.id].socket = chatSocket;
 	chatSocket.onopen = () => console.log("Connected to chat");
-	chatSocket.onclose = () => console.log("Chat disconnected");
+	
+	chatSocket.onclose = () => 
+	{
+		console.log("Chat disconnected");
+		FAKE_USERS[CURRENT_USER.id].socket = null; // reset socket
+	}
 
 	chatSocket.onmessage = (ev) => {
 		const data = JSON.parse(ev.data);
