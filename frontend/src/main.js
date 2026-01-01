@@ -355,6 +355,37 @@ window.addEventListener("DOMContentLoaded", () => {
 			}
 		}
 	}
+	
+	function renderFriendsPanel(currentUserId) {
+		const friendsPanel = document.getElementById("panel-friends");
+		friendsPanel.innerHTML = "";
+
+		const me = FAKE_USERS[currentUserId];
+		if (!me || !me.friends) {
+			friendsPanel.textContent = "No friends yet";
+			return;
+		}
+
+		me.friends.forEach(friendId => {
+			const friend = FAKE_USERS[friendId];
+			if (!friend) return;
+
+			const div = document.createElement("div");
+			div.className = "py-1 px-2 flex items-center gap-2";
+
+			const isOnline = onlineUsers.includes(friendId);
+
+			div.innerHTML = `
+		<span class="font-semibold">${friend.name}</span>
+		<span>${friend.avatar}</span>
+		<span class="text-sm ${isOnline ? "text-green-400" : "text-gray-400"}">
+			${isOnline ? "online" : "offline"}
+		</span>
+		`;
+
+			friendsPanel.appendChild(div);
+		});
+	}
 
 	// open socials
 	if (openSocialsBtn && chatContainer) {
@@ -381,7 +412,7 @@ window.addEventListener("DOMContentLoaded", () => {
 		});
 	});
 
-	// chat functionality
+	// broadcast functionality
 	const chatInput = document.getElementById("chatInput");
 	initTyping(chatInput);
 
@@ -427,8 +458,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
 			onlineUsers.forEach(userId => {
 				const user = FAKE_USERS[userId];
-				if (user.socket === null) return; //not logged in
 
+				// if (user.socket === null) return; //later, when we'll have db
+				if (!user.loggedIn) return;
+				
 				const div = document.createElement("div");
 				div.className = "py-1 px-2"; // keeps vertical spacing
 				// no hover on div, just padding
@@ -464,6 +497,9 @@ window.addEventListener("DOMContentLoaded", () => {
 			});
 		});
 	}
+
+	
+
 });
 
 

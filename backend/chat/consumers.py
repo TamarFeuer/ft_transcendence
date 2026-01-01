@@ -7,13 +7,12 @@ logger = logging.getLogger(__name__)
 ONLINE_USERS = set()
 
 # A dictionary because a user might have multiple tabs open, for private messages
-CONNECTED_USERS = {}  # maps user_id -> set of channel_names
+CONNECTED_USERS = {} # maps user_id -> set of channel_names
 
 class ChatConsumer(AsyncWebsocketConsumer):
-	
 	online_users = set()
-	async def connect(self):
 
+	async def connect(self):
 		# Called when a client opens a WebSocket connection.
 		# Parse user ID from query string passed through channels socket 
 		# and joins the global chat group
@@ -27,11 +26,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			if part.startswith("userId="):
 				self.user_id = part.split('=')[1]
 				break
-		
-		# 3. Fallback to 'u-guest' if no user ID provided
-		if not self.user_id:
-			self.user_id = "u-guest"
-		
+
 		# 4. Set group name for broadcasting
 		self.group_name = "global_chat"
 
