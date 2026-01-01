@@ -34,16 +34,50 @@
 
     <!-- Chat window container -->
     <div id="chatContainer"
-      class="fixed bottom-10 right-10 w-[22rem] h-[52rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col overflow-hidden z-50"
+      class="fixed bottom-10 right-10 w-[22rem] h-[52rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col z-50"
       style="display:none;">
 
-      <!-- HEADER (always visible) -->
-      <div id="chatHeader" class="flex items-center gap-2 bg-pink-600 p-2">
+      <!-- HEADER -->
+      <div id="chatHeader" class="flex items-center tracking-wider gap-4 bg-pink-600 p-2 overflow-visible">
 
         <!-- Tab buttons -->
-        <button data-panel="chat" class="tab-btn active !text-lg">Chat</button>
-        <button data-panel="users" class="tab-btn !text-lg">Users</button>
-        <button data-panel="friends" class="tab-btn !text-lg">Friends</button>
+        <!-- Broad Button -->
+        <button data-panel="chat" class="tab-btn !text-lg relative group">
+          Say Hi
+          <!-- Tooltip -->
+          <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
+            bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
+            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+            pointer-events-none text-center z-50
+            w-28 h-10 leading-tight">
+          Broadcast to all logged-in users
+          </span>
+        </button>
+
+        <!-- Users Button -->
+        <button data-panel="users" class="tab-btn !text-lg relative group">
+          Users
+          <!-- Tooltip -->
+          <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
+            bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
+            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+            pointer-events-none text-center z-50
+            w-28 h-10 leading-tight">
+            Chat with logged-in users
+          </span>
+        </button>
+        
+        <button data-panel="friends" class="tab-btn !text-lg relative group">
+          Friends
+          <!-- Tooltip -->
+          <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
+            bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
+            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+            pointer-events-none text-center z-50
+            w-28 h-10 leading-tight">
+            Play with your friends
+          </span>
+        </button>
 
         <!-- Close button -->
         <button id="closeSocialsBtn"
