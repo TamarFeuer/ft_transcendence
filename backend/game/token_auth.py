@@ -2,7 +2,9 @@ from urllib.parse import parse_qs
 import jwt
 from django.conf import settings
 from channels.db import database_sync_to_async
+import logging
 
+logger = logging.getLogger(__name__)
 
 @database_sync_to_async
 def get_user_from_token(token: str):
@@ -13,6 +15,7 @@ def get_user_from_token(token: str):
     User = get_user_model()
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        logger.warning(f"get_user_from_token: decoding payload token: {payload}")
         user_id = payload.get('user_id')
         if not user_id:
             return AnonymousUser()
@@ -22,7 +25,6 @@ def get_user_from_token(token: str):
             return AnonymousUser()
     except Exception:
         return AnonymousUser()
-
 
 class TokenAuthMiddleware:
     """ASGI middleware that reads a JWT token from the WS query string and sets scope['user'].
@@ -35,6 +37,7 @@ class TokenAuthMiddleware:
 
     async def __call__(self, scope, receive, send):
         # Only operate on websocket connections (safe-guard)
+        logger.warning(f"TokenAuthMiddleware: scope type: {scope.get('type')}")
         try:
             query_string = scope.get('query_string', b'').decode()
         except Exception:
@@ -59,7 +62,10 @@ class TokenAuthMiddleware:
             token = qs.get('token', [None])[0]
         if token:
             # Attempt to resolve token -> user
+            logger.warning(f"TokenAuth: received token: {token}")
             user = await get_user_from_token(token)
+            logger.warning(f"TokenAuth: decoded user: {user}")
+
             # copy scope to avoid mutating shared dicts
             scope = dict(scope)
             scope['user'] = user

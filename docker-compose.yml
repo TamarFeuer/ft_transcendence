@@ -2,6 +2,8 @@
 services:
   backend:
     build: ./backend
+    volumes:
+    - ./backend/db.sqlite3:/code/db.sqlite3
     container_name: pong_backend
     environment:
       - DJANGO_SETTINGS_MODULE=django_server.settings
