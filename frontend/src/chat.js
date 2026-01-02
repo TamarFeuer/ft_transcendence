@@ -48,24 +48,26 @@ export function initChat() {
 		}
 
 		if (data.type === "chat") {
-			console.log("Incoming chat message:", data);
+    console.log("Incoming chat message:", data);
 
-			const chatMessages = document.getElementById("chatMessages");
-			if (!chatMessages) return;
+    const panelChat = document.getElementById("panel-chat"); // <- use panel-chat
+    if (!panelChat) return;
 
-			const msgDiv = document.createElement("div");
+    const msgDiv = document.createElement("div");
 
-			// Decide sender display
-			let sender = getNameFromId(data.sender);
-			if (data.sender === myUserId) {
-				sender = "Me";
-				msgDiv.style.color = "#00FF00";
-			}
+    // Decide sender display
+    let sender = getNameFromId(data.sender);
+    if (data.sender === myUserId) {
+        sender = "Me";
+        msgDiv.style.color = "#00FF00";
+    }
 
-			msgDiv.textContent = `${sender}: ${data.message}`;
-			chatMessages.appendChild(msgDiv);
-			chatMessages.scrollTop = chatMessages.scrollHeight;
-		}
+    msgDiv.textContent = `${sender}: ${data.message}`;
+    panelChat.appendChild(msgDiv);
+
+    // Scroll to bottom
+    panelChat.scrollTop = panelChat.scrollHeight;
+}
 
 		if (data.type === "online_users") {
 			onlineUsers = data.users; // store current online users
