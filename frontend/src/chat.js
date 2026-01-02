@@ -7,9 +7,10 @@ export let onlineUsers = [];
 
 export function initChat() {
 	
-	// Create WebSocket
+	// Create WebSocket - connect to backend on port 3000 in dev mode
+	const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
 	chatSocket = new WebSocket(
-		`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/chat/?userId=${CURRENT_USER.id}`
+		`${location.protocol === "https:" ? "wss:" : "ws:"}//${wsHost}/ws/chat/?userId=${CURRENT_USER.id}`
 	);
 	
 	// Store it

@@ -23,28 +23,40 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.warning(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         logger.warning(f"Current players: {self.game.get_players()}")
 
-        if self.game.get_players()['left'] == self.scope['user'] or \
-           self.game.get_players()['right'] == self.scope['user']:
+        # Check for duplicate connections - reject if user is ALREADY in the game
+        players = self.game.get_players()
+        if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
+            logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
             await self.close(code=4005)
             return
         
         # Add player to game
         self.role = self.game.add_player(self.scope['user'])
-
+        logger.warning(f"Assigned role: {self.role} to: {self.scope['user']}")
         # Join game group
         await self.channel_layer.group_add(
             self.game_group_name,
             self.channel_name
         )
         
-        await self.accept()
-        
+        # Accept WebSocket connection with subprotocol if provided
+        headers = dict(self.scope.get('headers', []))
+        subprotocol = headers.get(b'sec-websocket-protocol')
+        if subprotocol:
+            # Echo back the first subprotocol (JWT token)
+            protocol_str = subprotocol.decode().split(',')[0].strip()
+            await self.accept(subprotocol=protocol_str)
+        else:
+            await self.accept()
+    
+        logger.warning(f"Send assign: {self.role} to: {self.scope['user']}")
         # Send role assignment
         await self.send(text_data=json.dumps({
             'type': 'assign',
             'role': self.role
         }))
-        
+        logger.warning(f"Start game?: {self.game.can_start()}")
+
         # Start game if both players connected
         if self.game.can_start():
             self.game.start_game()
@@ -56,6 +68,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             asyncio.create_task(self.game_loop())
     
     async def disconnect(self, close_code):
+        logger.warning(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         if hasattr(self, 'game') and self.game:
             self.game.remove_player(self.scope['user'])
             

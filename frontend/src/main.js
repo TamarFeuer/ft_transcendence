@@ -59,7 +59,9 @@ export function joinOnlineGame(gameId) {
 	const proto = location.protocol === "https:" ? "wss:" : "ws:";
 	// include JWT token using WebSocket subprotocol (safer than query string)
 	const token = localStorage.getItem('jwt');
-	const url = `${proto}//${location.host}/ws/${gameId}`;
+	// Connect to backend on port 3000 (not vite dev server on 5173)
+	const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
+	const url = `${proto}//${wsHost}/ws/${gameId}`;
 	ws = token ? new WebSocket(url, token) : new WebSocket(url);
 
 	ws.onopen = () => {
