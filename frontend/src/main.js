@@ -309,59 +309,117 @@ export async function startTournament(playerCount) {
 }
 
 setupRoutes();
-
+	
 window.addEventListener("DOMContentLoaded", () => {
-	handleRoute(window.location.pathname);
-
+	
 	initChat();
 
+	// Constants / DOM elements
 	const chatContainer = document.getElementById("chatContainer");
 	const openSocialsBtn = document.getElementById("openSocialsBtn");
 	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
 	const chatBtn = document.getElementById("chatBtn");
+	const chatInputWrapper = document.getElementById("chatInputWrapper");
+	const chatInput = document.getElementById("chatInput");
 	const panels = document.querySelectorAll(".panel");
 	const tabButtons = document.querySelectorAll(".tab-btn");
+	const usersBtn = document.querySelector('button[data-panel="users"]');
+	const usersList = document.getElementById("usersList");
+	const userDetails = document.getElementById("userDetails");
 
 
-	// show the open socials button initially
-	if (openSocialsBtn) {
-		openSocialsBtn.style.display = "block";
-	}
-
-	// function to show a specific panel
+	// Helpers
 	function showPanel(name) {
-		panels.forEach(p => {
-			// hide all panels
-			p.style.display = "none";
-		});
+		// Hide all panels
+		panels.forEach(p => (p.style.display = "none"));
 
+		// Show selected panel
 		const panelToShow = document.getElementById(`panel-${name}`);
 		if (panelToShow) panelToShow.style.display = "block";
 
+		// Update tab active state
 		tabButtons.forEach(b => b.classList.remove("active"));
 		document.querySelector(`[data-panel="${name}"]`)?.classList.add("active");
 
-		// show/hide the Send button only if Chat panel is active
-		const chatBtn = document.getElementById("chatBtn");
-		const chatInputWrapper = document.getElementById("chatInputWrapper");
-		if (chatBtn) {
+		// Show/hide chat input & send button
+		if (chatBtn && chatInputWrapper) {
 			if (name === "chat") {
 				chatBtn.classList.remove("hidden");
-				chatInputWrapper.classList.remove("hidden")
-			}
-			else {
+				chatInputWrapper.classList.remove("hidden");
+			} else {
 				chatBtn.classList.add("hidden");
-				chatInputWrapper.classList.add("hidden")
+				chatInputWrapper.classList.add("hidden");
 			}
 		}
+
+		// Render panel-specific content
+		if (name === "friends") renderFriendsPanel(CURRENT_USER.id);
+		else if (name === "users") renderUsersPanel();
+		else if (name === "chat") renderChatPanel();
 	}
-	
+
+	// Panel renderers
+	function renderChatPanel() {
+		// For now, chat panel doesn't need extra rendering
+		// Any initialization logic for chat can go here if needed
+	}
+
+	function renderUsersPanel() {
+		usersList.innerHTML = "";
+		userDetails.style.display = "none";
+		userDetails.innerHTML = "";
+
+		if (!onlineUsers || onlineUsers.length === 0) {
+			usersList.textContent = "No users online";
+			return;
+		}
+
+		onlineUsers.forEach(userId => {
+			const user = FAKE_USERS[userId];
+			if (!user.loggedIn) return;
+
+			const div = document.createElement("div");
+			div.className = "py-1 px-2";
+
+			const span = document.createElement("span");
+			span.textContent = getNameFromId(userId);
+			span.className =
+				"cursor-pointer hover:text-pink-500 transition-colors text-lg";
+
+			span.addEventListener("click", () => {
+				userDetails.innerHTML = `
+				<h3 class="text-lg font-bold">${user.name} ${user.avatar}</h3>
+				<p>ID: ${user.id}</p>
+				<p>Joined: ${new Date(user.createdAt).toLocaleString()}</p>
+				<button id="closeDetails"
+					class="mt-2 px-3 py-1 rounded border-2 border-red-500
+					text-red-500 font-semibold
+					hover:bg-red-500 hover:text-white
+					transition-colors duration-200 shadow-sm">
+				Close
+				</button>
+				`;
+				userDetails.style.display = "block";
+
+				document
+					.getElementById("closeDetails")
+					.addEventListener("click", () => {
+						userDetails.style.display = "none";
+						userDetails.innerHTML = "";
+					});
+			});
+
+			div.appendChild(span);
+			usersList.appendChild(div);
+		});
+	}
+
 	function renderFriendsPanel(currentUserId) {
 		const friendsPanel = document.getElementById("panel-friends");
 		friendsPanel.innerHTML = "";
 
 		const me = FAKE_USERS[currentUserId];
-		if (!me || !me.friends) {
+		if (!me || !me.friends || me.friends.length === 0) {
 			friendsPanel.textContent = "No friends yet";
 			return;
 		}
@@ -376,19 +434,22 @@ window.addEventListener("DOMContentLoaded", () => {
 			const isOnline = onlineUsers.includes(friendId);
 
 			div.innerHTML = `
-		<span class="font-semibold">${friend.name}</span>
-		<span>${friend.avatar}</span>
-		<span class="text-sm ${isOnline ? "text-green-400" : "text-gray-400"}">
-			${isOnline ? "online" : "offline"}
-		</span>
-		`;
+				<span class="font-semibold">${friend.name}</span>
+				<span>${friend.avatar}</span>
+				<span class="text-sm ${
+					isOnline ? "text-green-400" : "text-gray-400"
+				}">
+					${isOnline ? "online" : "offline"}
+				</span>
+			`;
 
 			friendsPanel.appendChild(div);
 		});
 	}
 
-	// open socials
+	// Socials open/close
 	if (openSocialsBtn && chatContainer) {
+		openSocialsBtn.style.display = "block";
 		openSocialsBtn.addEventListener("click", () => {
 			chatContainer.style.display = "flex";
 			openSocialsBtn.style.display = "none";
@@ -396,110 +457,39 @@ window.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
-	// close socials
 	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
 		closeSocialsBtn.addEventListener("click", () => {
-			chatContainer.style.display = "none";   // hide the container
-			openSocialsBtn.style.display = "block"; // show the launcher button
+			chatContainer.style.display = "none";
+			openSocialsBtn.style.display = "block";
 		});
 	}
 
-	// handles clicks on the tabs inside the Socials
+	// Tab click events
 	tabButtons.forEach(btn => {
-		btn.addEventListener("click", () => {
-			showPanel(btn.dataset.panel);
-			chatContainer.style.display = "flex";
-		});
+		btn.addEventListener("click", () => showPanel(btn.dataset.panel));
 	});
 
-	// broadcast functionality
-	const chatInput = document.getElementById("chatInput");
+	// Chat send functionality
 	initTyping(chatInput);
 
 	if (chatBtn && chatInput) {
-		// Send message on click
-		chatBtn.addEventListener("click", () => {
+		const sendMessage = () => {
 			const message = chatInput.value.trim();
 			if (message) {
 				sendChatMessage(message);
 				chatInput.value = "";
 			}
-		});
+		};
 
-		// Send message on Enter
-		chatInput.addEventListener("keypress", (e) => {
+		chatBtn.addEventListener("click", sendMessage);
+		chatInput.addEventListener("keypress", e => {
 			if (e.key === "Enter") {
 				e.preventDefault();
-				const message = chatInput.value.trim();
-				if (message) {
-					sendChatMessage(message);
-					chatInput.value = "";
-				}
+				sendMessage();
 			}
 		});
 	}
 
-	// users tab functionality
-	const usersBtn = document.querySelector('button[data-panel="users"]');
-	const userDetails = document.getElementById("userDetails");
-
-	const usersList = document.getElementById("usersList");
-
-	if (usersBtn && usersList) {
-		usersBtn.addEventListener("click", () => {
-			usersList.innerHTML = ""; // clear previous list
-			userDetails.style.display = "none";
-			userDetails.innerHTML = "";
-
-			if (onlineUsers.length === 0) {
-				usersList.textContent = "No users online";
-				return;
-			}
-
-			onlineUsers.forEach(userId => {
-				const user = FAKE_USERS[userId];
-
-				// if (user.socket === null) return; //later, when we'll have db
-				if (!user.loggedIn) return;
-				
-				const div = document.createElement("div");
-				div.className = "py-1 px-2"; // keeps vertical spacing
-				// no hover on div, just padding
-
-				const span = document.createElement("span");
-				span.textContent = getNameFromId(userId);
-				span.className = "cursor-pointer hover:text-pink-500 transition-colors text-lg"; // hover only affects text
-
-				// Add click listener on span
-				span.addEventListener("click", () => {
-					userDetails.innerHTML = `
-					<h3 class="text-lg font-bold">${user.name} ${user.avatar}</h3>
-					<p>ID: ${user.id}</p>
-					<p>Joined: ${new Date(user.createdAt).toLocaleString()}</p>
-					<button id="closeDetails"
-						class="mt-2 px-3 py-1 rounded border-2 border-red-500
-						text-red-500 font-semibold
-						hover:bg-red-500 hover:text-white
-						transition-colors duration-200 shadow-sm">
-					Close
-					</button>
-					`;
-					userDetails.style.display = "block";
-
-					document.getElementById("closeDetails").addEventListener("click", () => {
-						userDetails.style.display = "none";
-						userDetails.innerHTML = "";
-					});
-				});
-
-				div.appendChild(span); // text inside div, only text changes on hover
-				usersList.appendChild(div);
-			});
-		});
-	}
-
-	
-
+	// Initial route handling
+	handleRoute(window.location.pathname);
 });
-
-
