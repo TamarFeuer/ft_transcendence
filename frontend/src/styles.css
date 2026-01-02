@@ -27,6 +27,10 @@
   font-style: normal;
 }
 
+#chatContainer {
+  font-family: "ComicNeue", system-ui, sans-serif;
+}
+
 #chatMessages::-webkit-scrollbar {
   width: 8px;
   background-color: #ff4da6;
@@ -40,10 +44,6 @@
   scrollbar-width: thin;
   scrollbar-color: #4bed89 rgba(0, 0, 0, 0.25);
 }
-  
-#chatContainer {
-  font-family: "ComicNeue", system-ui, sans-serif;
-}
 
 #chatBtn {
   @apply fixed bottom-7 right-5 z-[9999]  bg-[#ff1493] 
@@ -51,6 +51,14 @@
   hover:border-pink-400
   transition-transform transition-colors duration-150
   active:scale-95 active:shadow-inner;
+}
+
+.tab-btn {
+  @apply px-2 py-1 text-sm text-white rounded hover:bg-pink-500;
+}
+
+.tab-btn.active {
+  @apply bg-pink-700;
 }
 
 /* User manager panel */
