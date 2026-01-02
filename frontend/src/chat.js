@@ -50,8 +50,8 @@ export function initChat() {
 		if (data.type === "chat") {
     console.log("Incoming chat message:", data);
 
-    const panelChat = document.getElementById("panel-chat"); // <- use panel-chat
-    if (!panelChat) return;
+    const chatMessages = document.getElementById("chatMessages");
+    if (!chatMessages) return;
 
     const msgDiv = document.createElement("div");
 
@@ -63,10 +63,10 @@ export function initChat() {
     }
 
     msgDiv.textContent = `${sender}: ${data.message}`;
-    panelChat.appendChild(msgDiv);
+    chatMessages.appendChild(msgDiv);
 
     // Scroll to bottom
-    panelChat.scrollTop = panelChat.scrollHeight;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 		if (data.type === "online_users") {
