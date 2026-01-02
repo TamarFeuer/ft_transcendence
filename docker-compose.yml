@@ -8,7 +8,14 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=django_server.settings
       - DEBUG=True
+      - DB_NAME=transcendence
+      - DB_USER=transcendence_user
+      - DB_PASSWORD=transcendence_pass
+      - DB_HOST=db
+      - DB_PORT=5432
     restart: unless-stopped
+    depends_on:
+      - db
     networks:
       - pongnet
     expose:
@@ -30,6 +37,20 @@ services:
       - pongnet
     environment:
       - VITE_BACKEND_URL=http://backend:3000
+
+  db:
+    container_name: transcendence_db
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_DB=transcendence
+      - POSTGRES_USER=transcendence_user
+      - POSTGRES_PASSWORD=transcendence_pass
+    volumes:
+      - ./db/postgres:/var/lib/postgresql/data
+    networks:
+      - pongnet
+    ports:
+      - "5432:5432"
 
   # redis:
   #   image: redis:7-alpine
