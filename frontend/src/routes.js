@@ -1,4 +1,4 @@
-import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame } from './main.js';
+import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame, initAIGame } from './main.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
@@ -53,7 +53,7 @@ export function setupRoutes() {
     const engine = new Engine(canvas, true);
     const scene = new Scene(engine);
     const gameObjects = initGameScene(scene, canvas, 2);
-    initOfflineGame(scene, gameObjects, false);
+    initAIGame(scene, gameObjects, false);
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
   };
