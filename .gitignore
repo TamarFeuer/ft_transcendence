@@ -1,4 +1,18 @@
+# since these are all build artifacts that should be regenerated:
+dist/
+frontend/dist/
+
+# Dependencies
 node_modules/
 
-# since these are all build artifacts that should be regenerated:
-frontend/dist/ 
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -31,12 +31,24 @@ export function setupRoutes() {
   routes['/pong'] = async () => {
     await loadTemplate('pong');
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
+    document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
     document.getElementById('onlineBtn')?.addEventListener('click', () => navigate('/online'));
     document.getElementById('tournamentBtn')?.addEventListener('click', () => navigate('/tournament'));
   };
 
   routes['/local'] = async () => {
     await loadTemplate('local');
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new Engine(canvas, true);
+    const scene = new Scene(engine);
+    const gameObjects = initGameScene(scene, canvas, 2);
+    initOfflineGame(scene, gameObjects, false);
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener("resize", () => engine.resize());
+  };
+
+  routes['/ai'] = async () => {
+    await loadTemplate('ai');
     const canvas = document.getElementById("renderCanvas");
     const engine = new Engine(canvas, true);
     const scene = new Scene(engine);
