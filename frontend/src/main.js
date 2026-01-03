@@ -187,20 +187,28 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 		window.addEventListener("keydown", keyDownHandler);
 		window.addEventListener("keyup", keyUpHandler);
 
-		// Keyboard interval
-		const keyboardInterval = setInterval(() => {
-			if (keys['w'] || keys['s']) {
-				let y = 0;
-				if (keys['w']) y = 0.8;
-				if (keys['s']) y = -0.8;
-				gameObjects.paddleLeft.position.y += y;
+		// Player 1 controls (W/S)
+		const keyboardIntervalP1 = setInterval(() => {
+			let y = 0;
+			if (keys['w']) y = 0.8;
+			if (keys['s']) y = -0.8;
+			gameObjects.paddleLeft.position.y += y;
+
+			// Keep paddle within bounds
+			if (gameObjects.paddleLeft.position.y > 4.5) {
+				gameObjects.paddleLeft.position.y = 4.5;
 			}
-			if (keys['ArrowUp'] || keys['ArrowDown']) {
-				let y = 0;
-				if (keys['ArrowUp']) y = 0.8;
-				if (keys['ArrowDown']) y = -0.8;
-				gameObjects.paddleRight.position.y += y;
-			}
+			if (gameObjects.paddleLeft.position.y < -4.5) {
+				gameObjects.paddleLeft.position.y = -4.5;
+			}			
+		}, 1000 / 15);
+
+		// Player 2 controls (Arrow keys)
+		const keyboardIntervalP2 = setInterval(() => {
+			let y = 0;
+			if (keys['ArrowUp']) y = 0.8;
+			if (keys['ArrowDown']) y = -0.8;
+			gameObjects.paddleRight.position.y += y;
 
 			// Keep paddle within bounds
 			if (gameObjects.paddleRight.position.y > 4.5) {
@@ -208,7 +216,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 			}
 			if (gameObjects.paddleRight.position.y < -4.5) {
 				gameObjects.paddleRight.position.y = -4.5;
-			}
+			}			
 		}, 1000 / 15);
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
@@ -248,7 +256,8 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 			// Check winner
 			if (scoreP1int >= 10 || scoreP2int >= 10) {
 				// Cleanup
-				clearInterval(keyboardInterval);
+				clearInterval(keyboardIntervalP1);
+				clearInterval(keyboardIntervalP2);
 				window.removeEventListener("keydown", keyDownHandler);
 				window.removeEventListener("keyup", keyUpHandler);
 				scene.onBeforeRenderObservable.remove(renderObserver);
@@ -377,7 +386,7 @@ export function initAIGame(scene, gameObjects, tournament) {
 				scene.onBeforeRenderObservable.remove(renderObserver);
 
 				if (!tournament) {
-					alert(scoreP1int >= 10 ? "Player 1 wins!" : "Player 2 wins!");
+					alert(scoreP1int >= 10 ? "AI wins!" : "You win!");
 					navigate('/');
 				}
 
