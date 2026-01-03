@@ -201,6 +201,14 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 				if (keys['ArrowDown']) y = -0.8;
 				gameObjects.paddleRight.position.y += y;
 			}
+
+			// Keep paddle within bounds
+			if (gameObjects.paddleRight.position.y > 4.5) {
+				gameObjects.paddleRight.position.y = 4.5;
+			}
+			if (gameObjects.paddleRight.position.y < -4.5) {
+				gameObjects.paddleRight.position.y = -4.5;
+			}
 		}, 1000 / 15);
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
@@ -278,12 +286,33 @@ export function initAIGame(scene, gameObjects, tournament) {
 		window.addEventListener("keydown", keyDownHandler);
 		window.addEventListener("keyup", keyUpHandler);
 
-		// Player 1 controls (W/S)
+		// AI controls (W/S)
 		const keyboardIntervalP1 = setInterval(() => {
-			let y = 0;
-			if (keys['w']) y = 0.8;
-			if (keys['s']) y = -0.8;
-			gameObjects.paddleLeft.position.y += y;
+			const paddleY = gameObjects.paddleLeft.position.y;
+			const ballY = gameObjects.ball.position.y;
+			
+			// AI tries to move paddle towards ball
+			const difference = ballY - paddleY;
+			
+			// Only move if ball is on AI's side (approaching)
+			if (gameObjects.ball.position.x < 0) {
+				if (Math.abs(difference) > 0.5) { // Dead zone to avoid jittering
+					if (difference > 0) {
+						gameObjects.paddleLeft.position.y += 0.8;
+					} else {
+						gameObjects.paddleLeft.position.y -= 0.8;
+					}
+				}
+			}
+
+			// Keep paddle within bounds
+			if (gameObjects.paddleRight.position.y > 4.5) {
+				gameObjects.paddleRight.position.y = 4.5;
+			}
+			if (gameObjects.paddleRight.position.y < -4.5) {
+				gameObjects.paddleRight.position.y = -4.5;
+
+			}
 		}, standartSpeed);
 
 		// Player 2 controls (Arrow keys)
@@ -292,6 +321,14 @@ export function initAIGame(scene, gameObjects, tournament) {
 			if (keys['ArrowUp']) y = 0.8;
 			if (keys['ArrowDown']) y = -0.8;
 			gameObjects.paddleRight.position.y += y;
+
+			// Keep paddle within bounds
+			if (gameObjects.paddleRight.position.y > 4.5) {
+				gameObjects.paddleRight.position.y = 4.5;
+			}
+			if (gameObjects.paddleRight.position.y < -4.5) {
+				gameObjects.paddleRight.position.y = -4.5;
+			}			
 		}, standartSpeed);
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
