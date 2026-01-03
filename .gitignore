@@ -1,2 +1,4 @@
-
 node_modules/
+
+# since these are all build artifacts that should be regenerated:
+frontend/dist/ 
