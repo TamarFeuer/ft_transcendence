@@ -36,7 +36,7 @@ async function refreshAccessToken() {
 }
 
 // --- API helper with automatic token refresh ---
-async function fetchWithAuth(url, options = {}) {
+async function fetchWithRefreshAuth(url, options = {}) {
     options.credentials = 'include'; // Always include cookies
     
     let res = await fetch(url, options);
@@ -103,7 +103,7 @@ export async function logoutUser() {
 
 export async function getCurrentUser() {
     try {
-        const res = await fetchWithAuth('/api/auth/me');
+        const res = await fetchWithRefreshAuth('/api/auth/me');
         if (res.ok) {
             const data = await res.json();
             if (data.authenticated && data.username) {
@@ -209,7 +209,7 @@ export function createUserManager() {
 }
 
 export async function checkAuthRequired() {
-    const res = await fetch('/api/auth/me', { method: 'GET', credentials: 'include' });
+    const res = await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
     if (res.ok) {
         const data = await res.json();
         console.log('Auth check:', data);
