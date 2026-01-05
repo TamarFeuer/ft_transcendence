@@ -296,6 +296,8 @@ export function initAIGame(scene, gameObjects, tournament) {
 		window.addEventListener("keyup", keyUpHandler);
 
 		// AI controls (W/S)
+
+		// Simulated Annealing
 		const keyboardIntervalP1 = setInterval(() => {
 			const paddleY = gameObjects.paddleLeft.position.y;
 			const ballY = gameObjects.ball.position.y;
@@ -303,14 +305,31 @@ export function initAIGame(scene, gameObjects, tournament) {
 			// AI tries to move paddle towards ball
 			const difference = ballY - paddleY;
 			
-			// Only move if ball is on AI's side (approaching)
-			if (gameObjects.ball.position.x < 0) {
-				if (Math.abs(difference) > 0.5) { // Dead zone to avoid jittering
-					if (difference > 0) {
-						gameObjects.paddleLeft.position.y += 0.8;
-					} else {
-						gameObjects.paddleLeft.position.y -= 0.8;
-					}
+			if (gameObjects.ball.position.x < 0 && Math.abs(difference) > 0.5) {
+				// Current energy (distance from ball)
+				const currentEnergy = Math.abs(difference);
+				
+				// Propose a random move
+				const proposedMove = Math.random() < 0.5 ? 0.8 : -0.8;
+				const newY = paddleY + proposedMove;
+				const newEnergy = Math.abs(ballY - newY);
+				
+				// Energy difference (negative = improvement)
+				const deltaE = newEnergy - currentEnergy;
+				
+				// Acceptance probability: always accept improvements,
+				// sometimes accept worse moves based on temperature
+				const acceptProbability = deltaE < 0 ? 1.0 : Math.exp(-deltaE / gameObjects.temperature);
+				
+				// Accept or reject the move
+				if (Math.random() < acceptProbability) {
+					gameObjects.paddleLeft.position.y = newY;
+				}
+				
+				// Cool down
+				gameObjects.temperature *= 0.99;
+				if (gameObjects.temperature < 0.5) {
+					gameObjects.temperature = 0.5;
 				}
 			}
 
