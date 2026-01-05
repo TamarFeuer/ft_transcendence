@@ -1,12 +1,83 @@
-<div id="menuOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10"
+<div id="menuOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10 overflow-auto"
   style="background-image: url('../assets/background.jpg'); background-size: cover; background-repeat: no-repeat;">
-  <h1 class="text-white text-4xl font-bold mb-6">Tournament</h1>
-  <div class="flex flex-col gap-4 items-center">
-    <input type="number" id="tournamentPlayerCount" min="2" value="4" class="px-3 py-2 rounded w-24 text-center" placeholder="Players" />
-    <div class="flex gap-3">
-      <button id="startTournamentBtn" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded">Start Tournament</button>
-      <button id="backBtn" class="px-5 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded">Back</button>
+  <div class="max-w-6xl w-full px-4 py-6">
+    <h1 class="text-white text-4xl font-bold mb-6 text-center">Tournament Lobby</h1>
+    
+    <!-- Create Tournament Section -->
+    <div class="bg-gray-900/80 rounded-lg p-6 mb-6">
+      <h2 class="text-white text-2xl font-bold mb-4">Create New Tournament</h2>
+      <div class="flex flex-col gap-4">
+        <input 
+          type="text" 
+          id="tournamentName" 
+          placeholder="Tournament Name" 
+          class="px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+        />
+        <textarea 
+          id="tournamentDescription" 
+          placeholder="Description (optional)" 
+          rows="2"
+          class="px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+        ></textarea>
+        <div class="flex gap-4 items-center">
+          <label class="text-white">Max Players:</label>
+          <select id="tournamentMaxPlayers" class="px-4 py-2 rounded bg-gray-800 text-white border border-gray-700">
+            <option value="4">4</option>
+            <option value="8" selected>8</option>
+            <option value="16">16</option>
+            <option value="32">32</option>
+          </select>
+          <button id="createTournamentBtn" class="ml-auto px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-bold">
+            Create Tournament
+          </button>
+        </div>
+      </div>
+      <div id="createStatus" class="mt-3"></div>
     </div>
-    <div id="tournamentStatus" class="text-white mt-4"></div>
+
+    <!-- Available Tournaments Section -->
+    <div class="bg-gray-900/80 rounded-lg p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-white text-2xl font-bold">Available Tournaments</h2>
+        <button id="refreshTournamentsBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded">
+          🔄 Refresh
+        </button>
+      </div>
+      <div id="tournamentsList" class="space-y-3">
+        <p class="text-gray-400">Loading tournaments...</p>
+      </div>
+    </div>
+
+    <!-- My Tournaments Section -->
+    <div class="bg-gray-900/80 rounded-lg p-6 mb-6">
+      <h2 class="text-white text-2xl font-bold mb-4">My Tournaments</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <h3 class="text-blue-400 font-semibold mb-2">Ongoing</h3>
+          <div id="ongoingTournaments" class="space-y-2">
+            <p class="text-gray-400 text-sm">None</p>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-yellow-400 font-semibold mb-2">Upcoming</h3>
+          <div id="upcomingTournaments" class="space-y-2">
+            <p class="text-gray-400 text-sm">None</p>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-green-400 font-semibold mb-2">Completed</h3>
+          <div id="completedTournaments" class="space-y-2">
+            <p class="text-gray-400 text-sm">None</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="text-center">
+      <button id="backBtn" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded font-bold">
+        ← Back to Menu
+      </button>
+    </div>
   </div>
 </div>

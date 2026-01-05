@@ -12,9 +12,11 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'rest_framework',
     'channels',
     'game',
     'chat',
+    'tournament',
 ]
 
 print("Based dir:", BASE_DIR)

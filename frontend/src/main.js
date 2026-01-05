@@ -27,7 +27,7 @@ let ws = null;
 let currentGameId = null;
 
 export const routes = {};
-import { setupRoutes } from "./routes.js";
+import { setupRoutes, handleTournamentRoute } from "./routes.js";
 
 export function navigate(path) {
 	window.history.pushState({}, path, window.location.origin + path);
@@ -35,6 +35,12 @@ export function navigate(path) {
 }
 
 function handleRoute(path) {
+	// Check for tournament/:id route
+	if (path.match(/^\/tournament\/\d+$/)) {
+		handleTournamentRoute(path);
+		return;
+	}
+	
 	const handler = routes[path];
 	if (handler) {
 		handler();

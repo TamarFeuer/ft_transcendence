@@ -1,0 +1,52 @@
+<div id="menuOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10 overflow-auto"
+  style="background-image: url('../assets/background.jpg'); background-size: cover; background-repeat: no-repeat;">
+  <div class="max-w-6xl w-full px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-white text-4xl font-bold">Tournament Games</h1>
+      <button id="backBtn" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded font-bold">
+        ← Back
+      </button>
+    </div>
+    
+    <!-- Leaderboard -->
+    <div class="bg-gray-900/80 rounded-lg p-6 mb-6">
+      <h2 class="text-white text-2xl font-bold mb-4">Leaderboard</h2>
+      <table class="w-full text-white text-sm">
+        <thead class="border-b border-gray-700">
+          <tr>
+            <th class="text-left py-2">Rank</th>
+            <th class="text-left py-2">Player</th>
+            <th class="text-right py-2">Score</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <tr><td colspan="3" class="text-gray-400 py-2">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Ready Games -->
+    <div class="bg-gray-900/80 rounded-lg p-6 mb-6">
+      <h2 class="text-white text-2xl font-bold mb-4">Your Ready Games</h2>
+      <div id="readyGamesList" class="space-y-3">
+        <p class="text-gray-400">Loading games...</p>
+      </div>
+    </div>
+
+    <!-- Ongoing Games -->
+    <div class="bg-gray-900/80 rounded-lg p-6 mb-6">
+      <h2 class="text-white text-2xl font-bold mb-4">Ongoing Games</h2>
+      <div id="ongoingGamesList" class="space-y-3">
+        <p class="text-gray-400">No ongoing games</p>
+      </div>
+    </div>
+
+    <!-- Completed Games -->
+    <div class="bg-gray-900/80 rounded-lg p-6">
+      <h2 class="text-white text-2xl font-bold mb-4">Completed Games</h2>
+      <div id="completedGamesList" class="space-y-3">
+        <p class="text-gray-400">No completed games</p>
+      </div>
+    </div>
+  </div>
+</div>
