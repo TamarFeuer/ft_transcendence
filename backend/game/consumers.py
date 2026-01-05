@@ -19,7 +19,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             return
 
         # Check for duplicate connections
-
+        logger.warning(f"Scope: {self.scope}")
         logger.warning(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         logger.warning(f"Current players: {self.game.get_players()}")
 
@@ -30,8 +30,10 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.close(code=4005)
             return
         
+        logger.warning(f"user obj={self.scope.get('user')}, id={getattr(self.scope.get('user'), 'id', None)}, type={type(self.scope.get('user'))}")
         # Add player to game
-        self.role = self.game.add_player(self.scope['user'])
+        # self.role = self.game.add_player(self.scope['user'], self.scope['id'])
+        self.role = self.game.add_player(self.scope['user'], getattr(self.scope.get('user'), 'id', None))
         logger.warning(f"Assigned role: {self.role} to: {self.scope['user']}")
         # Join game group
         await self.channel_layer.group_add(
@@ -51,9 +53,16 @@ class GameConsumer(AsyncWebsocketConsumer):
     
         logger.warning(f"Send assign: {self.role} to: {self.scope['user']}")
         # Send role assignment
+        user_id = None
+        try:
+            user_id = self.scope['user'].id
+        except Exception:
+            user_id = None
+
         await self.send(text_data=json.dumps({
             'type': 'assign',
-            'role': self.role
+            'role': self.role,
+            'user_id': user_id
         }))
         logger.warning(f"Start game?: {self.game.can_start()}")
 
@@ -77,7 +86,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                     self.game_group_name,
                     {
                         'type': 'game_over',
-                        'winner': 'Player disconnected'
+                        'winner': 'Player disconnected',
+                        'winner_id': None
                     }
                 )
         
@@ -100,7 +110,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """Main game loop running at 60 FPS"""
         while self.game and self.game.status == 'active':
             result = self.game.tick()
-            
+            logger.debug(f"Game tick result: {result}")
             if result:
                 await self.channel_layer.group_send(
                     self.game_group_name,
@@ -109,13 +119,26 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'state': result
                     }
                 )
+                players = self.game.get_players()
+                winner_id = None
+                winner_name = None
+
+                if result.get('winner') == 'left':
+                    winner_user = players['left']
+                    winner_id = getattr(winner_user, 'id', None)
+                    winner_name = getattr(winner_user, 'username', 'Player 1')
+                elif result.get('winner') == 'right':
+                    winner_user = players['right']
+                    winner_id = getattr(winner_user, 'id', None)
+                    winner_name = getattr(winner_user, 'username', 'Player 2')
                 
                 if result.get('winner'):
                     await self.channel_layer.group_send(
                         self.game_group_name,
                         {
                             'type': 'game_over',
-                            'winner': result['winner']
+                            'winner': winner_name,
+                            'winner_id': winner_id
                         }
                     )
                     break
@@ -137,7 +160,9 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     async def game_over(self, event):
         """Handle game over broadcast"""
+        logger.warning(f"Game over event received: {event}")
         await self.send(text_data=json.dumps({
             'type': 'gameOver',
-            'winner': event['winner']
+            'winner': event['winner'],
+            'winner_id': event['winner_id']
         }))

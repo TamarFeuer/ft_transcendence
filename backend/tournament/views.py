@@ -266,6 +266,18 @@ class StartTournamentGameView(APIView):
         if user not in [game.player1, game.player2]:
             return Response({'error': 'you are not in this game'}, status=status.HTTP_403_FORBIDDEN)
         
+        # If game is already ongoing, return the existing game_id so second player can join
+        if game.status == 'ongoing':
+            if not game.game_id:
+                return Response({'error': 'game session not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                'message': 'game already started',
+                'game_id': game.game_id,
+                'tournament_game_id': game.id,
+                'player1': game.player1.username,
+                'player2': game.player2.username
+            }, status=status.HTTP_200_OK)
+        
         if game.status != 'ready':
             return Response({'error': 'game is not ready'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -298,11 +310,12 @@ class UpdateTournamentGameResultView(APIView):
         
         game_id = request.data.get('game_id')
         winner_id = request.data.get('winner_id')
-        
+        logger.debug(f"UpdateTournamentGameResultView called with game_id={game_id}, winner_id={winner_id}")
         if not game_id or not winner_id:
             return Response({'error': 'game_id and winner_id required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        game = get_object_or_404(TournamentGame, id=game_id)
+        # Look up by game_id (GameSession UUID), not id (TournamentGame integer id)
+        game = get_object_or_404(TournamentGame, game_id=game_id)
         tournament = game.tournament
         
         # Verify winner is one of the players

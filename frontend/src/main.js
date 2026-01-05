@@ -4,6 +4,8 @@ import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
 import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
+import { updateTournamentGameResult } from "./tournament.js";
+
 
 function getUserFromURL() {
 	const params = new URLSearchParams(window.location.search);
@@ -53,7 +55,7 @@ window.addEventListener('popstate', () => {
 	handleRoute(window.location.pathname);
 });
 
-export function joinOnlineGame(gameId) {
+export function joinOnlineGame(gameId, IsTournament) {
 	const canvas = document.getElementById("renderCanvas");
 	const engine = new Engine(canvas, true);
 	const scene = new Scene(engine);
@@ -80,7 +82,7 @@ export function joinOnlineGame(gameId) {
 
 	ws.onerror = (e) => console.error("WS error", e);
 
-	ws.onmessage = (ev) => {
+	ws.onmessage = async (ev) => {
 		try {
 			const data = JSON.parse(ev.data);
 			console.log("WS message", data);
@@ -155,7 +157,11 @@ export function joinOnlineGame(gameId) {
 				window.removeEventListener("pointermove", pointerHandler);
 				window.removeEventListener("keydown", keyDownHandler);
 				window.removeEventListener("keyup", keyUpHandler);
-
+				console.log("data:", data);
+				console.log("gameId:", gameId);
+				console.log("data.winner.id:", data.winner_id);
+				if (IsTournament)
+					await updateTournamentGameResult(gameId, data.winner_id);
 				// Dispose engine and scene
 				scene.dispose();
 				engine.dispose();

@@ -107,7 +107,8 @@ def register(request):
         
         response = JsonResponse({
             'success': True,
-            'username': user.username
+            'username': user.username,
+            'user_id': user.id
         })
         
         # Set HTTP-only cookies
@@ -148,7 +149,8 @@ def login_view(request):
         
         response = JsonResponse({
             'success': True,
-            'username': user.username
+            'username': user.username,
+            'user_id': user.id
         })
         
         # Set HTTP-only cookies
@@ -201,7 +203,8 @@ def refresh_token_view(request):
             
             response = JsonResponse({
                 'success': True,
-                'username': user.username
+                'username': user.username,
+                'user_id': user.id
             })
             
             # Set new cookies

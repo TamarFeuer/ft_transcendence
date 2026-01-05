@@ -36,6 +36,8 @@ export function setupRoutes() {
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
     document.getElementById('onlineBtn')?.addEventListener('click', () => navigate('/online'));
     document.getElementById('tournamentBtn')?.addEventListener('click', () => navigate('/tournament'));
+
+
   };
 
   routes['/local'] = async () => {
@@ -319,6 +321,18 @@ export function setupRoutes() {
       return;
     }
 
+    // If we landed here with a gameId query param (e.g. from a tournament start), join the game right away
+    const params = new URLSearchParams(window.location.search);
+    const gameId = params.get('gameId');
+    if (gameId) {
+      joinOnlineGame(gameId, false);
+
+      // Drop the query param so popstate/back does not re-join repeatedly
+      params.delete('gameId');
+      const newUrl = `${window.location.pathname}${params.toString() ? `?${params}` : ''}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+
     await loadTemplate('online');
 
     document.getElementById('backBtn')?.addEventListener('click', () => navigate('/'));
@@ -335,6 +349,7 @@ export function setupRoutes() {
           const gameBtn = document.createElement('button');
           gameBtn.textContent = `Join Game ${game.id}`;
           gameBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded m-1';
+          console.log("Adding join button for game ID:", game.id);
           gameBtn.addEventListener('click', () => joinOnlineGame(game.id));
           const gameStatusDiv = document.createElement('div');
           gameStatusDiv.className = 'text-white';
@@ -442,7 +457,9 @@ async function loadTournamentGames() {
         if (result.ok) {
           alert(`Game started! Game ID: ${result.data.game_id}`);
           // Redirect to the game
-          window.location.href = `/pong?gameId=${result.data.game_id}`;
+          joinOnlineGame(result.data.game_id, true);
+
+          // window.location.href = `/online?gameId=${result.data.game_id}`;
         } else {
           alert(result.data?.error || 'Failed to start game');
           btn.disabled = false;
@@ -456,6 +473,9 @@ async function loadTournamentGames() {
   
   // Load all games
   const allGamesResult = await tournamentAPI.getTournamentGames(tournamentId);
+
+  console.log("All tournament games:", allGamesResult);
+
   if (allGamesResult.ok && allGamesResult.data) {
     const ongoingList = document.getElementById('ongoingGamesList');
     const completedList = document.getElementById('completedGamesList');

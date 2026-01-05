@@ -53,27 +53,29 @@ class GameSession:
             if game_id in cls._games:
                 del cls._games[game_id]
     
-    def add_player(self, channel_name, role=None):
+    def add_player(self, name, id, role=None):
         """Add a player or spectator to the game"""
         if not self.players['left']:
-            self.players['left'] = channel_name
-            self.clients.add(channel_name)
+            self.players['left'] = name
+            self.players['left_id'] = id
+            self.clients.add(name)
             return 'left'
         elif not self.players['right']:
-            self.players['right'] = channel_name
-            self.clients.add(channel_name)
+            self.players['right'] = name
+            self.players['right_id'] = id
+            self.clients.add(name)
             return 'right'
         else:
-            self.clients.add(channel_name)
+            self.clients.add(name)
             return 'spectator'
     
-    def remove_player(self, channel_name):
+    def remove_player(self, name):
         """Remove a player from the game"""
-        self.clients.discard(channel_name)
+        self.clients.discard(name)
         
-        if self.players['left'] == channel_name:
+        if self.players['left'] == name:
             self.players['left'] = None
-        if self.players['right'] == channel_name:
+        if self.players['right'] == name:
             self.players['right'] = None
         
         # If game was active and a player left, end the game
@@ -132,6 +134,7 @@ class GameSession:
         
         # Scoring
         winner = None
+        # winner_id = None
         if state['ball']['x'] < -6:
             state['score']['p2'] += 1
             self.reset_ball()
@@ -141,17 +144,23 @@ class GameSession:
         
         # Check win condition
         if state['score']['p1'] >= state['winningScore']:
-            winner = 'Player 1'
+            # players = self.game.get_players()
+            # winner = players['left']
+            winner = 'left'
+            # winner_id = self.players['left_id']
             self.status = 'finished'
         elif state['score']['p2'] >= state['winningScore']:
-            winner = 'Player 2'
+            # players = self.game.get_players()
+            winner = 'right'
+            # winner = players['right']
+            # winner_id = self.players['right_id']
             self.status = 'finished'
         
         return {
             'ball': {'x': state['ball']['x'], 'y': state['ball']['y']},
             'paddles': state['paddles'],
             'score': state['score'],
-            'winner': winner
+            'winner': winner,
         }
     
     def reset_ball(self):
