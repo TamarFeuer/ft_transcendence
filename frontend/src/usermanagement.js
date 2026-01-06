@@ -1,5 +1,3 @@
-
-
 // --- Token refresh helper ---
 let refreshPromise = null;
 
@@ -37,9 +35,10 @@ async function refreshAccessToken() {
 }
 
 // --- API helper with automatic token refresh ---
-async function fetchWithRefreshAuth(url, options = {}) {
+// If a request returns 401 due to token expiration, try to refresh the token and retry once.
+// returns 200 or 401 response if refresh fails.
+export async function fetchWithRefreshAuth(url, options = {}) {
     options.credentials = 'include'; // Always include cookies
-    
     let res = await fetch(url, options);
     
     // If unauthorized and error is token_expired, try to refresh
@@ -212,6 +211,7 @@ export function createUserManager() {
     renderPanel();
 }
 
+// if the user is not authenticated, return true, else false
 export async function checkAuthRequired() {
     const res = await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
     if (res.ok) {

@@ -249,6 +249,14 @@ def logout_view(request):
 
 @require_http_methods(["GET"])
 def current_user_view(request):
+    # Check cookies from headers
+    headers = dict(request.headers)
+    cookies = request.COOKIES
+    
+    print("Headers:", headers)
+    print("Cookies:", cookies)
+    print("Authorization:", headers.get('Authorization'))
+
     """Get current user from access token cookie."""
     access_token = request.COOKIES.get('access_token')
     logger.warning(f"current_user_view: access_token: {access_token}")

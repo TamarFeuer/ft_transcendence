@@ -1,3 +1,5 @@
+import { fetchWithRefreshAuth } from './usermanagement.js';
+
 // Tournament API functions
 
 export async function createTournament(name, description, maxPlayers) {
@@ -70,6 +72,7 @@ export async function cancelTournament(tournamentId) {
 
 export async function listRegistrationTournaments() {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/show/registration/', {
             method: 'GET',
             credentials: 'include'
@@ -84,6 +87,7 @@ export async function listRegistrationTournaments() {
 
 export async function listOngoingTournaments() {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/show/ongoing/', {
             method: 'GET',
             credentials: 'include'
@@ -98,6 +102,7 @@ export async function listOngoingTournaments() {
 
 export async function listUpcomingTournaments() {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/show/upcoming/', {
             method: 'GET',
             credentials: 'include'
@@ -112,6 +117,7 @@ export async function listUpcomingTournaments() {
 
 export async function listCompletedTournaments() {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/show/completed/', {
             method: 'GET',
             credentials: 'include'
@@ -126,6 +132,7 @@ export async function listCompletedTournaments() {
 
 export async function getTournamentGames(tournamentId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch(`/api/tournament/show/games/?tournament_id=${tournamentId}`, {
             method: 'GET',
             credentials: 'include'
@@ -140,6 +147,7 @@ export async function getTournamentGames(tournamentId) {
 
 export async function getTournamentLeaderboard(tournamentId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch(`/api/tournament/leaderboard/?tournament_id=${tournamentId}`, {
             method: 'GET',
             credentials: 'include'
@@ -154,6 +162,7 @@ export async function getTournamentLeaderboard(tournamentId) {
 
 export async function getTournamentUserReadyGames(tournamentId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch(`/api/tournament/show/ready/games/?tournament_id=${tournamentId}`, {
             method: 'GET',
             credentials: 'include'
@@ -184,6 +193,7 @@ export async function startTournamentGame(gameId) {
 
 export async function updateTournamentGameResult(gameId, winnerId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/game/result/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

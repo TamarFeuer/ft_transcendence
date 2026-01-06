@@ -60,7 +60,8 @@ export function setupRoutes() {
     
     await loadTemplate('tournament');
     
-    // Get current user for checking if they're tournament creator
+    // Get current user for checking if they're tournament creato
+    console.log("All cookies:", document.cookie);
     const currentUser = await getCurrentUser();
     let currentUsername = currentUser.username || localStorage.getItem('username');
     
@@ -264,6 +265,7 @@ export function setupRoutes() {
       listEl.querySelectorAll('.view-games-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const tournamentId = e.target.dataset.tournamentId;
+          console.log("Viewing tournament ID:", tournamentId);
           navigate(`/tournament/${tournamentId}`);
         });
       });
@@ -308,8 +310,19 @@ export function setupRoutes() {
         div.innerHTML = `
           <div class="text-white font-semibold">${tournament.name}</div>
           <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} players</div>
+          <button class="view-games-btn mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold w-full" data-tournament-id="${tournament.id}">
+            View Games
+          </button>
         `;
         listEl.appendChild(div);
+      });
+      // Add event listeners
+      listEl.querySelectorAll('.view-games-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const tournamentId = e.target.dataset.tournamentId;
+          console.log("Viewing tournament ID:", tournamentId);
+          navigate(`/tournament/${tournamentId}`);
+        });
       });
     }
   };
@@ -409,6 +422,7 @@ async function loadTournamentGames() {
   
   // Load leaderboard
   const leaderboardResult = await tournamentAPI.getTournamentLeaderboard(tournamentId);
+  console.log("Tournament leaderboard:", leaderboardResult);
   if (leaderboardResult.ok && leaderboardResult.data) {
     const tbody = document.getElementById('leaderboardBody');
     tbody.innerHTML = '';
@@ -449,10 +463,15 @@ async function loadTournamentGames() {
     // Add event listeners for starting games
     listEl.querySelectorAll('.start-game-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
+        if (await checkAuthRequired()) {
+          alert('You need to be logged in to start games.');
+          return;
+        }
+
         const gameId = e.target.dataset.gameId;
         btn.disabled = true;
         btn.textContent = 'Starting...';
-        
+
         const result = await tournamentAPI.startTournamentGame(gameId);
         if (result.ok) {
           alert(`Game started! Game ID: ${result.data.game_id}`);

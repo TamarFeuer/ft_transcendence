@@ -6,7 +6,6 @@ import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
 import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
 import { updateTournamentGameResult } from "./tournament.js";
 
-
 function getUserFromURL() {
 	const params = new URLSearchParams(window.location.search);
 	const key = params.get("user"); // e.g., "alice"

@@ -18,6 +18,14 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.close(code=4004)
             return
 
+        # Check cookies from headers
+        headers = dict(self.scope.get('headers', []))
+        cookies = self.scope.get('cookies', {})
+        
+        print("Headers:", headers)
+        print("Cookies:", cookies)
+        print("Authorization:", headers.get(b'authorization'))
+
         # Check for duplicate connections
         logger.warning(f"Scope: {self.scope}")
         logger.warning(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")

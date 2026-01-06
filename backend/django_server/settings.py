@@ -6,6 +6,24 @@ SECRET_KEY = 'your-secret-key-change-in-production'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+# Make cookies accessible to JavaScript
+SESSION_COOKIE_HTTPONLY = False
+CSRF_COOKIE_HTTPONLY = False
+
+# Allow cookies across ports on localhost
+# SESSION_COOKIE_SAMESITE = 'Lax'
+# CSRF_COOKIE_SAMESITE = 'Lax'
+
+# For cross-port localhost cookie sharing
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = False  # Allow HTTP (localhost)
+
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = False
+
+# For cross-port on localhost
+CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://localhost:3000']
+
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.auth',

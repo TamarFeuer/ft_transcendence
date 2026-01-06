@@ -225,9 +225,9 @@ class TournamentUserReadyGamesListView(APIView):
         from django.db.models import Q
         games = TournamentGame.objects.filter(
             tournament_id=tournament_id,
-            status='ready'
+            status__in=['ready', '1/2 players ready']
         ).filter(Q(player1=user) | Q(player2=user))
-        
+    
         serializer = TournamentGameSerializer(games, many=True)
         return Response(serializer.data)
 
@@ -240,6 +240,9 @@ class TournamentLeaderboardView(APIView):
         if not tournament_id:
             return Response({'error': 'tournament_id required'}, status=status.HTTP_400_BAD_REQUEST)
         
+        logger.debug(f"Fetching leaderboard for tournament_id={tournament_id}")
+        logger.debug(f"Tournament exists: {Tournament.objects.filter(id=tournament_id)}")
+
         participants = TournamentParticipant.objects.filter(
             tournament_id=tournament_id
         ).order_by('-score', 'joined_at')
@@ -267,9 +270,11 @@ class StartTournamentGameView(APIView):
             return Response({'error': 'you are not in this game'}, status=status.HTTP_403_FORBIDDEN)
         
         # If game is already ongoing, return the existing game_id so second player can join
-        if game.status == 'ongoing':
+        if game.status == '1/2 players ready':
             if not game.game_id:
                 return Response({'error': 'game session not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            game.status = 'ongoing'
+            game.save()
             return Response({
                 'message': 'game already started',
                 'game_id': game.game_id,
@@ -278,16 +283,17 @@ class StartTournamentGameView(APIView):
                 'player2': game.player2.username
             }, status=status.HTTP_200_OK)
         
-        if game.status != 'ready':
+        if game.status != 'ready' and game.status != '1/2 players ready':
             return Response({'error': 'game is not ready'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Create GameSession from game app
         from game.models import GameSession
         game_session = GameSession.create_game()
         
         # Link tournament game to game session
         game.game_id = game_session.id
-        game.status = 'ongoing'
+        # game.status = 'ongoing'
+        game.status = '1/2 players ready'
         game.started_at = timezone.now()
         game.save()
         
@@ -334,43 +340,79 @@ class UpdateTournamentGameResultView(APIView):
         participant = TournamentParticipant.objects.get(tournament=tournament, user=winner)
         participant.score += 10  # Award points for winning
         participant.save()
-        
+        logger.debug(f"Updated participant {participant.user.username} score to {participant.score}")
+
         # Check if all games in this round are completed
         current_round = game.round
         round_games = TournamentGame.objects.filter(tournament=tournament, round=current_round)
         completed_games = round_games.filter(status='completed').count()
+        next_round_response = None
         
         if completed_games == round_games.count():
             # All games in this round completed, create next round
             next_round = current_round + 1
             winners = [g.winner for g in round_games if g.winner]
-            
-            # Create next round games
-            for i in range(0, len(winners), 2):
-                if i + 1 < len(winners):
-                    TournamentGame.objects.create(
-                        tournament=tournament,
-                        round=next_round,
-                        player1=winners[i],
-                        player2=winners[i + 1],
-                        status='ready'
-                    )
-            
+            logger.debug(f"All games in round {current_round} completed. Winners: {[w.username for w in winners]}")
+
+            # Include any participants who had a bye (not scheduled this round)
+            all_participant_ids = set(
+                tournament.participants.values_list('user_id', flat=True)
+            )
+            players_in_round = set()
+            for g in round_games:
+                players_in_round.add(g.player1_id)
+                players_in_round.add(g.player2_id)
+            logger.debug(f"All participant IDs: {all_participant_ids}")
+            logger.debug(f"Players in round {current_round}: {players_in_round}")
+            bye_player_ids = all_participant_ids - players_in_round
+            bye_players = list(User.objects.filter(id__in=bye_player_ids))
+            logger.debug(f"Bye players for next round: {[p.username for p in bye_players]}")
+            survivors = winners + bye_players
+
             # If only one player remains, tournament is completed
-            if len(winners) == 1:
+            if len(survivors) == 1:
                 tournament.status = 'completed'
                 tournament.end_time = timezone.now()
                 tournament.save()
-                
+            
                 # Award tournament winner
-                winner_participant = TournamentParticipant.objects.get(tournament=tournament, user=winners[0])
+                winner_participant = TournamentParticipant.objects.get(tournament=tournament, user=survivors[0])
                 winner_participant.rank = 1
                 winner_participant.score += 50  # Bonus for tournament win
                 winner_participant.save()
+            else:
+                # Create next round games; handle odd survivor count by auto-advancing one bye
+                next_round_players = survivors.copy()
+                auto_advance_player = None
+                if len(next_round_players) % 2 == 1:
+                    auto_advance_player = next_round_players.pop()
+            
+                for i in range(0, len(next_round_players), 2):
+                    TournamentGame.objects.create(
+                        tournament=tournament,
+                        round=next_round,
+                        player1=next_round_players[i],
+                        player2=next_round_players[i + 1],
+                        status='ready'
+                    )
+
+                # If there was an auto-advance, mark a completed bye game so bracket progresses
+                if auto_advance_player:
+                    TournamentGame.objects.create(
+                        tournament=tournament,
+                        round=next_round,
+                        player1=auto_advance_player,
+                        player2=auto_advance_player,
+                        winner=auto_advance_player,
+                        status='completed',
+                        started_at=timezone.now(),
+                        completed_at=timezone.now()
+                    )
+                next_round_response = next_round
         
         return Response({
             'message': 'game result updated',
-            'next_round': game.round + 1 if completed_games == round_games.count() and len(winners) > 1 else None
+                'next_round': next_round_response
         }, status=status.HTTP_200_OK)
 
 

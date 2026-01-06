@@ -1,5 +1,4 @@
 import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
-
 let chatSocket = null;
 let myUserId = null;
 let myUserName = null;
@@ -8,7 +7,8 @@ export let onlineUsers = [];
 export function initChat() {
 	
 	// Create WebSocket - connect to backend on port 3000 in dev mode
-	const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
+	
+	const wsHost = location.host;
 	chatSocket = new WebSocket(
 		`${location.protocol === "https:" ? "wss:" : "ws:"}//${wsHost}/ws/chat/?userId=${CURRENT_USER.id}`
 	);
