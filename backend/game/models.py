@@ -16,6 +16,7 @@ class GameSession:
             'score': {'p1': 0, 'p2': 0},
             'winningScore': 5
         }
+        self.isTournamentGame = False
         self.players = {'left': None, 'right': None}
         self.clients = set()
         self.status = 'waiting'  # waiting, active, finished

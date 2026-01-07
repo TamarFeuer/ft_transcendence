@@ -9,6 +9,7 @@ from django.conf import settings
 from .models import Tournament, TournamentParticipant, TournamentGame
 from .serializers import TournamentSerializer, TournamentParticipantSerializer, TournamentGameSerializer
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -76,7 +77,6 @@ class TournamentJoinView(APIView):
         
         return Response({'message': 'joined successfully'}, status=status.HTTP_201_CREATED)
 
-
 class TournamentStartView(APIView):
     """Start a tournament (creator only)."""
     
@@ -102,18 +102,57 @@ class TournamentStartView(APIView):
         tournament.start_time = timezone.now()
         tournament.save()
         
-        # Create first round games
+        # Create round-robin games (each player plays every other player once)
         participants = list(tournament.participants.all())
-        for i in range(0, len(participants), 2):
-            if i + 1 < len(participants):
-                TournamentGame.objects.create(
-                    tournament=tournament,
-                    round=1,
-                    player1=participants[i].user,
-                    player2=participants[i + 1].user,
-                    status='ready'
-                )
-        
+        # participants = {"bob", "alice", "eve", "mallory", "trent", "peggy", "kim", "lee", "suk", "wang"}
+        random.shuffle(participants)  # Shuffle to randomize pairings
+        logger.debug(f"Starting tournament with participants: {[p.user.username for p in participants]}")
+        # logger.debug(f"Starting tournament with participants: {participants}")
+
+        all_pairings = []
+        round_num = 1
+        if participant_count % 2 == 1:
+            participants.append(None)  # Add a dummy participant for bye weeks
+            participant_count += 1
+        num_rounds = participant_count - 1
+        half_size = participant_count // 2
+        for round_index in range(num_rounds):
+            logger.debug(f"Creating pairings for round {round_index + 1}")
+            round_pairings = []
+            for i in range(half_size):
+                p1 = participants[i]
+                p2 = participants[participant_count - 1 - i]
+                if p1 is not None and p2 is not None:
+                    round_pairings.append((p1, p2))
+                    TournamentGame.objects.create(
+                        tournament=tournament,
+                        round=round_index + 1,
+                        player1=p1.user,
+                        player2=p2.user,
+                        status='ready'
+                    )
+                    logger.debug(f"Paired {p1.user.username} vs {p2.user.username} in round {round_index + 1}")
+            all_pairings.extend(round_pairings)
+            # Rotate participants for next round
+            participants = [participants[0]] + [participants[-1]] + participants[1:-1]
+            round_num += 1
+
+        # round_num = 1
+        # all_pairings = []
+        # games_per_round = participant_count // 2
+        # for i in range(len(participants) - 2):
+        #     j = i
+        #     for j in range(len(participants) - 2):
+        #         p1 = participants[j]
+        #         p2 = participants[j + 1]
+        #         all_pairings.append((p1, p2))
+        #         j += 1
+        #     i += 1
+        #     round_num += 1
+        # logger.debug(f"All pairings: {all_pairings}")
+
+
+        logger.debug(f"Created {len(all_pairings)} games across {round_num - 1} rounds")
         return Response({'message': 'tournament started'}, status=status.HTTP_200_OK)
 
 
@@ -289,6 +328,7 @@ class StartTournamentGameView(APIView):
         # Create GameSession from game app
         from game.models import GameSession
         game_session = GameSession.create_game()
+        game_session.isTournamentGame = True
         
         # Link tournament game to game session
         game.game_id = game_session.id
@@ -347,72 +387,24 @@ class UpdateTournamentGameResultView(APIView):
         round_games = TournamentGame.objects.filter(tournament=tournament, round=current_round)
         completed_games = round_games.filter(status='completed').count()
         next_round_response = None
-        
+
         if completed_games == round_games.count():
-            # All games in this round completed, create next round
+            # Determine next round number
             next_round = current_round + 1
-            winners = [g.winner for g in round_games if g.winner]
-            logger.debug(f"All games in round {current_round} completed. Winners: {[w.username for w in winners]}")
 
-            # Include any participants who had a bye (not scheduled this round)
-            all_participant_ids = set(
-                tournament.participants.values_list('user_id', flat=True)
-            )
-            players_in_round = set()
-            for g in round_games:
-                players_in_round.add(g.player1_id)
-                players_in_round.add(g.player2_id)
-            logger.debug(f"All participant IDs: {all_participant_ids}")
-            logger.debug(f"Players in round {current_round}: {players_in_round}")
-            bye_player_ids = all_participant_ids - players_in_round
-            bye_players = list(User.objects.filter(id__in=bye_player_ids))
-            logger.debug(f"Bye players for next round: {[p.username for p in bye_players]}")
-            survivors = winners + bye_players
-
-            # If only one player remains, tournament is completed
-            if len(survivors) == 1:
-                tournament.status = 'completed'
-                tournament.end_time = timezone.now()
-                tournament.save()
-            
-                # Award tournament winner
-                winner_participant = TournamentParticipant.objects.get(tournament=tournament, user=survivors[0])
-                winner_participant.rank = 1
-                winner_participant.score += 50  # Bonus for tournament win
-                winner_participant.save()
-            else:
-                # Create next round games; handle odd survivor count by auto-advancing one bye
-                next_round_players = survivors.copy()
-                auto_advance_player = None
-                if len(next_round_players) % 2 == 1:
-                    auto_advance_player = next_round_players.pop()
-            
-                for i in range(0, len(next_round_players), 2):
-                    TournamentGame.objects.create(
-                        tournament=tournament,
-                        round=next_round,
-                        player1=next_round_players[i],
-                        player2=next_round_players[i + 1],
-                        status='ready'
-                    )
-
-                # If there was an auto-advance, mark a completed bye game so bracket progresses
-                if auto_advance_player:
-                    TournamentGame.objects.create(
-                        tournament=tournament,
-                        round=next_round,
-                        player1=auto_advance_player,
-                        player2=auto_advance_player,
-                        winner=auto_advance_player,
-                        status='completed',
-                        started_at=timezone.now(),
-                        completed_at=timezone.now()
-                    )
+            # If next-round games are already scheduled (e.g., round-robin), don't auto-generate
+            if TournamentGame.objects.filter(tournament=tournament, round=next_round).exists():
+                logger.debug(f"Next round {next_round} already scheduled; skipping auto-generation.")
                 next_round_response = next_round
-        
+
+        # If all tournament games are completed (round-robin case), mark tournament completed
+        if not TournamentGame.objects.filter(tournament=tournament).exclude(status='completed').exists():
+            tournament.status = 'completed'
+            tournament.end_time = timezone.now()
+            tournament.save()
+            logger.debug(f"Tournament {tournament.id} completed; all scheduled games finished.")
+
         return Response({
             'message': 'game result updated',
-                'next_round': next_round_response
+            'next_round': next_round_response
         }, status=status.HTTP_200_OK)
-
-

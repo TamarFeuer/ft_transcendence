@@ -51,6 +51,7 @@ def health(request):
 @require_http_methods(["POST"])
 def create_game(request):
     game = GameSession.create_game()
+    game.isTournamentGame = False
     # Use logging so output is captured by gunicorn/daphne/docker logs
     logger.warning(f"Created game with ID: {game.id}")
     return JsonResponse({
@@ -84,7 +85,8 @@ def list_games(request):
             {
                 'id': g.id,
                 'status': g.status,
-                'playerCount': len(g.clients)
+                'playerCount': len(g.clients),
+                'isTournamentGame': g.isTournamentGame
             }
             for g in games
         ]

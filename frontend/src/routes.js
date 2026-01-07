@@ -205,6 +205,7 @@ export function setupRoutes() {
           btn.textContent = 'Starting...';
           
           const result = await tournamentAPI.startTournament(tournamentId);
+          // result.ok = false; // TEMPORARY DISABLE STARTING TO PREVENT ISSUES WHILE TESTING
           if (result.ok) {
             alert('Tournament started!');
             loadAllTournaments();
@@ -359,6 +360,12 @@ export function setupRoutes() {
         availableGamesDiv.innerHTML += '<p class="text-gray-300">No available games.</p>';
       } else {
         data.games.forEach((game) => {
+          console.log("Processing game:", game);
+          if (game.isTournamentGame == true)
+          {
+            // Skip tournament games
+            return;
+          }
           const gameBtn = document.createElement('button');
           gameBtn.textContent = `Join Game ${game.id}`;
           gameBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded m-1';
@@ -443,21 +450,39 @@ async function loadTournamentGames() {
   if (readyResult.ok && readyResult.data && readyResult.data.length > 0) {
     const listEl = document.getElementById('readyGamesList');
     listEl.innerHTML = '';
+    let cnt = 0;
     readyResult.data.forEach(game => {
+      console.log("Ready game:", game);
       const gameDiv = document.createElement('div');
       gameDiv.className = 'bg-gray-800 rounded-lg p-4 border border-blue-500';
-      gameDiv.innerHTML = `
+      if (cnt == 0)
+      {
+        gameDiv.innerHTML = `
         <div class="flex justify-between items-center">
-          <div class="text-white">
-            <div class="font-bold text-lg">${game.player1_username} vs ${game.player2_username}</div>
-            <div class="text-gray-400 text-sm">Round ${game.round}</div>
-          </div>
-          <button class="start-game-btn px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold" data-game-id="${game.id}">
-            Start Game
-          </button>
-        </div>
-      `;
+        <div class="text-white">
+        <div class="font-bold text-lg">${game.player1_username} vs ${game.player2_username}</div>
+              <div class="text-gray-400 text-sm">Round ${game.round}</div>
+              </div>
+              <button class="start-game-btn px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold" data-game-id="${game.id}">
+              Start Game
+              </button>
+              </div>
+            `;
+      }
+      else
+      {
+        gameDiv.innerHTML = `
+        <div class="flex justify-between items-center">
+        <div class="text-white">
+        <div class="font-bold text-lg">${game.player1_username} vs ${game.player2_username}</div>
+              <div class="text-gray-400 text-sm">Round ${game.round}</div>
+              </div>
+
+              </div>
+            `;
+      }
       listEl.appendChild(gameDiv);
+      cnt += 1;
     });
     
     // Add event listeners for starting games

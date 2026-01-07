@@ -92,12 +92,18 @@ export function joinOnlineGame(gameId, IsTournament) {
 				appRoot.innerHTML = `
 				<div id="gameContainer">
 					<canvas id="renderCanvas"></canvas>
-					<div id="scoreHud" class="score-hud" style="display: block; position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; z-index: 100;">
-						<div>Player 1: <span id="scoreP1">0</span></div>
-						<div>Player 2: <span id="scoreP2">0</span></div>
+					<div class="absolute inset-0 flex justify-between items-start pt-32 px-8 z-20 pointer-events-none">
+						<div class="flex flex-col items-start">
+							<div class="text-white font-bold text-lg tracking-wide">${data.P1}</div>
+							<div id="scoreP1" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+						</div>
+						<div class="flex flex-col items-end">
+							<div class="text-white font-bold text-lg tracking-wide">${data.P2}</div>
+							<div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+						</div>
 					</div>
 				</div>
-			`;
+				`;
 
 				window.gameObjects = initGameScene(scene, canvas, 2);
 
@@ -168,7 +174,8 @@ export function joinOnlineGame(gameId, IsTournament) {
 				// Close websocket
 				ws?.close();
 				ws = null;
-				navigate('/');
+				// Navigate back to tournament with tournament id
+          		navigate(`/tournament/${window.currentTournamentId}`);
 			}
 
 		} catch (e) {

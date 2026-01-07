@@ -77,9 +77,19 @@ class GameConsumer(AsyncWebsocketConsumer):
         # Start game if both players connected
         if self.game.can_start():
             self.game.start_game()
+            # Refresh players after start
+            players = self.game.get_players()
+            p1 = players.get('left')
+            p2 = players.get('right')
             await self.channel_layer.group_send(
                 self.game_group_name,
-                {'type': 'game_start'}
+                {
+                    'type': 'game_start',
+                    'P1': getattr(p1, 'username', 'Player 1'),
+                    'P2': getattr(p2, 'username', 'Player 2'),
+                    'p1_id': getattr(p1, 'id', None),
+                    'p2_id': getattr(p2, 'id', None)
+                }
             )
             # Start game loop
             asyncio.create_task(self.game_loop())
@@ -156,7 +166,11 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def game_start(self, event):
         """Handle game start broadcast"""
         await self.send(text_data=json.dumps({
-            'type': 'gameStart'
+            'type': 'gameStart',
+            'P1': event.get('P1'),
+            'P2': event.get('P2'),
+            'p1_id': event.get('p1_id'),
+            'p2_id': event.get('p2_id')
         }))
     
     async def game_state(self, event):
