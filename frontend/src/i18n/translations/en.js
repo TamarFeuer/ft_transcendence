@@ -61,4 +61,16 @@ export const en = {
   [TranslationKey.MINE_RESTART]: 'Restart',
   [TranslationKey.MINE_LOST]: 'Lost',
   [TranslationKey.MINE_WON]: 'Won',
+
+  [TranslationKey.SOCIALS_OPEN]: 'Socials',
+  [TranslationKey.SOCIALS_SAY_HI]: 'Say Hi',
+  [TranslationKey.SOCIALS_BROADCAST]: 'Broadcast to all logged-in users',
+  [TranslationKey.SOCIALS_USERS]: 'Users',
+  [TranslationKey.SOCIALS_CHAT_WITH]: 'Chat with logged-in users',
+  [TranslationKey.SOCIALS_FRIENDS]: 'Friends',
+  [TranslationKey.SOCIALS_PLAY]: 'Play with your friends',
+  [TranslationKey.SOCIALS_CLOSE]: 'X',
+  [TranslationKey.SOCIALS_SEND]: 'Send',
+  [TranslationKey.SOCIALS_LIST]: 'Friends list goes here',
+  [TranslationKey.SOCIALS_TYPE_HERE]: 'Type a message...',
 };

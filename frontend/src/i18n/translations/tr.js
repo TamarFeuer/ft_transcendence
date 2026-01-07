@@ -60,4 +60,16 @@ export const tr = {
   [TranslationKey.MINE_RESTART]: 'Yeniden Başlat',
   [TranslationKey.MINE_LOST]: 'Kaybettiniz',
   [TranslationKey.MINE_WON]: 'Kazandınız',
+
+  [TranslationKey.SOCIALS_OPEN]: 'İletişim',
+  [TranslationKey.SOCIALS_SAY_HI]: 'Merhaba de!',
+  [TranslationKey.SOCIALS_BROADCAST]: 'Oturum açmış tüm kullanıcılara yayınla',
+  [TranslationKey.SOCIALS_USERS]: 'Kullanıcılar',
+  [TranslationKey.SOCIALS_CHAT_WITH]: 'Oturum açmış kullanıcılarla sohbet et',
+  [TranslationKey.SOCIALS_FRIENDS]: 'Arkadaşlar',
+  [TranslationKey.SOCIALS_PLAY]: 'Arkadaşlarınla oyna',
+  [TranslationKey.SOCIALS_CLOSE]: 'X',
+  [TranslationKey.SOCIALS_SEND]: 'Gönder',
+  [TranslationKey.SOCIALS_LIST]: 'Arkadaş listesi burada',
+  [TranslationKey.SOCIALS_TYPE_HERE]: 'Bir mesaj yaz...',
 };

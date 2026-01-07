@@ -61,4 +61,17 @@ export const nl = {
   [TranslationKey.MINE_RESTART]: 'Herstarten',
   [TranslationKey.MINE_LOST]: 'Verloren',
   [TranslationKey.MINE_WON]: 'Gewonnen',
+
+  [TranslationKey.SOCIALS_OPEN]: 'Sociaal',
+  [TranslationKey.SOCIALS_SAY_HI]: 'Zeg Hoi',
+  [TranslationKey.SOCIALS_BROADCAST]: 'Uitzenden naar alle ingelogde gebruikers',
+  [TranslationKey.SOCIALS_USERS]: 'Gebruikers',
+  [TranslationKey.SOCIALS_CHAT_WITH]: 'Chat met ingelogde gebruikers',
+  [TranslationKey.SOCIALS_FRIENDS]: 'Vrienden',
+  [TranslationKey.SOCIALS_PLAY]: 'Speel met je vrienden',
+  [TranslationKey.SOCIALS_CLOSE]: 'X',
+  [TranslationKey.SOCIALS_SEND]: 'Verstuur',
+  [TranslationKey.SOCIALS_LIST]: 'Vriendenlijst komt hier',
+  [TranslationKey.SOCIALS_TYPE_HERE]: 'Typ een bericht...',
+
 };
