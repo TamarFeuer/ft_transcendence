@@ -4,6 +4,7 @@ import logging
 import jwt
 from django.conf import settings
 from jwt import InvalidTokenError
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"id": self.user_id,
 				"name": self.username,
 				"avatar": "👤",
-				"createdAt": None
+				"createdAt": timezone.now().isoformat() # timezone aware
 		}
 		# Send self info
 		await self.send(text_data=json.dumps({

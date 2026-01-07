@@ -390,7 +390,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 			const span = document.createElement("span");
 			
 			// Determine display name: use name if available, else ID
-			let displayName = getNameFromUser(user);
+			let displayName = getNameFromUser(user)
 			span.textContent = displayName;
 			span.className =
 				"cursor-pointer hover:text-pink-500 transition-colors text-lg";
