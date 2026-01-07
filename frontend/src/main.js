@@ -4,6 +4,7 @@ import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
 import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
+import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 
 function getUserFromURL() {
 	const params = new URLSearchParams(window.location.search);
@@ -332,6 +333,27 @@ window.addEventListener("DOMContentLoaded", () => {
 	const usersBtn = document.querySelector('button[data-panel="users"]');
 	const usersList = document.getElementById("usersList");
 	const userDetails = document.getElementById("userDetails");
+	const languageSelect = document.getElementById("languageSelectorBtn");
+
+	// Initialize i18n
+	initI18n();
+	
+	// Update page translations
+	updatePageTranslations();
+	
+	// Setup language selector
+	if (languageSelect) {
+		languageSelect.addEventListener("change", (e) => {
+			const target = e.target;
+			setLanguage(target.value);
+			updatePageTranslations();
+		});
+	}
+	
+	// Listen for language change events
+	window.addEventListener("languagechange", () => {
+		updatePageTranslations();
+	});
 
 	// create user manager UI
 	createUserManager();
