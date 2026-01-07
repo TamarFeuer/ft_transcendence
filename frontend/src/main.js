@@ -3,24 +3,7 @@ import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
-import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
-
-function getUserFromURL() {
-	const params = new URLSearchParams(window.location.search);
-	const key = params.get("user"); // e.g., "alice"
-	const userKey = key ? `u-${key}` : null; // "u-alice
-
-	if (userKey && FAKE_USERS[userKey]) {
-		return FAKE_USERS[userKey];
-	}
-
-	return FAKE_USERS["u-guest"];
-}
-
-export const CURRENT_USER = getUserFromURL();
-window.CURRENT_USER = CURRENT_USER; // <--- attach to global
-console.log("Current user:", CURRENT_USER);
-
+import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
 
 // --- Game Variables ---
 let ws = null;
@@ -57,12 +40,16 @@ export function joinOnlineGame(gameId) {
 	let keyUpHandler = null;
 
 	const proto = location.protocol === "https:" ? "wss:" : "ws:";
-	// include JWT token using WebSocket subprotocol (safer than query string)
-	const token = localStorage.getItem('jwt');
+	// Cookies are automatically sent with WebSocket connections
 	// Connect to backend on port 3000 (not vite dev server on 5173)
 	const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
-	const url = `${proto}//${wsHost}/ws/${gameId}`;
-	ws = token ? new WebSocket(url, token) : new WebSocket(url);
+
+	console.log("DEV import:", import.meta.env.DEV);
+	console.log("WS Host:", wsHost);
+	console.log("location.host:", location.host);
+
+	const url = `${proto}//${location.host}/ws/${gameId}`;
+	ws = new WebSocket(url);
 
 	ws.onopen = () => {
 		console.log("WS connected to game:", gameId);
@@ -315,9 +302,16 @@ export async function startTournament(playerCount) {
 }
 
 setupRoutes();
+
+window.addEventListener("DOMContentLoaded", async () => {
 	
-window.addEventListener("DOMContentLoaded", () => {
+	// Fetch current user from backend
+	const CURRENT_USER = await fetchCurrentUser();
 	
+	// Store globally so chat.js can access it
+	window.CURRENT_USER = CURRENT_USER;
+
+	console.log("Current user:", CURRENT_USER);
 	initChat();
 
 	// Constants / DOM elements
@@ -336,11 +330,13 @@ window.addEventListener("DOMContentLoaded", () => {
 	// create user manager UI
 	createUserManager();
 
-    // Show chat container
-    // const container = document.getElementById("chatContainer");
-    // if (container) container.style.display = "flex";
-
 	// Helpers
+	function getNameFromUser(user) {
+		// Prefer the name, fallback to id
+		if (user.name) return user.name;
+		return user.id;
+	}
+
 	function showPanel(name) {
 		// Hide all panels
 		panels.forEach(p => (p.style.display = "none"));
@@ -386,15 +382,16 @@ window.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		onlineUsers.forEach(userId => {
-			const user = FAKE_USERS[userId];
-			if (!user.loggedIn) return;
+		onlineUsers.forEach(user => {
 
 			const div = document.createElement("div");
 			div.className = "py-1 px-2";
 
 			const span = document.createElement("span");
-			span.textContent = getNameFromId(userId);
+			
+			// Determine display name: use name if available, else ID
+			let displayName = getNameFromUser(user)
+			span.textContent = displayName;
 			span.className =
 				"cursor-pointer hover:text-pink-500 transition-colors text-lg";
 
