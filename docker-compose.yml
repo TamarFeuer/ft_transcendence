@@ -57,18 +57,21 @@ services:
   #   ports:
   #     - "6379:6379"
   #   restart: unless-stopped
-  # nginx:
-  #   image: nginx:stable-alpine
-  #   container_name: pong_nginx
-  #   depends_on:
-  #   - backend
-  #   ports:
-  #   - "8080:80"
-  #   volumes:
-  #   - ./frontend/dist:/usr/share/nginx/html:ro
-  #   - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
   #   networks:
-  #   - pongnet
+  #     - pongnet
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: pong_nginx
+    depends_on:
+    - backend
+    ports:
+    - "8080:80"
+    volumes:
+    - ./frontend/dist:/usr/share/nginx/html:ro
+    - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+    - pongnet
 
 networks:
   pongnet:

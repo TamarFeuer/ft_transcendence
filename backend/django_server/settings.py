@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+# from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'your-secret-key-change-in-production'
@@ -15,18 +16,23 @@ INSTALLED_APPS = [
     'channels',
     'game',
     'chat',
+    # 'corsheaders',
 ]
 
 print("Based dir:", BASE_DIR)
 
 MIDDLEWARE = [
+    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
+ 
 ]
 
 ROOT_URLCONF = 'django_server.urls'
 WSGI_APPLICATION = 'django_server.wsgi.application'
 ASGI_APPLICATION = 'django_server.asgi.application'
+
+# REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
 # Channels configuration
 CHANNEL_LAYERS = {
@@ -34,14 +40,7 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels.layers.InMemoryChannelLayer'
     }
 }
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             "hosts": [('redis', 6379)],
-#         },
-#     },
-# }
+
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
@@ -64,3 +63,17 @@ DATABASES = {
 }
 
 STATIC_URL = 'static/'
+
+
+
+# # if using cookies for auth
+# CORS_ALLOW_CREDENTIALS = True
+
+# # allow frontend origin
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:5173",
+# ]
+
+# CORS_ALLOW_HEADERS = list(default_headers) + [
+#     'Authorization',
+# ]

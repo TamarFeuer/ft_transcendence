@@ -3,23 +3,24 @@ import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
-import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
+// import { FAKE_USERS, getNameFromId } from "./fakeUsers.js";
+import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
 
-function getUserFromURL() {
-	const params = new URLSearchParams(window.location.search);
-	const key = params.get("user"); // e.g., "alice"
-	const userKey = key ? `u-${key}` : null; // "u-alice
+// function getUserFromURL() {
+// 	const params = new URLSearchParams(window.location.search);
+// 	const key = params.get("user"); // e.g., "alice"
+// 	const userKey = key ? `u-${key}` : null; // "u-alice
 
-	if (userKey && FAKE_USERS[userKey]) {
-		return FAKE_USERS[userKey];
-	}
+// 	if (userKey && FAKE_USERS[userKey]) {
+// 		return FAKE_USERS[userKey];
+// 	}
 
-	return FAKE_USERS["u-guest"];
-}
+// 	return FAKE_USERS["u-guest"];
+// }
 
-export const CURRENT_USER = getUserFromURL();
-window.CURRENT_USER = CURRENT_USER; // <--- attach to global
-console.log("Current user:", CURRENT_USER);
+// export const CURRENT_USER = getUserFromURL();
+// window.CURRENT_USER = CURRENT_USER; // <--- attach to global
+// console.log("Current user:", CURRENT_USER);
 
 
 // --- Game Variables ---
@@ -319,9 +320,16 @@ export async function startTournament(playerCount) {
 }
 
 setupRoutes();
+
+window.addEventListener("DOMContentLoaded", async () => {
 	
-window.addEventListener("DOMContentLoaded", () => {
+	// Fetch current user from backend
+    const CURRENT_USER = await fetchCurrentUser();
 	
+	// Store globally so chat.js can access it
+    window.CURRENT_USER = CURRENT_USER;
+
+	console.log("Current user:", CURRENT_USER);
 	initChat();
 
 	// Constants / DOM elements
