@@ -100,3 +100,33 @@ export function updatePageTranslations() {
     }
   });
 }
+
+/**
+ * Simple pluralization support
+ * Usage: pluralize('ITEMS', 5) with translations like:
+ * { ITEMS_zero: "no items", ITEMS_one: "1 item", ITEMS_other: "{count} items" }
+ */
+export function pluralize(key, count) {
+  const pluralRules = new Intl.PluralRules(currentLanguage);
+  const rule = pluralRules.select(count);
+  const pluralKey = `${key}_${rule}`;
+  
+  // Try plural key first, fallback to base key
+  return t(pluralKey, { count }) || t(key, { count });
+}
+
+/**
+ * Format date according to current locale
+ * Usage: formatDate(new Date(), { dateStyle: 'long' })
+ */
+export function formatDate(date, options = {}) {
+  return new Intl.DateTimeFormat(currentLanguage, options).format(date);
+}
+
+/**
+ * Format a number according to current locale
+ * Usage: formatNumber(1234.56) => "1,234.56" (EN) or "1.234,56" (NL)
+ */
+export function formatNumber(number, options = {}) {
+  return new Intl.NumberFormat(currentLanguage, options).format(number);
+}
