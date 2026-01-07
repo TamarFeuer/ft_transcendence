@@ -239,12 +239,19 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 			if (gameObjects.ball.position.x < gameObjects.paddleLeft.position.x + 0.25 &&
 				gameObjects.ball.position.x > gameObjects.paddleLeft.position.x &&
 				Math.abs(gameObjects.ball.position.y - gameObjects.paddleLeft.position.y) < 0.75) {
-				ballVX = -ballVX;
+				// Compute bounce angle based on impact point on paddle
+				const offset = (gameObjects.ball.position.y - gameObjects.paddleLeft.position.y) / 0.75; // -1..1
+				const speed = Math.sqrt(ballVX * ballVX + ballVY * ballVY) || 0.1;
+				ballVX = Math.abs(speed * 0.9); // send to the right, keep base speed
+				ballVY = offset * speed; // angle varies with where you hit
 			}
 			if (gameObjects.ball.position.x > gameObjects.paddleRight.position.x - 0.25 &&
 				gameObjects.ball.position.x < gameObjects.paddleRight.position.x &&
 				Math.abs(gameObjects.ball.position.y - gameObjects.paddleRight.position.y) < 0.75) {
-				ballVX = -ballVX;
+				const offset = (gameObjects.ball.position.y - gameObjects.paddleRight.position.y) / 0.75;
+				const speed = Math.sqrt(ballVX * ballVX + ballVY * ballVY) || 0.1;
+				ballVX = -Math.abs(speed * 0.9); // send to the left
+				ballVY = offset * speed;
 			}
 
 			if (gameObjects.ball.position.x < -6) {
