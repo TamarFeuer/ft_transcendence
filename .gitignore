@@ -1,2 +1,5 @@
 
 node_modules/
+.env
+*.sqlite3
+db/postgres/

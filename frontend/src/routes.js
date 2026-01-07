@@ -2,6 +2,7 @@ import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame } fr
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
+import { checkAuthRequired } from './usermanagement.js';
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -47,6 +48,11 @@ export function setupRoutes() {
   };
 
   routes['/tournament'] = async () => {
+    if (await checkAuthRequired() == true)
+    {
+      alert('You need to be logged in to access online games.');
+      return;
+    }
     await loadTemplate('tournament');
     document.getElementById('backBtn')?.addEventListener('click', () => navigate('/'));
     document.getElementById('startTournamentBtn')?.addEventListener('click', () => {
@@ -58,6 +64,12 @@ export function setupRoutes() {
   };
 
   routes['/online'] = async () => {
+    if (await checkAuthRequired() == true)
+    {
+      alert('You need to be logged in to access online games.');
+      return;
+    }
+
     await loadTemplate('online');
 
     document.getElementById('backBtn')?.addEventListener('click', () => navigate('/'));
