@@ -16,3 +16,7 @@ node_modules/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Database
+*.sqlite3
+db/postgres/
