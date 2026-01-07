@@ -14,15 +14,24 @@ export function initChat() {
 	}
 	
 	// Determine host for dev vs production
-	const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
+
 
 	// Create WebSocket connection
 	chatSocket = new WebSocket(
-		`${location.protocol === "https:" ? "wss:" : "ws:"}//${wsHost}/ws/chat/?userId=${CURRENT_USER.id}`
+		`${location.protocol === "http:" ? "ws:" : "wss:"}//${location.host}/ws/chat/`
 	);
 
 	// Log connection status
-	chatSocket.onopen = () => console.log("Connected to chat");
+	chatSocket.onopen = () => {
+		console.log("Connected to chat");
+		chatSocket.send(JSON.stringify({
+		type: "identify",
+		userId: CURRENT_USER.user_id,
+		name: CURRENT_USER.username,
+		token: CURRENT_USER.access_token
+		}));
+	}
+		
 	chatSocket.onclose = () => console.log("Chat disconnected");
 
 	// Handle incoming messages from backend
@@ -79,8 +88,8 @@ export function initChat() {
 
 		// --- Step 3: Online users update ---
 		if (data.type === "online_users") {
-			onlineUsers = data.users; // array of {id, name, avatar} from backend
-			// Here you could also render the online users list in your UI
+			  console.log("Received online_users message:", data.users);
+			onlineUsers = data.users; // array of {id, name, avatar, createdAt} from backend
 		}
 
 		// --- Step 4: Typing notifications ---
