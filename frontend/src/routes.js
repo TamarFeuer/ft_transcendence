@@ -3,6 +3,7 @@ import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
 import { checkAuthRequired } from './usermanagement.js';
+import { updatePageTranslations } from './i18n';
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -18,6 +19,9 @@ async function loadTemplate(name) {
 
   const appRoot = document.getElementById("app-root");
   appRoot.innerHTML = html;
+  
+  // Sync translations with current app language
+  updatePageTranslations();
 }
 
 export function setupRoutes() {

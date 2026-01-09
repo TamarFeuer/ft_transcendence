@@ -5,10 +5,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css"> 
   <title>Pong</title>
-  <style>
-
-  </style>
 </head>
 
 <body>
@@ -21,8 +19,18 @@
     <!-- Game root for dynamic content -->
     <div id="app-root"></div>
 
+    <!-- Language selector -->
+    <div id="languageSelectorBtn" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
+      <label data-i18n="LABEL_LANGUAGE">Language:</label>
+      <select id="languageSelect">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="tr">Türkçe</option>
+      </select>
+    </div>    
+
     <!-- Launcher button -->
-    <button id="openSocialsBtn" style="display: none;" class="fixed bottom-16 right-16 px-6 py-6 
+    <button id="openSocialsBtn" data-i18n="SOCIALS_OPEN" style="display: none;" class="fixed bottom-16 right-16 px-6 py-6 
       text-xl tracking-widest font-extrabold font-comic
       bg-black text-white rounded-xl shadow-[0_0_15px_rgba(0,255,100,0.8)]
       border-2 border-lime-400
@@ -41,45 +49,45 @@
 
         <!-- Tab buttons -->
         <!-- Broad Button -->
-        <button data-panel="chat" class="tab-btn !text-lg relative group">
+        <button data-panel="chat" data-i18n="SOCIALS_SAY_HI" class="tab-btn !text-lg relative group">
           Say Hi
           <!-- Tooltip -->
           <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
             bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
             opacity-0 group-hover:opacity-100 transition-opacity duration-200
             pointer-events-none text-center z-50
-            w-28 h-10 leading-tight">
+            w-28 h-10 leading-tight" data-i18n="SOCIALS_BROADCAST">
             Broadcast to all logged-in users
           </span>
         </button>
 
         <!-- Users Button -->
-        <button data-panel="users" class="tab-btn !text-lg relative group">
+        <button data-panel="users" data-i18n="SOCIALS_USERS" class="tab-btn !text-lg relative group">
           Users
           <!-- Tooltip -->
           <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
             bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
             opacity-0 group-hover:opacity-100 transition-opacity duration-200
             pointer-events-none text-center z-50
-            w-28 h-10 leading-tight">
+            w-28 h-10 leading-tight" data-i18n="SOCIALS_CHAT_WITH">
             Chat with logged-in users
           </span>
         </button>
 
-        <button data-panel="friends" class="tab-btn !text-lg relative group">
+        <button data-panel="friends" data-i18n="SOCIALS_FRIENDS" class="tab-btn !text-lg relative group">
           Friends
           <!-- Tooltip -->
           <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
             bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
             opacity-0 group-hover:opacity-100 transition-opacity duration-200
             pointer-events-none text-center z-50
-            w-28 h-10 leading-tight">
+            w-28 h-10 leading-tight" data-i18n="SOCIALS_PLAY">
             Play with your friends
           </span>
         </button>
 
         <!-- Close button -->
-        <button id="closeSocialsBtn"
+        <button id="closeSocialsBtn" data-i18n="SOCIALS_CLOSE"
           class="absolute top-5 right-1 text-red font-comic font-extrabold px-2 py-1 hover:text-pink-400">
           X
         </button>
@@ -91,7 +99,7 @@
           </span>
 
           <!-- Send button -->
-          <button id="chatBtn" class="w-11 h-8 flex items-center justify-center rounded bg-pink-500 hover:bg-pink-400">
+          <button id="chatBtn" data-i18n="SOCIALS_SEND" class="w-11 h-8 flex items-center justify-center rounded bg-pink-500 hover:bg-pink-400">
             Send
           </button>
         </div>
@@ -105,7 +113,7 @@
         <!-- Input box: stays fixed at bottom -->
         <div id="chatInputWrapper" class="p-2 bg-black/80 flex">
           <textarea id="chatInput" rows="3" class="flex-1 px-2 py-1 rounded bg-gray-800 text-white text-lg resize-none"
-            placeholder="Type a message..."></textarea>
+            data-i18n="SOCIALS_TYPE_HERE" placeholder="Type a message..."></textarea>
         </div>
       </div>
 
@@ -121,7 +129,7 @@
       </div>
 
       <!-- FRIENDS PANEL -->
-      <div id="panel-friends" class="panel flex-1 flex flex-col p-2 hidden text-lg">
+      <div id="panel-friends" data-i18n="SOCIALS_LIST" class="panel flex-1 flex flex-col p-2 hidden text-lg">
         Friends list goes here
       </div>
     </div>

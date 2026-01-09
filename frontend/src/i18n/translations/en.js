@@ -1,0 +1,103 @@
+
+import { TranslationKey } from '../keys';
+
+export const en = {
+  [TranslationKey.PAGE_TITLE]: 'Pong',
+  [TranslationKey.MAIN_TITLE]: 'Pong',
+  
+  [TranslationKey.BTN_TIC_TAC_TOE]: 'Tic-Tac-Toe',
+  [TranslationKey.BTN_MINESWEEPER]: 'Minesweeper',
+  [TranslationKey.BTN_PONG]: 'Pong',
+  
+  [TranslationKey.BTN_LOCAL]: 'LOCAL',
+  [TranslationKey.BTN_ONLINE]: 'ONLINE',
+  [TranslationKey.BTN_SINGLEPLAYER]: 'SINGLEPLAYER',
+  [TranslationKey.BTN_MULTIPLAYER]: 'MULTIPLAYER',
+  [TranslationKey.BTN_TOURNAMENT]: 'TOURNAMENT',
+  
+  [TranslationKey.LABEL_PLAYER_COUNT]: 'Enter number of players:',
+  [TranslationKey.BTN_START_GAME]: 'START GAME',
+  [TranslationKey.BTN_REGISTER_PLAYERS]: 'REGISTER PLAYERS',
+  [TranslationKey.LABEL_PLAYER_ALIAS]: 'Enter your alias:',
+  [TranslationKey.BTN_SET_ALIAS]: 'SET ALIAS',
+  
+  [TranslationKey.PLAYER_1]: 'Player 1',
+  [TranslationKey.PLAYER_2]: 'Player 2',
+  [TranslationKey.LABEL_LANGUAGE]: 'Language:',
+  
+  [TranslationKey.MSG_PLAYER_WINS]: '{player} wins!',
+  [TranslationKey.MSG_TIC_TAC_TOE_NOT_IMPLEMENTED]: 'Tic-Tac-Toe selected. (Not implemented yet)',
+  [TranslationKey.MSG_MINESWEEPER_NOT_IMPLEMENTED]: 'Minesweeper selected. (Not implemented yet)',
+  [TranslationKey.MSG_PLAYERS_REGISTERED]: 'Registered {count} players for the tournament.',
+  [TranslationKey.MSG_MIN_PLAYERS_ERROR]: 'Number of players must be 2 or more.',
+  [TranslationKey.MSG_ALIAS_SET]: 'Alias "{alias}" set. Please enter alias for player {next}.',
+  [TranslationKey.MSG_ALL_PLAYERS_REGISTERED]: 'All {count} players registered: {players}. Proceeding to game start.',
+  [TranslationKey.MSG_VALID_ALIAS_ERROR]: 'Please enter a valid alias.',
+  [TranslationKey.MSG_STARTING_ONLINE_MULTIPLAYER]: 'Starting Online Multiplayer Game',
+  [TranslationKey.MSG_STARTING_ONLINE_TOURNAMENT]: 'Starting Online Tournament',
+  [TranslationKey.MSG_STARTING_SINGLEPLAYER]: 'Starting Singleplayer Game',
+  [TranslationKey.MSG_STARTING_GAME_WITH_PLAYERS]: 'Starting {mode} with {count} players',
+  
+  [TranslationKey.WS_CONNECTED]: 'WS connected',
+  [TranslationKey.WS_ERROR]: 'WS error',
+  [TranslationKey.WS_MESSAGE]: 'WS message',
+  [TranslationKey.WS_ROLE]: 'role:',
+  
+  [TranslationKey.TTT_TITLE]: 'Play Tic-Tac-Toe',
+  [TranslationKey.TTT_PLAY_AS_X]: 'Play as X',
+  [TranslationKey.TTT_PLAY_AS_O]: 'Play as O',
+  [TranslationKey.TTT_GAME_OVER_TIE]: 'Game Over: Tie.',
+  [TranslationKey.TTT_GAME_OVER_WINS]: 'Game Over: {winner} wins.',
+  [TranslationKey.TTT_PLAY_AS]: 'Play as {player}',
+  [TranslationKey.TTT_COMPUTER_THINKING]: 'Computer thinking...',
+  [TranslationKey.TTT_PLAY_AGAIN]: 'Play Again',
+  
+  [TranslationKey.MINE_TITLE]: 'Play Minesweeper',
+  [TranslationKey.MINE_RULE_1]: 'Click a cell to reveal it.',
+  [TranslationKey.MINE_RULE_2]: 'Right-click a cell to mark it as a mine.',
+  [TranslationKey.MINE_RULE_3]: 'Mark all mines successfully to win!',
+  [TranslationKey.MINE_PLAY_GAME]: 'Play Game',
+  [TranslationKey.MINE_AI_HELP]: 'AI Help',
+  [TranslationKey.MINE_RESTART]: 'Restart',
+  [TranslationKey.MINE_LOST]: 'Lost',
+  [TranslationKey.MINE_WON]: 'Won',
+
+  [TranslationKey.SOCIALS_OPEN]: 'Socials',
+  [TranslationKey.SOCIALS_SAY_HI]: 'Say Hi',
+  [TranslationKey.SOCIALS_BROADCAST]: 'Broadcast to all logged-in users',
+  [TranslationKey.SOCIALS_USERS]: 'Users',
+  [TranslationKey.SOCIALS_CHAT_WITH]: 'Chat with logged-in users',
+  [TranslationKey.SOCIALS_FRIENDS]: 'Friends',
+  [TranslationKey.SOCIALS_PLAY]: 'Play with your friends',
+  [TranslationKey.SOCIALS_CLOSE]: 'X',
+  [TranslationKey.SOCIALS_SEND]: 'Send',
+  [TranslationKey.SOCIALS_LIST]: 'Friends list goes here',
+  [TranslationKey.SOCIALS_TYPE_HERE]: 'Type a message...',
+  
+  // Routes / Pages
+  [TranslationKey.ONLINE_TITLE]: 'Online Game',
+  [TranslationKey.ONLINE_CREATE_GAME]: 'Create Game',
+  [TranslationKey.ONLINE_BACK]: 'Back',
+  [TranslationKey.ONLINE_REFRESH_GAMES]: 'Refresh Games',
+
+  [TranslationKey.TOURNAMENT_TITLE]: 'Tournament',
+  [TranslationKey.TOURNAMENT_START]: 'Start Tournament',
+  [TranslationKey.TOURNAMENT_BACK]: 'Back',
+  [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'Players',
+  [TranslationKey.TOURNAMENT_REFRESH]: 'Refresh Games',
+
+  [TranslationKey.PONG_LOCAL]: 'Local Game',
+  [TranslationKey.PONG_AI]: 'AI Opponent Game',
+  [TranslationKey.PONG_TOURNAMENT]: 'Tournament',
+  [TranslationKey.PONG_ONLINE]: 'Online Game',
+
+  // User Management
+  [TranslationKey.UM_USER]: 'User',
+  [TranslationKey.UM_LOGIN_TITLE]: 'Login',
+  [TranslationKey.UM_LOGIN_BTN]: 'Login',
+  [TranslationKey.UM_LOGGED_IN]: 'Logged in',
+  [TranslationKey.UM_REGISTER_TITLE]: 'Register',
+  [TranslationKey.UM_REGISTER_BTN]: 'Register',
+  [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'username',
+  [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'password',
+};
