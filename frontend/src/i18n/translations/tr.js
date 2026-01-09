@@ -72,4 +72,32 @@ export const tr = {
   [TranslationKey.SOCIALS_SEND]: 'Gönder',
   [TranslationKey.SOCIALS_LIST]: 'Arkadaş listesi burada',
   [TranslationKey.SOCIALS_TYPE_HERE]: 'Bir mesaj yaz...',
+  // Routes / Pages
+  [TranslationKey.ONLINE_TITLE]: 'Çevrimiçi Oyun',
+  [TranslationKey.ONLINE_CREATE_GAME]: 'Oyun Oluştur',
+  [TranslationKey.ONLINE_BACK]: 'Geri',
+  [TranslationKey.ONLINE_REFRESH_GAMES]: 'Oyunları Yenile',
+
+  [TranslationKey.TOURNAMENT_TITLE]: 'Turnuva',
+  [TranslationKey.TOURNAMENT_START]: 'Turnuvayı Başlat',
+  [TranslationKey.TOURNAMENT_BACK]: 'Geri',
+  [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'Oyuncular',
+  [TranslationKey.TOURNAMENT_REFRESH]: 'Oyunları Yenile',
+
+  [TranslationKey.PONG_LOCAL]: 'Yerel Oyun',
+  [TranslationKey.PONG_AI]: 'YZ Rakibi Oyunu',
+  [TranslationKey.PONG_TOURNAMENT]: 'Turnuva',
+  [TranslationKey.PONG_ONLINE]: 'Çevrimiçi Oyun',
+
+  // User Management
+  [TranslationKey.UM_USER]: 'Kullanıcı',
+  [TranslationKey.UM_LOGIN_TITLE]: 'Giriş Yap',
+  [TranslationKey.UM_LOGIN_BTN]: 'Giriş Yap',
+  [TranslationKey.UM_LOGGED_IN]: 'Giriş yapıldı',
+  [TranslationKey.UM_REGISTER_TITLE]: 'Kayıt Ol',
+  [TranslationKey.UM_REGISTER_BTN]: 'Kayıt Ol',
+  [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'kullanıcı adı',
+  [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'şifre',
 };
+
+

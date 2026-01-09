@@ -73,4 +73,31 @@ export const en = {
   [TranslationKey.SOCIALS_SEND]: 'Send',
   [TranslationKey.SOCIALS_LIST]: 'Friends list goes here',
   [TranslationKey.SOCIALS_TYPE_HERE]: 'Type a message...',
+  
+  // Routes / Pages
+  [TranslationKey.ONLINE_TITLE]: 'Online Game',
+  [TranslationKey.ONLINE_CREATE_GAME]: 'Create Game',
+  [TranslationKey.ONLINE_BACK]: 'Back',
+  [TranslationKey.ONLINE_REFRESH_GAMES]: 'Refresh Games',
+
+  [TranslationKey.TOURNAMENT_TITLE]: 'Tournament',
+  [TranslationKey.TOURNAMENT_START]: 'Start Tournament',
+  [TranslationKey.TOURNAMENT_BACK]: 'Back',
+  [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'Players',
+  [TranslationKey.TOURNAMENT_REFRESH]: 'Refresh Games',
+
+  [TranslationKey.PONG_LOCAL]: 'Local Game',
+  [TranslationKey.PONG_AI]: 'AI Opponent Game',
+  [TranslationKey.PONG_TOURNAMENT]: 'Tournament',
+  [TranslationKey.PONG_ONLINE]: 'Online Game',
+
+  // User Management
+  [TranslationKey.UM_USER]: 'User',
+  [TranslationKey.UM_LOGIN_TITLE]: 'Login',
+  [TranslationKey.UM_LOGIN_BTN]: 'Login',
+  [TranslationKey.UM_LOGGED_IN]: 'Logged in',
+  [TranslationKey.UM_REGISTER_TITLE]: 'Register',
+  [TranslationKey.UM_REGISTER_BTN]: 'Register',
+  [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'username',
+  [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'password',
 };

@@ -73,5 +73,31 @@ export const nl = {
   [TranslationKey.SOCIALS_SEND]: 'Verstuur',
   [TranslationKey.SOCIALS_LIST]: 'Vriendenlijst komt hier',
   [TranslationKey.SOCIALS_TYPE_HERE]: 'Typ een bericht...',
+  
+  // Routes / Pages
+  [TranslationKey.ONLINE_TITLE]: 'Online Spel',
+  [TranslationKey.ONLINE_CREATE_GAME]: 'Maak Spel',
+  [TranslationKey.ONLINE_BACK]: 'Terug',
+  [TranslationKey.ONLINE_REFRESH_GAMES]: 'Spellen Vernieuwen',
 
+  [TranslationKey.TOURNAMENT_TITLE]: 'Toernooi',
+  [TranslationKey.TOURNAMENT_START]: 'Start Toernooi',
+  [TranslationKey.TOURNAMENT_BACK]: 'Terug',
+  [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'Spelers',
+  [TranslationKey.TOURNAMENT_REFRESH]: 'Spellen Vernieuwen',
+
+  [TranslationKey.PONG_LOCAL]: 'Lokaal Spel',
+  [TranslationKey.PONG_AI]: 'AI Tegenstander Spel',
+  [TranslationKey.PONG_TOURNAMENT]: 'Toernooi',
+  [TranslationKey.PONG_ONLINE]: 'Online Spel',
+
+  // User Management
+  [TranslationKey.UM_USER]: 'Gebruiker',
+  [TranslationKey.UM_LOGIN_TITLE]: 'Inloggen',
+  [TranslationKey.UM_LOGIN_BTN]: 'Inloggen',
+  [TranslationKey.UM_LOGGED_IN]: 'Ingelogd',
+  [TranslationKey.UM_REGISTER_TITLE]: 'Registreren',
+  [TranslationKey.UM_REGISTER_BTN]: 'Registreren',
+  [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'gebruikersnaam',
+  [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'wachtwoord',
 };

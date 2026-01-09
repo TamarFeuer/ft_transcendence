@@ -99,6 +99,18 @@ export function updatePageTranslations() {
       element.textContent = t(TranslationKey[key]);
     }
   });
+
+  // Support placeholder translations: data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
+    const key = element.getAttribute('data-i18n-placeholder');
+    if (key && TranslationKey[key]) {
+      if (element.placeholder !== undefined) {
+        element.placeholder = t(TranslationKey[key]);
+      } else {
+        element.setAttribute('placeholder', t(TranslationKey[key]));
+      }
+    }
+  });
 }
 
 /**
