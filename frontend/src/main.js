@@ -190,10 +190,21 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 export function initOfflineGame(scene, gameObjects, tournament) {
 	return new Promise((resolve) => {
-		let ballVX = 0.07;
-		let ballVY = 0.07;
+		// Speed configuration: tweak these to make the game slower/faster
+		const SPEED_INITIAL = 0.04;       // starting speed (lower = slower)
+		const SPEED_ACCEL_BASE = 1.000001; // per-frame accel base (1.0 = no growth)
+		const SPEED_MAX = 0.18;           // cap max resultant speed
+
+		let ballVX = SPEED_INITIAL;
+		let ballVY = SPEED_INITIAL;
+		let ballSpin = 0; // Angular velocity (positive = topspin, negative = backspin)
 		let scoreP1int = 0;
 		let scoreP2int = 0;
+		
+		// Track paddle positions for velocity calculation
+		let paddleLeftPrevY = gameObjects.paddleLeft.position.y;
+		let paddleRightPrevY = gameObjects.paddleRight.position.y;
+		let lastFrameTime = Date.now();
 
 		const scoreP1 = document.getElementById("scoreP1");
 		const scoreP2 = document.getElementById("scoreP2");
@@ -201,57 +212,137 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 		scoreP2.textContent = "0";
 
 		const keys = {};
+		let mouseControlledPaddleY = null; // Track mouse position for right paddle
 
 		// Handlers
 		const keyDownHandler = (e) => keys[e.key] = true;
 		const keyUpHandler = (e) => keys[e.key] = false;
+		
+		// Mouse control for right paddle
+		const pointerMoveHandler = (e) => {
+			// Normalize mouse Y position to game coordinates (-4 to 4)
+			const normalized = 1 - (e.clientY / window.innerHeight); // 0 to 1
+			mouseControlledPaddleY = (normalized - 0.5) * 8; // -4 to 4
+		};
 
 		window.addEventListener("keydown", keyDownHandler);
 		window.addEventListener("keyup", keyUpHandler);
+		window.addEventListener("pointermove", pointerMoveHandler);
 
-		// Keyboard interval
+		// Smoother keyboard controls with higher frequency and smaller steps
 		const keyboardInterval = setInterval(() => {
+			// Left paddle - W/S keys
 			if (keys['w'] || keys['s']) {
 				let y = 0;
-				if (keys['w']) y = 0.8;
-				if (keys['s']) y = -0.8;
+				if (keys['w']) y = 0.35; // Reduced from 0.8 for smoother movement
+				if (keys['s']) y = -0.35;
 				gameObjects.paddleLeft.position.y += y;
+				
+				// Keep within bounds
+				gameObjects.paddleLeft.position.y = Math.max(-4.5, Math.min(4.5, gameObjects.paddleLeft.position.y));
 			}
-			if (keys['ArrowUp'] || keys['ArrowDown']) {
+			
+			// Right paddle - Arrow keys OR mouse (mouse takes priority)
+			if (mouseControlledPaddleY !== null) {
+				// Smooth interpolation to mouse position
+				const targetY = Math.max(-4.5, Math.min(4.5, mouseControlledPaddleY));
+				const diff = targetY - gameObjects.paddleRight.position.y;
+				gameObjects.paddleRight.position.y += diff * 0.15; // Smooth follow
+			} else if (keys['ArrowUp'] || keys['ArrowDown']) {
 				let y = 0;
-				if (keys['ArrowUp']) y = 0.8;
-				if (keys['ArrowDown']) y = -0.8;
+				if (keys['ArrowUp']) y = 0.35; // Reduced from 0.8 for smoother movement
+				if (keys['ArrowDown']) y = -0.35;
 				gameObjects.paddleRight.position.y += y;
+				
+				// Keep within bounds
+				gameObjects.paddleRight.position.y = Math.max(-4.5, Math.min(4.5, gameObjects.paddleRight.position.y));
 			}
-		}, 1000 / 15);
+		}, 1000 / 60); // Increased from 15 to 60 fps for smoother movement
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
-			gameObjects.ball.position.x += ballVX;
-			gameObjects.ball.position.y += ballVY;
-			ballVX *= 1.00005;
-			ballVY *= 1.00005;
+			// Calculate delta time for frame-independent physics
+			const currentTime = Date.now();
+			const dt = (currentTime - lastFrameTime) / 16.67; // Normalize to 60fps
+			lastFrameTime = currentTime;
+			
+			// Magnus effect: spin creates perpendicular force
+			// In real ping pong, topspin makes ball curve downward, backspin upward
+			const magnusCoefficient = 0.0008;
+			const extra_factor = 40
+			const spinForce = -ballSpin * magnusCoefficient  * extra_factor * dt;
+			ballVY += spinForce;
+			
+			// Air resistance causes spin to decay
+			const spinDecay = 0.992;
+			ballSpin *= Math.pow(spinDecay, dt);
+			
+			// Visual rotation based on spin (rotate around Z axis)
+			gameObjects.ball.rotation.z += ballSpin * magnusCoefficient * extra_factor * 100 * dt;
+			
+			// Update ball position
+			gameObjects.ball.position.x += ballVX * dt;
+			gameObjects.ball.position.y += ballVY * dt;
+			
+			// Gradual speed increase (uses config)
+			const speedIncrease = Math.pow(SPEED_ACCEL_BASE, dt);
+			ballVX *= speedIncrease;
+			ballVY *= speedIncrease;
 
-			// Ball collision logic
+			// Clamp maximum speed (resultant velocity)
+			const currentSpeed = Math.hypot(ballVX, ballVY);
+			// if (currentSpeed > SPEED_MAX) {
+			// 	const scale = SPEED_MAX / currentSpeed;
+			// 	ballVX *= scale;
+			// 	ballVY *= scale;
+			// }
+
+			// Ball collision with top/bottom walls
 			if (gameObjects.ball.position.y > 5 || gameObjects.ball.position.y < -5) {
 				ballVY = -ballVY;
+				// Wall bounce reduces spin by 30%
+				ballSpin *= 0.7;
 			}
 
+			// Calculate paddle velocities (in units per frame)
+			const paddleLeftVel = (gameObjects.paddleLeft.position.y - paddleLeftPrevY) / dt;
+			const paddleRightVel = (gameObjects.paddleRight.position.y - paddleRightPrevY) / dt;
+			paddleLeftPrevY = gameObjects.paddleLeft.position.y;
+			paddleRightPrevY = gameObjects.paddleRight.position.y;
+			
+			// Left paddle collision
 			if (gameObjects.ball.position.x < gameObjects.paddleLeft.position.x + 0.25 &&
 				gameObjects.ball.position.x > gameObjects.paddleLeft.position.x &&
 				Math.abs(gameObjects.ball.position.y - gameObjects.paddleLeft.position.y) < 0.75) {
-				// Compute bounce angle based on impact point on paddle
-				const offset = (gameObjects.ball.position.y - gameObjects.paddleLeft.position.y) / 0.75; // -1..1
-				const speed = Math.sqrt(ballVX * ballVX + ballVY * ballVY) || 0.1;
-				ballVX = Math.abs(speed * 0.9); // send to the right, keep base speed
-				ballVY = offset * speed; // angle varies with where you hit
+				
+				// Simple bounce (no angle effect)
+				ballVX = -ballVX;
+				
+				// SPIN PHYSICS: Fast perpendicular paddle movement creates spin
+				// Upward paddle movement = topspin (positive)
+				// Downward paddle movement = backspin (negative)
+				const spinTransferCoefficient = 1.5;
+				ballSpin = paddleLeftVel * spinTransferCoefficient;
+				
+				// Paddle movement also slightly affects ball's vertical velocity
+				const velocityTransfer = 0.11;
+				ballVY += paddleLeftVel * velocityTransfer;
 			}
+			
+			// Right paddle collision
 			if (gameObjects.ball.position.x > gameObjects.paddleRight.position.x - 0.25 &&
 				gameObjects.ball.position.x < gameObjects.paddleRight.position.x &&
 				Math.abs(gameObjects.ball.position.y - gameObjects.paddleRight.position.y) < 0.75) {
-				const offset = (gameObjects.ball.position.y - gameObjects.paddleRight.position.y) / 0.75;
-				const speed = Math.sqrt(ballVX * ballVX + ballVY * ballVY) || 0.1;
-				ballVX = -Math.abs(speed * 0.9); // send to the left
-				ballVY = offset * speed;
+				
+				// Simple bounce (no angle effect)
+				ballVX = -ballVX;
+				
+				// SPIN PHYSICS: Transfer spin from paddle velocity
+				const spinTransferCoefficient = 1.5;
+				ballSpin = paddleRightVel * spinTransferCoefficient;
+				
+				// Paddle movement affects ball's vertical velocity
+				const velocityTransfer = 0.11;
+				ballVY += paddleRightVel * velocityTransfer;
 			}
 
 			if (gameObjects.ball.position.x < -6) {
@@ -259,11 +350,17 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 				scoreP2.textContent = scoreP2int.toString();
 				gameObjects.ball.position.x = 0;
 				gameObjects.ball.position.y = 0;
+				ballSpin = 0; // Reset spin
+				ballVX = SPEED_INITIAL;
+				ballVY = SPEED_INITIAL;
 			} else if (gameObjects.ball.position.x > 6) {
 				scoreP1int++;
 				scoreP1.textContent = scoreP1int.toString();
 				gameObjects.ball.position.x = 0;
 				gameObjects.ball.position.y = 0;
+				ballSpin = 0; // Reset spin
+				ballVX = -SPEED_INITIAL;
+				ballVY = SPEED_INITIAL;
 			}
 
 			// Check winner
@@ -272,6 +369,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 				clearInterval(keyboardInterval);
 				window.removeEventListener("keydown", keyDownHandler);
 				window.removeEventListener("keyup", keyUpHandler);
+				window.removeEventListener("pointermove", pointerMoveHandler);
 				scene.onBeforeRenderObservable.remove(renderObserver);
 
 				if (!tournament) {
