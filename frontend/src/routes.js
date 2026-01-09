@@ -1,4 +1,4 @@
-import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame } from './main.js';
+import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame, initAIGame } from './main.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
@@ -32,6 +32,7 @@ export function setupRoutes() {
   routes['/pong'] = async () => {
     await loadTemplate('pong');
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
+    document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
     document.getElementById('onlineBtn')?.addEventListener('click', () => navigate('/online'));
     document.getElementById('tournamentBtn')?.addEventListener('click', () => navigate('/tournament'));
   };
@@ -43,6 +44,17 @@ export function setupRoutes() {
     const scene = new Scene(engine);
     const gameObjects = initGameScene(scene, canvas, 2);
     initOfflineGame(scene, gameObjects, false);
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener("resize", () => engine.resize());
+  };
+
+  routes['/ai'] = async () => {
+    await loadTemplate('ai');
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new Engine(canvas, true);
+    const scene = new Scene(engine);
+    const gameObjects = initGameScene(scene, canvas, 2);
+    initAIGame(scene, gameObjects, false);
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
   };
