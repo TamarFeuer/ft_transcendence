@@ -1,4 +1,4 @@
-import { t, TranslationKey } from './i18n';
+// import { t, TranslationKey } from './i18n';
 
 const X = "X";
 const O = "O";
@@ -124,11 +124,14 @@ const minimax = (board) => {
 };
 
 // Game initialization function
-function initTicTacToe() {
+export function initTicTacToe() {
+  console.log('initTicTacToe called');
   const canvas = document.getElementById('tictactoeCanvas');
   if (!canvas) {
+    console.error('Canvas element not found!');
     throw new Error('Canvas element not found');
   }
+  console.log('Canvas found:', canvas);
 
   let animationId;
   
@@ -368,6 +371,7 @@ if (typeof window !== 'undefined') {
     if (!tictactoeInitialized) {
       tictactoeInitialized = true;
       initTicTacToe();
+      println('Tic Tac Toe initialized');
     }
   });
 }

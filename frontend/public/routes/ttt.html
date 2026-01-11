@@ -1,0 +1,16 @@
+<div id="tttContainer" class="w-full h-screen flex items-center justify-center bg-black/60">
+  <canvas id="tictactoeCanvas" width="600" height="400" style="border: 4px solid white; border-radius: 8px; display: block;"></canvas>
+</div>
+
+<script type="module">
+  import { initI18n, updatePageTranslations } from '../src/i18n/index.js';
+  
+  // Initialize i18n for this page
+  initI18n();
+  updatePageTranslations();
+  
+  // Listen for language changes from main app
+  document.addEventListener('languagechange', () => {
+    updatePageTranslations();
+  });
+</script>

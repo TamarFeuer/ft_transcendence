@@ -1,4 +1,4 @@
-import { t, TranslationKey } from './i18n';
+// import { t, TranslationKey } from './i18n';
 
 const HEIGHT = 8;
 const WIDTH = 8;

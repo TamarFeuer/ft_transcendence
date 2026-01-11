@@ -1,4 +1,5 @@
 import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame, initAIGame } from './main.js';
+import { initTicTacToe } from './tictactoe.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
@@ -57,6 +58,11 @@ export function setupRoutes() {
     initAIGame(scene, gameObjects, false);
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
+  };
+
+  routes['/ttt'] = async () => {
+    await loadTemplate('ttt');
+    initTicTacToe();
   };
 
   routes['/tournament'] = async () => {
