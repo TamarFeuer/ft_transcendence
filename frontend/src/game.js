@@ -32,5 +32,7 @@ export function initGameScene(scene, canvas, playerCount) {
   ball.material = ballMat;
   ball.position = new Vector3(0, 0, 0);
 
-  return { paddleLeft, paddleRight, ball };
+  const temperature = 5.0; // Initial temperature for AI paddle
+
+  return { paddleLeft, paddleRight, ball, temperature };
 }

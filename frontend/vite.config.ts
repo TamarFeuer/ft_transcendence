@@ -18,7 +18,7 @@ export default defineConfig({
         target: 'ws://backend:3000',
         ws: true,
         changeOrigin: true
-      }
+      },
     }
   }
 });

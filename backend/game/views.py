@@ -12,8 +12,36 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.conf import settings
 import jwt
 from datetime import datetime, timedelta
+import uuid
 
 UserModel = get_user_model()
+
+# Token expiration times
+ACCESS_TOKEN_LIFETIME = timedelta(minutes=2)  # Short-lived access token
+REFRESH_TOKEN_LIFETIME = timedelta(days=7)     # Long-lived refresh token
+
+def generate_tokens(user):
+    """Generate access and refresh tokens for a user."""
+    access_token_payload = {
+        'user_id': user.id,
+        'username': user.username,
+        'type': 'access',
+        'exp': datetime.utcnow() + ACCESS_TOKEN_LIFETIME,
+        'iat': datetime.utcnow()
+    }
+    
+    refresh_token_payload = {
+        'user_id': user.id,
+        'type': 'refresh',
+        'jti': str(uuid.uuid4()),  # Unique ID for refresh token
+        'exp': datetime.utcnow() + REFRESH_TOKEN_LIFETIME,
+        'iat': datetime.utcnow()
+    }
+    
+    access_token = jwt.encode(access_token_payload, settings.SECRET_KEY, algorithm='HS256')
+    refresh_token = jwt.encode(refresh_token_payload, settings.SECRET_KEY, algorithm='HS256')
+    
+    return access_token, refresh_token
 
 @require_http_methods(["GET"])
 def health(request):
@@ -75,8 +103,32 @@ def register(request):
         if UserModel.objects.filter(username=username).exists():
             return JsonResponse({'error': 'username taken'}, status=400)
         user = UserModel.objects.create_user(username=username, password=password)
-        token = jwt.encode({'user_id': user.id, 'exp': datetime.utcnow() + timedelta(days=7)}, settings.SECRET_KEY, algorithm='HS256')
-        return JsonResponse({'token': token, 'username': user.username})
+        access_token, refresh_token = generate_tokens(user)
+        
+        response = JsonResponse({
+            'success': True,
+            'username': user.username
+        })
+        
+        # Set HTTP-only cookies
+        response.set_cookie(
+            'access_token',
+            access_token,
+            max_age=int(ACCESS_TOKEN_LIFETIME.total_seconds()),
+            httponly=True,
+            secure=not settings.DEBUG,  # HTTPS in production
+            samesite='Lax'
+        )
+        response.set_cookie(
+            'refresh_token',
+            refresh_token,
+            max_age=int(REFRESH_TOKEN_LIFETIME.total_seconds()),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite='Lax'
+        )
+        
+        return response
     except Exception as e:
         logger.exception('Error in register')
         return JsonResponse({'error': 'internal error'}, status=500)
@@ -92,15 +144,130 @@ def login_view(request):
         user = authenticate(username=username, password=password)
         if user is None:
             return JsonResponse({'error': 'invalid credentials'}, status=401)
-        token = jwt.encode({'user_id': user.id, 'exp': datetime.utcnow() + timedelta(days=7)}, settings.SECRET_KEY, algorithm='HS256')
-        return JsonResponse({'token': token, 'username': user.username})
+        access_token, refresh_token = generate_tokens(user)
+        
+        response = JsonResponse({
+            'success': True,
+            'username': user.username
+        })
+        
+        # Set HTTP-only cookies
+        response.set_cookie(
+            'access_token',
+            access_token,
+            max_age=int(ACCESS_TOKEN_LIFETIME.total_seconds()),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite='Lax'
+        )
+        response.set_cookie(
+            'refresh_token',
+            refresh_token,
+            max_age=int(REFRESH_TOKEN_LIFETIME.total_seconds()),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite='Lax'
+        )
+        
+        return response
     except Exception:
         logger.exception('Error in login')
         return JsonResponse({'error': 'internal error'}, status=500)
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def refresh_token_view(request):
+    """Exchange a valid refresh token for a new access token."""
+    try:
+        # Get refresh token from cookie
+        refresh_token = request.COOKIES.get('refresh_token')
+        
+        if not refresh_token:
+            return JsonResponse({'error': 'refresh_token required'}, status=400)
+        
+        try:
+            # Decode and verify refresh token
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=['HS256'])
+            
+            # Verify it's a refresh token
+            if payload.get('type') != 'refresh':
+                return JsonResponse({'error': 'invalid token type'}, status=401)
+            
+            user_id = payload.get('user_id')
+            user = UserModel.objects.get(id=user_id)
+            
+            # Generate new tokens
+            access_token, new_refresh_token = generate_tokens(user)
+            
+            response = JsonResponse({
+                'success': True,
+                'username': user.username
+            })
+            
+            # Set new cookies
+            response.set_cookie(
+                'access_token',
+                access_token,
+                max_age=int(ACCESS_TOKEN_LIFETIME.total_seconds()),
+                httponly=True,
+                secure=not settings.DEBUG,
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'refresh_token',
+                new_refresh_token,
+                max_age=int(REFRESH_TOKEN_LIFETIME.total_seconds()),
+                httponly=True,
+                secure=not settings.DEBUG,
+                samesite='Lax'
+            )
+            
+            return response
+            
+        except jwt.ExpiredSignatureError:
+            return JsonResponse({'error': 'refresh token expired'}, status=401)
+        except jwt.DecodeError:
+            return JsonResponse({'error': 'invalid refresh token'}, status=401)
+        except UserModel.DoesNotExist:
+            return JsonResponse({'error': 'user not found'}, status=401)
+            
+    except Exception:
+        logger.exception('Error in refresh_token')
+        return JsonResponse({'error': 'internal error'}, status=500)
 
+@csrf_exempt
 @require_http_methods(["POST"])
 def logout_view(request):
-    # For stateless JWTs there's no server-side logout unless you implement a blacklist.
-    # Client should remove token locally. We return success for convenience.
-    return JsonResponse({'status': 'ok'})
+    response = JsonResponse({'success': True})
+    # Clear cookies
+    response.delete_cookie('access_token')
+    response.delete_cookie('refresh_token')
+    return response
+
+@require_http_methods(["GET"])
+def current_user_view(request):
+    """Get current user from access token cookie."""
+    access_token = request.COOKIES.get('access_token')
+    logger.warning(f"current_user_view: access_token: {access_token}")
+    if not access_token:
+        return JsonResponse({'authenticated': False}, status=401)
+    
+    try:
+        payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
+        logger.warning(f"current_user_view: decoded payload: {payload}")
+        if payload.get('type') != 'access':
+            return JsonResponse({'authenticated': False}, status=401)
+        
+        user_id = payload.get('user_id')
+        username = payload.get('username')
+        
+        return JsonResponse({
+            'authenticated': True,
+            'username': username,
+            'user_id': user_id
+        })
+        
+    except jwt.ExpiredSignatureError:
+        return JsonResponse({'authenticated': False, 'error': 'token_expired'}, status=401)
+    except jwt.DecodeError:
+        return JsonResponse({'authenticated': False}, status=401)

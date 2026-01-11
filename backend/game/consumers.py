@@ -66,11 +66,11 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
             # Start game loop
             asyncio.create_task(self.game_loop())
-    
+
     async def disconnect(self, close_code):
         logger.warning(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         if hasattr(self, 'game') and self.game:
-            self.game.remove_player(self.scope['user'])
+            # self.game.remove_player(self.scope['user'])
             
             if self.game.status == 'finished':
                 await self.channel_layer.group_send(
