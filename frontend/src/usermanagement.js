@@ -1,4 +1,5 @@
-
+import { t, updatePageTranslations } from './i18n/index.js';
+import { TranslationKey } from './i18n/keys.js';
 
 // --- Token refresh helper ---
 let refreshPromise = null;
@@ -126,8 +127,15 @@ export function createUserManager() {
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'manager-btn';
-    toggleBtn.textContent = 'User';
+    // toggleBtn.textContent = t(TranslationKey.UM_USER);
+    toggleBtn.textContent = '👤'; // I could not make the translation here, can we change this like this ??? :)))))
     toggleBtn.title = 'Open user manager';
+    
+    // // Update button text when language changes
+    // document.addEventListener('languagechange', () => {
+    //     toggleBtn.textContent = t(TranslationKey.UM_USER);
+    //     updatePageTranslations();
+    // });
 
     const panel = document.createElement('div');
     panel.className = 'manager-panel';
@@ -139,7 +147,7 @@ export function createUserManager() {
             panel.innerHTML = '';
             if (user.authenticated) {
                 const info = document.createElement('div');
-                info.innerHTML = `<div><strong>${username || 'User'}</strong></div><div class="small">Logged in</div>`;
+                info.innerHTML = `<div><strong>${username || toggleBtn.textContent}</strong></div><div class="small" data-i18n="${TranslationKey.UM_LOGGED_IN}">Logged in</div>`;
                 const logoutBtn = document.createElement('button');
                 logoutBtn.className = 'manager-btn';
                 logoutBtn.textContent = 'Logout';
@@ -149,25 +157,28 @@ export function createUserManager() {
                 });
                 panel.appendChild(info);
                 panel.appendChild(logoutBtn);
+                updatePageTranslations();
                 return;
             }
 
             // Tabs: Login / Register
             const loginForm = document.createElement('div');
             loginForm.innerHTML = `
-                <div style="font-weight:700;margin-bottom:6px">Login</div>
-                <input id="um_login_user" type="text" placeholder="username" />
-                <input id="um_login_pass" type="password" placeholder="password" />
-                <button id="um_login_btn" class="manager-btn">Login</button>
+                <div style="font-weight:700;margin-bottom:6px" data-i18n="${TranslationKey.UM_LOGIN_TITLE}">Login</div>
+                <input id="um_login_user" type="text" data-i18n-placeholder="${TranslationKey.UM_USERNAME_PLACEHOLDER}" />
+                <input id="um_login_pass" type="password" data-i18n-placeholder="${TranslationKey.UM_PASSWORD_PLACEHOLDER}" />
+                <button id="um_login_btn" class="manager-btn" data-i18n="${TranslationKey.UM_LOGIN_BTN}">Login</button>
             `;
             const regForm = document.createElement('div');
             regForm.style.marginTop = '8px';
             regForm.innerHTML = `
-                <div style="font-weight:700;margin-bottom:6px">Register</div>
-                <input id="um_reg_user" type="text" placeholder="username" />
-                <input id="um_reg_pass" type="password" placeholder="password" />
-                <button id="um_reg_btn" class="manager-btn">Register</button>
+                <div style="font-weight:700;margin-bottom:6px" data-i18n="${TranslationKey.UM_REGISTER_TITLE}">Register</div>
+                <input id="um_reg_user" type="text" data-i18n-placeholder="${TranslationKey.UM_USERNAME_PLACEHOLDER}" />
+                <input id="um_reg_pass" type="password" data-i18n-placeholder="${TranslationKey.UM_PASSWORD_PLACEHOLDER}" />
+                <button id="um_reg_btn" class="manager-btn" data-i18n="${TranslationKey.UM_REGISTER_BTN}">Register</button>
             `;
+
+            updatePageTranslations();
 
             panel.appendChild(loginForm);
             panel.appendChild(regForm);
