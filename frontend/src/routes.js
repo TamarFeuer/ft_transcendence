@@ -67,6 +67,7 @@ export function setupRoutes() {
   routes['/ttt'] = async () => {
     await loadTemplate('ttt');
     initTicTacToe();
+    document.getElementById('tttBackBtn')?.addEventListener('click', () => navigate('/'));
   };
 
   routes['/tournament'] = async () => {

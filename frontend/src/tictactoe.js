@@ -1,4 +1,5 @@
-// import { t, TranslationKey } from './i18n';
+import { t } from './i18n/index.js';
+import { TranslationKey } from './i18n/keys.js';
 
 const X = "X";
 const O = "O";
@@ -131,7 +132,6 @@ export function initTicTacToe() {
     console.error('Canvas element not found!');
     throw new Error('Canvas element not found');
   }
-  console.log('Canvas found:', canvas);
 
   let animationId;
   
@@ -159,9 +159,11 @@ export function initTicTacToe() {
       
       // Draw title
       ctx.fillStyle = white;
-      ctx.font = '40px Arial';
+      ctx.font = 'bold 40px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(t(TranslationKey.TTT_TITLE), width / 2, 50);
+      ctx.textBaseline = 'middle';
+      const titleText = t(TranslationKey.TTT_TITLE) || 'Play Tic-Tac-Toe';
+      ctx.fillText(titleText, width / 2, 40);
 
       // Draw player selection buttons
       const playXButton = { x: width / 8, y: height / 2, width: width / 4, height: 50 };
@@ -171,15 +173,18 @@ export function initTicTacToe() {
       ctx.fillStyle = white;
       ctx.fillRect(playXButton.x, playXButton.y, playXButton.width, playXButton.height);
       ctx.fillStyle = black;
-      ctx.font = '24px Arial';
+      ctx.font = 'bold 20px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(t(TranslationKey.TTT_PLAY_AS_X), playXButton.x + playXButton.width / 2, playXButton.y + playXButton.height / 2 + 8);
+      ctx.textBaseline = 'middle';
+      const playXText = t(TranslationKey.TTT_PLAY_AS_X) || 'Play as X';
+      ctx.fillText(playXText, playXButton.x + playXButton.width / 2, playXButton.y + playXButton.height / 2);
 
       // Draw Play as O button
       ctx.fillStyle = white;
       ctx.fillRect(playOButton.x, playOButton.y, playOButton.width, playOButton.height);
       ctx.fillStyle = black;
-      ctx.fillText(t(TranslationKey.TTT_PLAY_AS_O), playOButton.x + playOButton.width / 2, playOButton.y + playOButton.height / 2 + 8);
+      const playOText = t(TranslationKey.TTT_PLAY_AS_O) || 'Play as O';
+      ctx.fillText(playOText, playOButton.x + playOButton.width / 2, playOButton.y + playOButton.height / 2);
       
     } else {
       // Draw game board
@@ -258,8 +263,12 @@ export function initTicTacToe() {
     if (clickCooldown) return;
 
     const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mouseX = (event.clientX - rect.left) * scaleX;
+    const mouseY = (event.clientY - rect.top) * scaleY;
+
+    console.log('Click detected at:', mouseX, mouseY, 'Canvas:', width, height);
 
     if (user === null) {
       // Handle player selection
@@ -268,6 +277,7 @@ export function initTicTacToe() {
 
       if (mouseX >= playXButton.x && mouseX <= playXButton.x + playXButton.width &&
           mouseY >= playXButton.y && mouseY <= playXButton.y + playXButton.height) {
+        console.log('Clicked Play as X');
         clickCooldown = true;
         setTimeout(() => {
           user = X;
@@ -275,6 +285,7 @@ export function initTicTacToe() {
         }, 200);
       } else if (mouseX >= playOButton.x && mouseX <= playOButton.x + playOButton.width &&
                  mouseY >= playOButton.y && mouseY <= playOButton.y + playOButton.height) {
+        console.log('Clicked Play as O');
         clickCooldown = true;
         setTimeout(() => {
           user = O;
@@ -351,7 +362,10 @@ export function initTicTacToe() {
   canvas.height = height;
   
   // Add event listeners
+  console.log('Adding click listener to canvas:', canvas);
   canvas.addEventListener('click', handleCanvasClick);
+  canvas.addEventListener('pointerdown', handleCanvasClick); // Fallback for pointer events
+  console.log('Canvas click listener attached');
   
   // Start game loop
   gameLoop();
@@ -371,9 +385,6 @@ if (typeof window !== 'undefined') {
     if (!tictactoeInitialized) {
       tictactoeInitialized = true;
       initTicTacToe();
-      println('Tic Tac Toe initialized');
     }
   });
 }
-
-// document.getElementById('backBtn')?.addEventListener('click', () => navigate('/'));

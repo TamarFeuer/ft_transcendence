@@ -46,6 +46,7 @@ export const nl = {
   [TranslationKey.TTT_TITLE]: 'Boter-Kaas-Eieren Spelen',
   [TranslationKey.TTT_PLAY_AS_X]: 'Spelen als X',
   [TranslationKey.TTT_PLAY_AS_O]: 'Spelen als O',
+  [TranslationKey.TTT_BACK]: 'Terug',
   [TranslationKey.TTT_GAME_OVER_TIE]: 'Spel Afgelopen: Gelijkspel.',
   [TranslationKey.TTT_GAME_OVER_WINS]: 'Spel Afgelopen: {winner} wint.',
   [TranslationKey.TTT_PLAY_AS]: 'Spelen als {player}',

@@ -46,6 +46,7 @@ export const en = {
   [TranslationKey.TTT_TITLE]: 'Play Tic-Tac-Toe',
   [TranslationKey.TTT_PLAY_AS_X]: 'Play as X',
   [TranslationKey.TTT_PLAY_AS_O]: 'Play as O',
+  [TranslationKey.TTT_BACK]: 'Back',
   [TranslationKey.TTT_GAME_OVER_TIE]: 'Game Over: Tie.',
   [TranslationKey.TTT_GAME_OVER_WINS]: 'Game Over: {winner} wins.',
   [TranslationKey.TTT_PLAY_AS]: 'Play as {player}',

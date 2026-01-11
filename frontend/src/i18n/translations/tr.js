@@ -46,6 +46,7 @@ export const tr = {
   [TranslationKey.TTT_TITLE]: 'XOX Oyunu Oyna',
   [TranslationKey.TTT_PLAY_AS_X]: 'X olarak oyna',
   [TranslationKey.TTT_PLAY_AS_O]: 'O olarak oyna',
+  [TranslationKey.TTT_BACK]: 'Geri',
   [TranslationKey.TTT_GAME_OVER_TIE]: 'Oyun Bitti: Berabere.',
   [TranslationKey.TTT_GAME_OVER_WINS]: 'Oyun Bitti: {winner} kazandı.',
   [TranslationKey.TTT_PLAY_AS]: '{player} olarak oyna',
