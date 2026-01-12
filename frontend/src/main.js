@@ -2,8 +2,8 @@ import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
-import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
-import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
+import { initChat, chatSocket, sendChatMessage, onlineUsers, initTyping, stopChat } from './chat.js';
+import { getCurrentUser as fetchCurrentUser, logoutUser } from './usermanagement.js';
 
 // --- Game Variables ---
 let ws = null;
@@ -187,7 +187,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 			}
 			if (gameObjects.paddleLeft.position.y < -4.5) {
 				gameObjects.paddleLeft.position.y = -4.5;
-			}			
+			}
 		}, 1000 / 15);
 
 		// Player 2 controls (Arrow keys)
@@ -203,7 +203,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 			}
 			if (gameObjects.paddleRight.position.y < -4.5) {
 				gameObjects.paddleRight.position.y = -4.5;
-			}			
+			}
 		}, 1000 / 15);
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
@@ -288,31 +288,31 @@ export function initAIGame(scene, gameObjects, tournament) {
 		const keyboardIntervalP1 = setInterval(() => {
 			const paddleY = gameObjects.paddleLeft.position.y;
 			const ballY = gameObjects.ball.position.y;
-			
+
 			// AI tries to move paddle towards ball
 			const difference = ballY - paddleY;
-			
+
 			if (gameObjects.ball.position.x < 0 && Math.abs(difference) > 0.5) {
 				// Current energy (distance from ball)
 				const currentEnergy = Math.abs(difference);
-				
+
 				// Propose a random move
 				const proposedMove = Math.random() < 0.5 ? 0.8 : -0.8;
 				const newY = paddleY + proposedMove;
 				const newEnergy = Math.abs(ballY - newY);
-				
+
 				// Energy difference (negative = improvement)
 				const deltaE = newEnergy - currentEnergy;
-				
+
 				// Acceptance probability: always accept improvements,
 				// sometimes accept worse moves based on temperature
 				const acceptProbability = deltaE < 0 ? 1.0 : Math.exp(-deltaE / gameObjects.temperature);
-				
+
 				// Accept or reject the move
 				if (Math.random() < acceptProbability) {
 					gameObjects.paddleLeft.position.y = newY;
 				}
-				
+
 				// Cool down
 				gameObjects.temperature *= 0.99;
 				if (gameObjects.temperature < 0.5) {
@@ -343,7 +343,7 @@ export function initAIGame(scene, gameObjects, tournament) {
 			}
 			if (gameObjects.paddleRight.position.y < -4.5) {
 				gameObjects.paddleRight.position.y = -4.5;
-			}			
+			}
 		}, standartSpeed);
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
@@ -460,55 +460,84 @@ export async function startTournament(playerCount) {
 	navigate('/');
 }
 
+// --- Setup routes ---
 setupRoutes();
 
+// --- DOM elements ---
+const closeSocialsBtn = document.getElementById("closeSocialsBtn");
+const chatBtn = document.getElementById("chatBtn");
+const chatInputWrapper = document.getElementById("chatInputWrapper");
+const chatInput = document.getElementById("chatInput");
+const panels = document.querySelectorAll(".panel");
+const tabButtons = document.querySelectorAll(".tab-btn");
+const usersList = document.getElementById("usersList");
+const userDetails = document.getElementById("userDetails");
+
+// --- Auth + UI handler ---
+export async function handleAuthUpdate(user) {
+
+	// Only show chat/socials if logged in
+	const openSocialsBtn = document.getElementById("openSocialsBtn");
+	const chatContainer = document.getElementById("chatContainer");
+
+	if (user?.authenticated) {
+		if (openSocialsBtn) openSocialsBtn.style.display = "block";
+		// Initialize chat only once
+		if (!chatSocket) {
+			initChat();
+		}
+	} else {
+		if (openSocialsBtn) openSocialsBtn.style.display = "none";
+		if (chatContainer) chatContainer.style.display = "none";
+
+		// Close chat websocket if active
+		stopChat();
+	}
+}
+
+
+// --- DOMContentLoaded: fetch current user and initialize UI ---
 window.addEventListener("DOMContentLoaded", async () => {
-	
-	// Fetch current user from backend
-	const CURRENT_USER = await fetchCurrentUser();
-	
-	// Store globally so chat.js can access it
-	window.CURRENT_USER = CURRENT_USER;
+	// --- Create user manager button/panel ---
+	createUserManager(async () => {
+		// Get the latest logged-in user
+		const freshUser = await fetchCurrentUser();
+		window.CURRENT_USER = freshUser;
 
-	console.log("Current user:", CURRENT_USER);
-	initChat();
+		// Now update the UI (socials button + chat)
+		handleAuthUpdate(freshUser);
+	});
 
-	// Constants / DOM elements
+	
+	// Socials open/close buttons
 	const chatContainer = document.getElementById("chatContainer");
 	const openSocialsBtn = document.getElementById("openSocialsBtn");
-	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
-	const chatBtn = document.getElementById("chatBtn");
-	const chatInputWrapper = document.getElementById("chatInputWrapper");
-	const chatInput = document.getElementById("chatInput");
-	const panels = document.querySelectorAll(".panel");
-	const tabButtons = document.querySelectorAll(".tab-btn");
-	const usersBtn = document.querySelector('button[data-panel="users"]');
-	const usersList = document.getElementById("usersList");
-	const userDetails = document.getElementById("userDetails");
 
-	// create user manager UI
-	createUserManager();
+	if (openSocialsBtn && chatContainer) {
+		openSocialsBtn.addEventListener("click", () => {
+			chatContainer.style.display = "flex";
+			openSocialsBtn.style.display = "none";
 
-	// Helpers
-	function getNameFromUser(user) {
-		// Prefer the name, fallback to id
-		if (user.name) return user.name;
-		return user.id;
+			showPanel("chat");
+		});
 	}
 
-	function showPanel(name) {
-		// Hide all panels
-		panels.forEach(p => (p.style.display = "none"));
+	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
+		closeSocialsBtn.addEventListener("click", () => {
+			chatContainer.style.display = "none";
+			openSocialsBtn.style.display = "block";
+		});
+	}
 
-		// Show selected panel
+	// --- Panel handling ---
+	function showPanel(name) {
+		panels.forEach(p => (p.style.display = "none"));
 		const panelToShow = document.getElementById(`panel-${name}`);
 		if (panelToShow) panelToShow.style.display = "block";
 
-		// Update tab active state
 		tabButtons.forEach(b => b.classList.remove("active"));
 		document.querySelector(`[data-panel="${name}"]`)?.classList.add("active");
 
-		// Show/hide chat input & send button
 		if (chatBtn && chatInputWrapper) {
 			if (name === "chat") {
 				chatBtn.classList.remove("hidden");
@@ -519,17 +548,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 			}
 		}
 
-		// Render panel-specific content
 		if (name === "friends") renderFriendsPanel(CURRENT_USER.id);
 		else if (name === "users") renderUsersPanel();
 		else if (name === "chat") renderChatPanel();
 	}
 
-	// Panel renderers
-	function renderChatPanel() {
-		// For now, chat panel doesn't need extra rendering
-		// Any initialization logic for chat can go here if needed
-	}
+	// --- Panel renderers ---
+	function renderChatPanel() { /* chat init already handled */ }
 
 	function renderUsersPanel() {
 		usersList.innerHTML = "";
@@ -542,39 +567,25 @@ window.addEventListener("DOMContentLoaded", async () => {
 		}
 
 		onlineUsers.forEach(user => {
-
 			const div = document.createElement("div");
 			div.className = "py-1 px-2";
-
 			const span = document.createElement("span");
-			
-			// Determine display name: use name if available, else ID
-			let displayName = getNameFromUser(user)
+			const displayName = user.name || user.id;
 			span.textContent = displayName;
-			span.className =
-				"cursor-pointer hover:text-pink-500 transition-colors text-lg";
+			span.className = "cursor-pointer hover:text-pink-500 transition-colors text-lg";
 
 			span.addEventListener("click", () => {
 				userDetails.innerHTML = `
-				<h3 class="text-lg font-bold">${user.name} ${user.avatar}</h3>
-				<p>ID: ${user.id}</p>
-				<p>Joined: ${new Date(user.createdAt).toLocaleString()}</p>
-				<button id="closeDetails"
-					class="mt-2 px-3 py-1 rounded border-2 border-red-500
-					text-red-500 font-semibold
-					hover:bg-red-500 hover:text-white
-					transition-colors duration-200 shadow-sm">
-				Close
-				</button>
-				`;
+                    <h3 class="text-lg font-bold">${user.name || ''} ${user.avatar || ''}</h3>
+                    <p>ID: ${user.id}</p>
+                    <p>Joined: ${new Date(user.createdAt).toLocaleString()}</p>
+                    <button id="closeDetails" class="mt-2 px-3 py-1 rounded border-2 border-red-500 text-red-500 font-semibold hover:bg-red-500 hover:text-white transition-colors duration-200 shadow-sm">Close</button>
+                `;
 				userDetails.style.display = "block";
-
-				document
-					.getElementById("closeDetails")
-					.addEventListener("click", () => {
-						userDetails.style.display = "none";
-						userDetails.innerHTML = "";
-					});
+				document.getElementById("closeDetails")?.addEventListener("click", () => {
+					userDetails.style.display = "none";
+					userDetails.innerHTML = "";
+				});
 			});
 
 			div.appendChild(span);
@@ -585,61 +596,31 @@ window.addEventListener("DOMContentLoaded", async () => {
 	function renderFriendsPanel(currentUserId) {
 		const friendsPanel = document.getElementById("panel-friends");
 		friendsPanel.innerHTML = "";
-
 		const me = FAKE_USERS[currentUserId];
 		if (!me || !me.friends || me.friends.length === 0) {
 			friendsPanel.textContent = "No friends yet";
 			return;
 		}
-
 		me.friends.forEach(friendId => {
 			const friend = FAKE_USERS[friendId];
 			if (!friend) return;
-
 			const div = document.createElement("div");
 			div.className = "py-1 px-2 flex items-center gap-2";
-
 			const isOnline = onlineUsers.includes(friendId);
-
 			div.innerHTML = `
-				<span class="font-semibold">${friend.name}</span>
-				<span>${friend.avatar}</span>
-				<span class="text-sm ${
-					isOnline ? "text-green-400" : "text-gray-400"
-				}">
-					${isOnline ? "online" : "offline"}
-				</span>
-			`;
-
+                <span class="font-semibold">${friend.name}</span>
+                <span>${friend.avatar}</span>
+                <span class="text-sm ${isOnline ? "text-green-400" : "text-gray-400"}">${isOnline ? "online" : "offline"}</span>
+            `;
 			friendsPanel.appendChild(div);
 		});
 	}
 
-	// Socials open/close
-	if (openSocialsBtn && chatContainer) {
-		openSocialsBtn.style.display = "block";
-		openSocialsBtn.addEventListener("click", () => {
-			chatContainer.style.display = "flex";
-			openSocialsBtn.style.display = "none";
-			showPanel("chat");
-		});
-	}
+	// Tab buttons
+	tabButtons.forEach(btn => btn.addEventListener("click", () => showPanel(btn.dataset.panel)));
 
-	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
-		closeSocialsBtn.addEventListener("click", () => {
-			chatContainer.style.display = "none";
-			openSocialsBtn.style.display = "block";
-		});
-	}
-
-	// Tab click events
-	tabButtons.forEach(btn => {
-		btn.addEventListener("click", () => showPanel(btn.dataset.panel));
-	});
-
-	// Chat send functionality
+	// Chat send
 	initTyping(chatInput);
-
 	if (chatBtn && chatInput) {
 		const sendMessage = () => {
 			const message = chatInput.value.trim();
@@ -648,7 +629,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 				chatInput.value = "";
 			}
 		};
-
 		chatBtn.addEventListener("click", sendMessage);
 		chatInput.addEventListener("keypress", e => {
 			if (e.key === "Enter") {
@@ -658,6 +638,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 		});
 	}
 
-	// Initial route handling
+	// Initial route
 	handleRoute(window.location.pathname);
 });

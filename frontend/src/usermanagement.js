@@ -118,7 +118,7 @@ export async function getCurrentUser() {
 }
 
 // --- User manager UI (minimisable tab) ---
-export function createUserManager() {
+export function createUserManager(onAuthChange) {
     if (document.getElementById('userManager')) return;
 
     const container = document.createElement('div');
@@ -134,7 +134,7 @@ export function createUserManager() {
     panel.style.display = 'none';
 
     function renderPanel() {
-        getCurrentUser().then(user => {
+        return getCurrentUser().then(user => {
             const username = localStorage.getItem('username') || '';
             panel.innerHTML = '';
             if (user.authenticated) {
@@ -146,6 +146,7 @@ export function createUserManager() {
                 logoutBtn.addEventListener('click', async () => {
                     await logoutUser();
                     renderPanel();
+                    if (onAuthChange) onAuthChange() //notify main
                 });
                 panel.appendChild(info);
                 panel.appendChild(logoutBtn);
@@ -178,7 +179,10 @@ export function createUserManager() {
                 const res = await loginUser(u, p);
                 if (res && res.success) {
                     alert('Login successful');
+                    const user = await getCurrentUser(); // get fresh user
+                    window.CURRENT_USER = user; 
                     renderPanel();
+                    if (onAuthChange) onAuthChange(user) //notify main
                 } else {
                     alert(res.error || 'Login failed');
                 }
@@ -191,6 +195,7 @@ export function createUserManager() {
                 if (res && res.success) {
                     alert('Registration successful');
                     renderPanel();
+                    if (onAuthChange) onAuthChange() //notify main
                 } else {
                     alert(res.error || 'Registration failed');
                 }
@@ -205,7 +210,9 @@ export function createUserManager() {
     container.appendChild(toggleBtn);
     container.appendChild(panel);
     document.body.appendChild(container);
-    renderPanel();
+    renderPanel().then(() => {
+        if (onAuthChange) onAuthChange(); // notify main after initial render
+    });
 }
 
 export async function checkAuthRequired() {

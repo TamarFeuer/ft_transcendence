@@ -1,9 +1,13 @@
-let chatSocket = null;      // The WebSocket connection
+export let chatSocket = null;      // The WebSocket connection
+let chatInitialized = false;
 let myUserId = null;        // ID of the current user
 let myUserName = null;      // Name of the current user
 export let onlineUsers = []; // List of online users from backend
 
 export function initChat() {
+	
+	if (chatInitialized) return;
+    chatInitialized = true;
 	
 	 // Read current user from window (set in main.js)
 	const CURRENT_USER = window.CURRENT_USER;
@@ -13,9 +17,6 @@ export function initChat() {
 		return;
 	}
 	
-	// Determine host for dev vs production
-
-
 	// Create WebSocket connection
 	chatSocket = new WebSocket(
 		`${location.protocol === "http:" ? "ws:" : "wss:"}//${location.host}/ws/chat/`
@@ -119,38 +120,52 @@ export function sendChatMessage(message, target = null) {
 }
 
 // --- Typing indicator setup ---
+let typingListenerAttached = false;
+
 export function initTyping(chatInput) {
 	if (!chatInput) return;
-	if (!chatSocket) {
-		console.warn("Typing init: chatSocket not ready yet");
-		return;
-	}
+	if (typingListenerAttached) return;
+
+	typingListenerAttached = true;
 
 	let typingTimeout;
 
-	// Only attach input event after WebSocket is open
-	chatSocket.addEventListener("open", () => {
-		chatInput.addEventListener("input", () => {
-			if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatInput.addEventListener("input", () => {
+		if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 
-			// Notify backend user is typing
-			chatSocket.send(JSON.stringify({
-				type: "typing",
-				user: myUserId,
-				name: myUserName
-			}));
+		chatSocket.send(JSON.stringify({
+			type: "typing",
+			user: myUserId,
+			name: myUserName
+		}));
 
-			// Debounce: stop typing after 1 second of no input
-			clearTimeout(typingTimeout);
-			typingTimeout = setTimeout(() => {
-				if (chatSocket.readyState === WebSocket.OPEN) {
-					chatSocket.send(JSON.stringify({
-						type: "stop_typing",
-						user: myUserId,
-						name: myUserName
-					}));
-				}
-			}, 1000);
-		});
+		clearTimeout(typingTimeout);
+		typingTimeout = setTimeout(() => {
+			if (chatSocket?.readyState === WebSocket.OPEN) {
+				chatSocket.send(JSON.stringify({
+					type: "stop_typing",
+					user: myUserId,
+					name: myUserName
+				}));
+			}
+		}, 1000);
 	});
+}
+
+export function stopChat() {
+	chatInitialized = false;
+	typingListenerAttached = false;
+    if (chatSocket) {
+
+		chatSocket.close();
+		chatSocket = null;
+    }
+
+	myUserId = null;
+	myUserName = null;
+
+	// Clear chat messages
+	const chatMessages = document.getElementById("chatMessages");
+	if (chatMessages) chatMessages.innerHTML = "";
+
 }
