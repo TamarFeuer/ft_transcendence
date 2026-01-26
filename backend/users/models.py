@@ -42,23 +42,17 @@ class Friendship(models.Model):
             Q(requester=user2, receiver=user1, status='accepted')
         ).exists()
     
-    @classmethod
-    def get_friends(cls, user):
-        """Get all accepted friends of a user."""
-        return User.objects.filter(
-            Q(friend_requests_received__requester=user, friend_requests_received__status='accepted') |
-            Q(friend_requests_sent__receiver=user, friend_requests_sent__status='accepted')
-        ).distinct()
+    # @classmethod
+    # def get_friends(cls, user):
+    #     """Get all accepted friends of a user."""
     
-    @classmethod
-    def get_pending_requests(cls, user):
-        """Get all pending friend requests for a user (received)."""
-        return cls.objects.filter(receiver=user, status='pending')
+    # @classmethod
+    # def get_pending_requests(cls, user):
+    #     """Get all pending friend requests for a user (received)."""
     
-    @classmethod
-    def get_sent_requests(cls, user):
-        """Get all pending friend requests sent by a user."""
-        return cls.objects.filter(requester=user, status='pending')
+    # @classmethod
+    # def get_sent_requests(cls, user):
+    #     """Get all pending friend requests sent by a user."""
 
 
 class BlockedUser(models.Model):
