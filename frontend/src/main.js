@@ -4,6 +4,7 @@ import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
 import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
+import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 
 // --- Game Variables ---
 let ws = null;
@@ -21,8 +22,11 @@ function handleRoute(path) {
 	const handler = routes[path];
 	if (handler) {
 		handler();
+		// Ensure translations are applied after route loads
+		setTimeout(() => updatePageTranslations(), 0);
 	} else {
 		routes['/']?.();
+		setTimeout(() => updatePageTranslations(), 0);
 	}
 }
 
@@ -187,7 +191,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 			}
 			if (gameObjects.paddleLeft.position.y < -4.5) {
 				gameObjects.paddleLeft.position.y = -4.5;
-			}			
+			}
 		}, 1000 / 15);
 
 		// Player 2 controls (Arrow keys)
@@ -203,7 +207,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 			}
 			if (gameObjects.paddleRight.position.y < -4.5) {
 				gameObjects.paddleRight.position.y = -4.5;
-			}			
+			}
 		}, 1000 / 15);
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
@@ -288,31 +292,31 @@ export function initAIGame(scene, gameObjects, tournament) {
 		const keyboardIntervalP1 = setInterval(() => {
 			const paddleY = gameObjects.paddleLeft.position.y;
 			const ballY = gameObjects.ball.position.y;
-			
+
 			// AI tries to move paddle towards ball
 			const difference = ballY - paddleY;
-			
+
 			if (gameObjects.ball.position.x < 0 && Math.abs(difference) > 0.5) {
 				// Current energy (distance from ball)
 				const currentEnergy = Math.abs(difference);
-				
+
 				// Propose a random move
 				const proposedMove = Math.random() < 0.5 ? 0.8 : -0.8;
 				const newY = paddleY + proposedMove;
 				const newEnergy = Math.abs(ballY - newY);
-				
+
 				// Energy difference (negative = improvement)
 				const deltaE = newEnergy - currentEnergy;
-				
+
 				// Acceptance probability: always accept improvements,
 				// sometimes accept worse moves based on temperature
 				const acceptProbability = deltaE < 0 ? 1.0 : Math.exp(-deltaE / gameObjects.temperature);
-				
+
 				// Accept or reject the move
 				if (Math.random() < acceptProbability) {
 					gameObjects.paddleLeft.position.y = newY;
 				}
-				
+
 				// Cool down
 				gameObjects.temperature *= 0.99;
 				if (gameObjects.temperature < 0.5) {
@@ -343,7 +347,7 @@ export function initAIGame(scene, gameObjects, tournament) {
 			}
 			if (gameObjects.paddleRight.position.y < -4.5) {
 				gameObjects.paddleRight.position.y = -4.5;
-			}			
+			}
 		}, standartSpeed);
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
@@ -463,10 +467,10 @@ export async function startTournament(playerCount) {
 setupRoutes();
 
 window.addEventListener("DOMContentLoaded", async () => {
-	
+
 	// Fetch current user from backend
 	const CURRENT_USER = await fetchCurrentUser();
-	
+
 	// Store globally so chat.js can access it
 	window.CURRENT_USER = CURRENT_USER;
 
@@ -485,6 +489,33 @@ window.addEventListener("DOMContentLoaded", async () => {
 	const usersBtn = document.querySelector('button[data-panel="users"]');
 	const usersList = document.getElementById("usersList");
 	const userDetails = document.getElementById("userDetails");
+	const languageSelect = document.getElementById("languageSelectorBtn");
+
+	// Initialize i18n
+	initI18n();
+	
+	// Start each session with English
+	setLanguage(Language.EN);
+
+	// Initial route handling
+	handleRoute(window.location.pathname);
+
+	// Update page translations
+	updatePageTranslations();
+
+	// Setup language selector
+	if (languageSelect) {
+		languageSelect.addEventListener("change", (e) => {
+			const target = e.target;
+			setLanguage(target.value);
+			updatePageTranslations();
+		});
+	}
+
+	// Listen for language change events
+	window.addEventListener("languagechange", () => {
+		updatePageTranslations();
+	});
 
 	// create user manager UI
 	createUserManager();
@@ -547,7 +578,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 			div.className = "py-1 px-2";
 
 			const span = document.createElement("span");
-			
+
 			// Determine display name: use name if available, else ID
 			let displayName = getNameFromUser(user)
 			span.textContent = displayName;
@@ -604,8 +635,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 			div.innerHTML = `
 				<span class="font-semibold">${friend.name}</span>
 				<span>${friend.avatar}</span>
-				<span class="text-sm ${
-					isOnline ? "text-green-400" : "text-gray-400"
+				<span class="text-sm ${isOnline ? "text-green-400" : "text-gray-400"
 				}">
 					${isOnline ? "online" : "offline"}
 				</span>
@@ -658,6 +688,4 @@ window.addEventListener("DOMContentLoaded", async () => {
 		});
 	}
 
-	// Initial route handling
-	handleRoute(window.location.pathname);
 });
