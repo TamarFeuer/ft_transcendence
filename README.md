@@ -38,6 +38,8 @@ key features>
 tools, versions, configuration like .env setup, etc.), and step-by-step instructions to
 run the project>
 
+**Currently we build and run by: docker compose -d --build**
+
 
 ### Resources
 <classic references related to the topic (documentation, articles, tutorials, etc.), as well as a description of how AI was used —
