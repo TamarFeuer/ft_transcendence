@@ -28,23 +28,23 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
 - [Individual Contributions](#individual-contributions)
 
 
-### description
+### Description
 <clear name for the project and its
 key features>
 
 
-### instructions
+### Instructions
 <all the needed prerequisites (software,
 tools, versions, configuration like .env setup, etc.), and step-by-step instructions to
 run the project>
 
 
-### resources
+### Resources
 <classic references related to the topic (documentation, articles, tutorials, etc.), as well as a description of how AI was used —
 specifying for which tasks and which parts of the project>
 
 
-### team-information
+### Team Information
 <For each team member mentioned at the top of the README.md, you must provide:
 27
 ft_transcendence Surprise.
@@ -52,13 +52,13 @@ ft_transcendence Surprise.
 ◦ Brief description of their responsibilities>
 
 
-### project-management
+### Project Management
 <◦ How the team organized the work (task distribution, meetings, etc.).
 ◦ Tools used for project management (GitHub Issues, Trello, etc.).
 ◦ Communication channels used (Discord, Slack, etc.)>
 
 
-### technical-stack
+### Technical Stack
 <◦ Frontend technologies and frameworks used.
 ◦ Backend technologies and frameworks used.
 ◦ Database system and why it was chosen.
@@ -66,13 +66,13 @@ ft_transcendence Surprise.
 ◦ Justification for major technical choices>
 
 
-### database-schema
+### Database Schema
 <◦ Visual representation or description of the database structure.
 ◦ Tables/collections and their relationships.
 ◦ Key fields and data types>
 
 
-### feature-list
+### Feature List
 <◦ Complete list of implemented features.
 ◦ Which team member(s) worked on each feature.
 ◦ Brief description of each feature’s functionality>
@@ -100,12 +100,13 @@ The following features are implemented:
 
 #### Internationalization (i18n)
 The project has a custom i18n (internationalization) system.
+
 Supported Languages:
 - English (en)
 - Dutch (nl)
 - Turkish (tr)
 
-(To be removed later):
+**TODO (remove before final submission)**  
 How to add new translatable text:
 
 1. Add your translation key to: `frontend/src/i18n/keys.js`
@@ -121,7 +122,7 @@ How to use translations in Javascript:
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 ```
 
-**How to use translations in HTML:**
+How to use translations in HTML:
 ```html
 <button data-i18n="BTN_START_GAME">START GAME</button>
 ```
@@ -129,7 +130,7 @@ The text will automatically update when language changes.
 Frontend bottom-left corner has a language selector dropdown.
 
 
-### modules
+### Modules
 <◦ List of all chosen modules (Major and Minor).
 ◦ Point calculation (Major = 2pts, Minor = 1pt).
 ◦ Justification for each module choice, especially for custom "Modules of
@@ -138,7 +139,7 @@ choice".
 ◦ Which team member(s) worked on each module>
 
 
-### individual-contributions
+### Individual Contributions
 <◦ Detailed breakdown of what each team member contributed.
 ◦ Specific features, modules, or components implemented by each person.
 ◦ Any challenges faced and how they were overcome.
