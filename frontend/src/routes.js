@@ -187,6 +187,8 @@ export function setupRoutes() {
           const result = await tournamentAPI.joinTournament(tournamentId);
           if (result.ok) {
             alert('Joined tournament successfully!');
+            btn.disabled = false;
+            btn.textContent = 'Cancel';
             loadAllTournaments();
           } else {
             alert(result.data?.error || 'Failed to join tournament');

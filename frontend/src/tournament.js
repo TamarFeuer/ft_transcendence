@@ -4,6 +4,7 @@ import { fetchWithRefreshAuth } from './usermanagement.js';
 
 export async function createTournament(name, description, maxPlayers) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/create/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -24,6 +25,7 @@ export async function createTournament(name, description, maxPlayers) {
 
 export async function joinTournament(tournamentId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/join/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -31,6 +33,10 @@ export async function joinTournament(tournamentId) {
             body: JSON.stringify({ tournament_id: tournamentId })
         });
         const data = await res.json();
+        if (res.ok) {
+            console.log('Successfully joined tournament');
+            
+        }
         return { ok: res.ok, data };
     } catch (error) {
         console.error('Error joining tournament:', error);
@@ -40,6 +46,7 @@ export async function joinTournament(tournamentId) {
 
 export async function startTournament(tournamentId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/start/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -56,6 +63,7 @@ export async function startTournament(tournamentId) {
 
 export async function cancelTournament(tournamentId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/cancel/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -177,6 +185,7 @@ export async function getTournamentUserReadyGames(tournamentId) {
 
 export async function startTournamentGame(gameId) {
     try {
+        await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
         const res = await fetch('/api/tournament/game/start/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
