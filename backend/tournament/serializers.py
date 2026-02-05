@@ -1,22 +1,6 @@
 from rest_framework import serializers
 from .models import Tournament, TournamentParticipant, TournamentGame
 
-
-class TournamentSerializer(serializers.ModelSerializer):
-    creator_username = serializers.CharField(source='creator.username', read_only=True)
-    participant_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Tournament
-        fields = ['id', 'name', 'description', 'creator', 'creator_username', 
-                  'max_players', 'status', 'created_at', 'start_time', 'end_time', 
-                  'participant_count']
-        read_only_fields = ['creator', 'status', 'created_at', 'start_time', 'end_time']
-    
-    def get_participant_count(self, obj):
-        return obj.participants.count()
-
-
 class TournamentParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     
@@ -24,6 +8,22 @@ class TournamentParticipantSerializer(serializers.ModelSerializer):
         model = TournamentParticipant
         fields = ['id', 'user', 'username', 'joined_at', 'score', 'rank']
         read_only_fields = ['user', 'joined_at', 'score', 'rank']
+
+class TournamentSerializer(serializers.ModelSerializer):
+    creator_username = serializers.CharField(source='creator.username', read_only=True)
+    participant_count = serializers.SerializerMethodField()
+    participants = TournamentParticipantSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Tournament
+        fields = ['id', 'name', 'description', 'creator', 'creator_username', 
+                  'max_players', 'status', 'created_at', 'start_time', 'end_time', 
+                  'participant_count', 'participants']
+        read_only_fields = ['creator', 'status', 'created_at', 'start_time', 'end_time']
+    
+    def get_participant_count(self, obj):
+        return obj.participants.count()
+
 
 
 class TournamentGameSerializer(serializers.ModelSerializer):

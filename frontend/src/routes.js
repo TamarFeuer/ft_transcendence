@@ -133,7 +133,7 @@ export function setupRoutes() {
         listEl.innerHTML = '<p class="text-gray-400">No tournaments available for registration.</p>';
         return;
       }
-      
+      console.log("Registration tournaments:", result.data); 
       listEl.innerHTML = '';
       result.data.forEach(tournament => {
         const tournamentDiv = document.createElement('div');
@@ -141,7 +141,9 @@ export function setupRoutes() {
         
         const isCreator = tournament.creator_username === currentUsername;
         const isFull = tournament.participant_count >= tournament.max_players;
-        
+        const isRegistered = tournament.participants.some(p => p.username === currentUsername);
+        console.log("isRegistered:", isRegistered); 
+
         tournamentDiv.innerHTML = `
           <div class="flex justify-between items-start">
             <div class="flex-1">
@@ -154,11 +156,16 @@ export function setupRoutes() {
               </div>
             </div>
             <div class="flex gap-2">
-              ${!isCreator && !isFull ? `
+              ${!isCreator && !isFull && !isRegistered ? `
                 <button class="join-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
                   Join
                 </button>
               ` : ''}
+              ${isRegistered && !isCreator ? `
+                <div class="px-4 py-2 bg-blue-500 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
+                  Joined
+                </div>
+                ` : ''}
               ${isCreator ? `
                 <button class="start-btn px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
                   Start

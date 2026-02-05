@@ -148,6 +148,8 @@ export function createUserManager() {
                 logoutBtn.textContent = 'Logout';
                 logoutBtn.addEventListener('click', async () => {
                     await logoutUser();
+                    //refresh page to update UI based on auth state
+                    location.reload();
                     renderPanel();
                 });
                 panel.appendChild(info);
@@ -181,6 +183,7 @@ export function createUserManager() {
                 const res = await loginUser(u, p);
                 if (res && res.success) {
                     alert('Login successful');
+                    location.reload();
                     renderPanel();
                 } else {
                     alert(res.error || 'Login failed');
