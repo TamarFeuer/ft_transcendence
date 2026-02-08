@@ -144,8 +144,14 @@ export function createUserManager() {
     function renderPanel() {
         getCurrentUser().then(user => {
             const username = localStorage.getItem('username') || '';
+            const openSocialsBtn = document.getElementById('openSocialsBtn');
             panel.innerHTML = '';
             if (user.authenticated) {
+                // User is logged in - show chat button
+            if (openSocialsBtn) {
+                openSocialsBtn.style.display = 'block';
+            }
+                
                 const info = document.createElement('div');
                 info.innerHTML = `<div><strong>${username || toggleBtn.textContent}</strong></div><div class="small" data-i18n="${TranslationKey.UM_LOGGED_IN}">Logged in</div>`;
                 const logoutBtn = document.createElement('button');
@@ -159,6 +165,11 @@ export function createUserManager() {
                 panel.appendChild(logoutBtn);
                 updatePageTranslations();
                 return;
+            }
+            
+            // User is NOT logged in - hide chat button
+            if (openSocialsBtn) {
+                openSocialsBtn.style.display = 'none';
             }
 
             // Tabs: Login / Register
@@ -189,7 +200,7 @@ export function createUserManager() {
                 const res = await loginUser(u, p);
                 if (res && res.success) {
                     alert('Login successful');
-                    renderPanel();
+                    window.location.reload();
                 } else {
                     alert(res.error || 'Login failed');
                 }
@@ -201,7 +212,7 @@ export function createUserManager() {
                 const res = await registerUser(u, p);
                 if (res && res.success) {
                     alert('Registration successful');
-                    renderPanel();
+                    window.location.reload();
                 } else {
                     alert(res.error || 'Registration failed');
                 }
