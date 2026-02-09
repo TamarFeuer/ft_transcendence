@@ -27,6 +27,24 @@
   font-style: normal;
 }
 
+#menuOverlayHome, #menuOverlayTournament {
+  background-image: url('../assets/background.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+#menuOverlayOnline {
+  background-image: url('../assets/online.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+#menuOverlayPong {
+  background-image: url('../assets/pong.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
 #chatContainer {
   font-family: "ComicNeue", system-ui, sans-serif;
 }

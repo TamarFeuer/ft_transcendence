@@ -1,7 +1,7 @@
 import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame, initAIGame } from './main.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
-import bgImage from '../assets/background.jpg';
+import favicon from '../assets/favicon.ico';
 import { checkAuthRequired } from './usermanagement.js';
 import { updatePageTranslations } from './i18n';
 
@@ -18,6 +18,7 @@ async function loadTemplate(name) {
   const html = await res.text();
 
   const appRoot = document.getElementById("app-root");
+  document.getElementById("favicon").href = favicon;
   appRoot.innerHTML = html;
   
   // Sync translations with current app language
