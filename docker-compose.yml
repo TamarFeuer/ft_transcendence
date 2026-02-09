@@ -16,6 +16,7 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+      - redis
     networks:
       - pongnet
     expose:
