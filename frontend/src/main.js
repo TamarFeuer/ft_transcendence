@@ -27,6 +27,7 @@ function handleRoute(path) {
 	} else {
 		routes['/']?.();
 		setTimeout(() => updatePageTranslations(), 0);
+		window.history.replaceState({}, '/', window.location.origin + '/');
 	}
 }
 
