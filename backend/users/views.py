@@ -40,4 +40,7 @@ def send_friend_request(request):
 		return JsonResponse({'error': 'invalid token'}, status=401)
 	except User.DoesNotExist:
 		return JsonResponse({'error': 'user does not exist'}, status=404)
+	except Exception as e:
+		logger.exception('Error sending a friend request')
+		return JsonResponse({'error': 'internal error'}, status=500)
 
