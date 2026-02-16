@@ -1,0 +1,102 @@
+import { onlineUsers } from "./chat";
+
+// creates the add friend Button
+function renderAddFriendsButton(addFriendSection){
+	const addFriendButton = document.createElement('button');
+	addFriendButton.style.display = 'block';
+	addFriendButton.textContent = 'Add New Friend';
+	addFriendSection.appendChild(addFriendButton);
+	return addFriendButton;
+}
+
+function handleSendingRequest(addFriendSection, addFriendButton){
+		addFriendButton.addEventListener('click', function(){
+		// addFriendButton.remove();
+		if (addFriendSection.children.length() > 0){
+			addFriendSection
+		}
+		const container = document.createElement('div');
+		container.style.display = 'flex';
+		container.style.gap = '12px';
+		addFriendSection.appendChild(container);
+		const friendInput = document.createElement('input');
+		friendInput.id = 'friendUsernameInput';
+		friendInput.placeholder = 'Enter Username';
+		friendInput.style.color = 'black';
+		container.appendChild(friendInput);
+
+		const sendButton = document.createElement('button');
+		sendButton.textContent = '➤';
+		sendButton.style.color = 'lightblue';
+		sendButton.style.fontSize = '30px';
+		container.appendChild(sendButton);
+		sendButton.addEventListener('click', function(){
+			const friendUsername = friendInput.value;
+			fetch('/api/friends/send', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json'},
+				body: JSON.stringify({to_username: friendUsername})
+			})
+		})
+
+	})
+}
+
+function expandPendingRequests(pendingRequestsSection, pendingRequestsButton){
+	pendingRequestsButton.addEventListener('click', function(){
+		const requestsList = document.createElement('div');
+		requestsList.textContent = 'requests will appear here'
+		pendingRequestsSection.appendChild(requestsList);
+	})
+}
+
+function renderPendingRequestsButton(pendingRequestsSection){
+	const pendingRequestsButton = document.createElement('button');
+	pendingRequestsButton.style.display = 'block';
+	pendingRequestsButton.textContent = 'Pending Requests';
+	pendingRequestsSection.appendChild(pendingRequestsButton);
+	return pendingRequestsButton;
+}
+
+export function renderFriendsPanel(currentUserId) {
+	const friendsPanel = document.getElementById("panel-friends");
+	friendsPanel.innerHTML = "";
+
+	const addFriendSection = document.createElement('div');
+	const pendingRequestsSection = document.createElement('div');
+	const friendsListSection = document.createElement('div');
+	friendsPanel.appendChild(addFriendSection);
+	friendsPanel.appendChild(pendingRequestsSection);
+	friendsPanel.appendChild(friendsListSection);
+
+	const addFriendButton = renderAddFriendsButton(addFriendSection);
+	const pendingRequestsButton = renderPendingRequestsButton(pendingRequestsSection);
+	handleSendingRequest(addFriendSection, addFriendButton);
+	expandPendingRequests(pendingRequestsSection, pendingRequestsButton);
+	const me = FAKE_USERS[currentUserId];
+	// if (!me || !me.friends || me.friends.length === 0) {
+	// 	friendsPanel.textContent = "No friends yet";
+	// 	return;
+	// }
+
+	me.friends.forEach(friendId => {
+		const friend = FAKE_USERS[friendId];
+		if (!friend) return;
+
+		const div = document.createElement("div");
+		div.className = "py-1 px-2 flex items-center gap-2";
+
+		const isOnline = onlineUsers.includes(friendId);
+
+		div.innerHTML = `
+			<span class="font-semibold">${friend.name}</span>
+			<span>${friend.avatar}</span>
+			<span class="text-sm ${isOnline ? "text-green-400" : "text-gray-400"
+			}">
+				${isOnline ? "online" : "offline"}
+			</span>
+		`;
+
+		friendsListSection.appendChild(div);
+	});
+}

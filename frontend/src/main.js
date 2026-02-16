@@ -4,6 +4,7 @@ import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat, sendChatMessage, onlineUsers, initTyping } from './chat.js';
 import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
+import { renderFriendsPanel } from "./friends.js";
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 
 // --- Game Variables ---
@@ -613,37 +614,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 		});
 	}
 
-	function renderFriendsPanel(currentUserId) {
-		const friendsPanel = document.getElementById("panel-friends");
-		friendsPanel.innerHTML = "";
 
-		const me = FAKE_USERS[currentUserId];
-		if (!me || !me.friends || me.friends.length === 0) {
-			friendsPanel.textContent = "No friends yet";
-			return;
-		}
-
-		me.friends.forEach(friendId => {
-			const friend = FAKE_USERS[friendId];
-			if (!friend) return;
-
-			const div = document.createElement("div");
-			div.className = "py-1 px-2 flex items-center gap-2";
-
-			const isOnline = onlineUsers.includes(friendId);
-
-			div.innerHTML = `
-				<span class="font-semibold">${friend.name}</span>
-				<span>${friend.avatar}</span>
-				<span class="text-sm ${isOnline ? "text-green-400" : "text-gray-400"
-				}">
-					${isOnline ? "online" : "offline"}
-				</span>
-			`;
-
-			friendsPanel.appendChild(div);
-		});
-	}
 
 	// Socials open/close
 	if (openSocialsBtn && chatContainer) {
