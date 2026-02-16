@@ -10,43 +10,53 @@ function renderAddFriendsButton(addFriendSection){
 }
 
 function handleSendingRequest(addFriendSection, addFriendButton){
+	let container = null;
 		addFriendButton.addEventListener('click', function(){
 		// addFriendButton.remove();
-		if (addFriendSection.children.length() > 0){
-			addFriendSection
-		}
-		const container = document.createElement('div');
-		container.style.display = 'flex';
-		container.style.gap = '12px';
-		addFriendSection.appendChild(container);
-		const friendInput = document.createElement('input');
-		friendInput.id = 'friendUsernameInput';
-		friendInput.placeholder = 'Enter Username';
-		friendInput.style.color = 'black';
-		container.appendChild(friendInput);
-
-		const sendButton = document.createElement('button');
-		sendButton.textContent = '➤';
-		sendButton.style.color = 'lightblue';
-		sendButton.style.fontSize = '30px';
-		container.appendChild(sendButton);
-		sendButton.addEventListener('click', function(){
-			const friendUsername = friendInput.value;
-			fetch('/api/friends/send', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json'},
-				body: JSON.stringify({to_username: friendUsername})
+		if (container){
+			container.remove();
+			container = null;
+		} else{
+			
+			container = document.createElement('div');
+			container.style.display = 'flex';
+			container.style.gap = '12px';
+			addFriendSection.appendChild(container);
+			const friendInput = document.createElement('input');
+			friendInput.id = 'friendUsernameInput';
+			friendInput.placeholder = 'Enter Username';
+			friendInput.style.color = 'black';
+			container.appendChild(friendInput);
+	
+			const sendButton = document.createElement('button');
+			sendButton.textContent = '➤';
+			sendButton.style.color = 'lightblue';
+			sendButton.style.fontSize = '30px';
+			container.appendChild(sendButton);
+			sendButton.addEventListener('click', function(){
+				const friendUsername = friendInput.value;
+				fetch('/api/friends/send', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json'},
+					body: JSON.stringify({to_username: friendUsername})
+				})
 			})
-		})
+		}
 
 	})
 }
 
 function expandPendingRequests(pendingRequestsSection, pendingRequestsButton){
+	let requestsList = null;
 	pendingRequestsButton.addEventListener('click', function(){
-		const requestsList = document.createElement('div');
-		requestsList.textContent = 'requests will appear here'
-		pendingRequestsSection.appendChild(requestsList);
+		if (requestsList){
+			requestsList.remove();
+			requestsList = null;
+		} else {
+			requestsList = document.createElement('div');
+			requestsList.textContent = 'requests will appear here'
+			pendingRequestsSection.appendChild(requestsList);
+		}
 	})
 }
 
