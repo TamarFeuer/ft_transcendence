@@ -10,17 +10,29 @@ from .models import FriendRequest
 
 logger = logging.getLogger(__name__)
 
+def get_authenticated_user(request):
+	try:
+		access_token = request.COOKIES.get('access_token')
+		if not access_token:
+			return (None, JsonResponse({'error': 'User is not found'}, status = 401))
+		payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
+		user_id = payload.get('user_id')
+		user = User.objects.get(id=user_id)
+	except jwt.ExpiredSignatureError:
+		return (None, JsonResponse({'error': 'token expired'}, status=401))
+	except jwt.DecodeError:
+		return (None, JsonResponse({'error': 'invalid token'}, status=401))
+	except User.DoesNotExist:
+		return (None, JsonResponse({'error': 'user does not exist'}, status=404))
+	return (user, None)
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def send_friend_request(request):
 	try:
-		access_token = request.COOKIES.get('access_token')
-		if not access_token:
-			return JsonResponse({'error': 'User is not logged in'}, status=401)
-		payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
-		#get sender's data that performs the friend request
-		user_id = payload.get('user_id')
-		from_user = User.objects.get(id=user_id)
+		from_user, error = get_authenticated_user(request)
+		if error:
+			return error
 		data = json.loads(request.body.decode())
 		to_username = data.get('to_username')
 		to_user = User.objects.get(username=to_username)
@@ -43,4 +55,12 @@ def send_friend_request(request):
 	except Exception as e:
 		logger.exception('Error sending a friend request')
 		return JsonResponse({'error': 'internal error'}, status=500)
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_pending_requests(request):
+	try:
+		user, error = get_authenticated_user(request)
+		pending_requests = FriendRequest.objects.filter(to_user=user, status='pending')
+		
 
