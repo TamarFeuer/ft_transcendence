@@ -55,7 +55,7 @@ function handleAccept(requestId){
 	});
 }
 
-function createPendingRequestsElements(pendingRequestsSection, data){
+function createPendingRequestsElements(requestsList, data){
 	data.requests.forEach(request => {
 		const singlePendingRequest = document.createElement('div');
 		const acceptButton = document.createElement('button');
@@ -71,7 +71,7 @@ function createPendingRequestsElements(pendingRequestsSection, data){
 		singlePendingRequest.appendChild(friendUsername);
 		singlePendingRequest.appendChild(acceptButton);
 		singlePendingRequest.appendChild(declineButton);
-		pendingRequestsSection.appendChild(singlePendingRequest);
+		requestsList.appendChild(singlePendingRequest);
 	});
 }
 
@@ -89,7 +89,7 @@ function expandPendingRequests(pendingRequestsSection, pendingRequestsButton){
 			fetchWithRefreshAuth('/api/friends/pending')
 			.then(response => response.json()).then(data => {
 				console.log(data);
-				createPendingRequestsElements(pendingRequestsSection, data);
+				createPendingRequestsElements(requestsList, data);
 			});
 		}
 	})
