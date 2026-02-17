@@ -47,9 +47,18 @@ function handleSendingRequest(addFriendSection, addFriendButton){
 }
 
 function handleAccept(requestId){
-	fetchWithRefreshAuth('api/friends/accept', {
+	fetchWithRefreshAuth('/api/friends/accept', {
 		method: 'POST',
 		headers: {'Content-Type': 'application/json'},
+		credentials: 'include',
+		body: JSON.stringify({request_id: requestId})
+	});
+}
+
+function handleDelete(requestId){
+	fetchWithRefreshAuth('/api/friends/delete', {
+		method: 'POST',
+		headers: {'Content-Type' : 'application/json'},
 		credentials: 'include',
 		body: JSON.stringify({request_id: requestId})
 	});
@@ -68,6 +77,7 @@ function createPendingRequestsElements(requestsList, data){
 		acceptButton.textContent = '✅';
 		acceptButton.addEventListener('click', () => handleAccept(request.id));
 		declineButton.textContent = '❌';
+		declineButton.addEventListener('click', () => handleDelete(request.id));	
 		singlePendingRequest.appendChild(friendUsername);
 		singlePendingRequest.appendChild(acceptButton);
 		singlePendingRequest.appendChild(declineButton);
