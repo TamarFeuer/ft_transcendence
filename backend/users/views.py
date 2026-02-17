@@ -40,7 +40,7 @@ def send_friend_request(request):
 		to_user = User.objects.get(username=to_username)
 		if from_user == to_user:
 			return JsonResponse({'error': 'Cannot make a friend request to yourself'}, status=400)
-		existing = FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists()
+		existing = FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exclude(status='declined').exists()
 		if existing:
 			return JsonResponse({'error': 'Friend request pending'}, status=400)
 		friend_request = FriendRequest.objects.create(from_user=from_user, to_user=to_user)
