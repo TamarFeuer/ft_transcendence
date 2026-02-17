@@ -37,7 +37,7 @@ async function refreshAccessToken() {
 }
 
 // --- API helper with automatic token refresh ---
-async function fetchWithRefreshAuth(url, options = {}) {
+export async function fetchWithRefreshAuth(url, options = {}) {
     options.credentials = 'include'; // Always include cookies
     
     let res = await fetch(url, options);

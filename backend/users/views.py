@@ -1,3 +1,4 @@
+
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -61,6 +62,41 @@ def send_friend_request(request):
 def get_pending_requests(request):
 	try:
 		user, error = get_authenticated_user(request)
+		if error:
+			return error
 		pending_requests = FriendRequest.objects.filter(to_user=user, status='pending')
-		
+		print(pending_requests)
 
+		return JsonResponse({'requests': list(pending_requests.values('id', 'from_user__username', 'status'))})
+
+	except Exception as e:
+			logger.exception('Error sending a friend request')
+			return JsonResponse({'error': 'internal error'}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def accept_request(request):
+	try:
+		user, error = get_authenticated_user(request)
+		if error:
+			return error
+		data = json.loads(request.body.decode())
+		request_id = data.get('request_id')
+		if not request_id:
+			return JsonResponse({'error': 'request_id is required'}, status=400)
+		friend_request = FriendRequest.objects.get(id=request_id)
+		if friend_request.to_user != user:
+			return JsonResponse({'error': 'Not your friend request'}, status=403)
+		if friend_request.status != 'pending':
+			return JsonResponse({'error': 'Friend request is already processed'}, status=400)
+		friend_request.status = 'accepted'
+		friend_request.save()
+		return JsonResponse({'success': True}, status=200)
+	except FriendRequest.DoesNotExist:
+			return JsonResponse({'error': 'Friend Request does not exist'}, status=404)
+	except Exception as e:
+		return JsonResponse({'error': "Error accepting friend request"}, status=500)
+
+
+	
