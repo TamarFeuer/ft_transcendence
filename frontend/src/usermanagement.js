@@ -144,12 +144,12 @@ export function createUserManager() {
     function renderPanel() {
         getCurrentUser().then(user => {
             const username = localStorage.getItem('username') || '';
-            const openSocialsBtn = document.getElementById('openSocialsBtn');
+            const openChatBtn = document.getElementById('openChatBtn');
             panel.innerHTML = '';
             if (user.authenticated) {
                 // User is logged in - show chat button
-            if (openSocialsBtn) {
-                openSocialsBtn.style.display = 'block';
+            if (openChatBtn) {
+                openChatBtn.style.display = 'block';
             }
                 
                 const info = document.createElement('div');
@@ -168,8 +168,8 @@ export function createUserManager() {
             }
             
             // User is NOT logged in - hide chat button
-            if (openSocialsBtn) {
-                openSocialsBtn.style.display = 'none';
+            if (openChatBtn) {
+                openChatBtn.style.display = 'none';
             }
 
             // Tabs: Login / Register

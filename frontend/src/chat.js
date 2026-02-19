@@ -1,119 +1,149 @@
-let chatSocket = null;
-let myUserId = null;
+// Handles WebSocket chat: connection, messaging, typing, online users.
+// The chat panel is a persistent overlay in index.html — it is NOT a route.
+// It stays alive across SPA navigation because it lives outside #app-root.
+
+//chatSocket.readyState is a number. The WebSocket API defines four possible values:
+// javascriptWebSocket.CONNECTING  // 0 - still connecting
+// WebSocket.OPEN        // 1 - ready to use
+// WebSocket.CLOSING     // 2 - closing
+// WebSocket.CLOSED      // 3 - closed
+
+let chatSocket = null; // Single shared WebSocket connection for all chat
+let myUserId = null; // Set after server sends "self_id" confirmation
 let myUserName = null;
+
+// Exported so other modules (e.g. main.js) can read the current online users list
 export let onlineUsers = [];
 
 export function initChat() {
 	
+	// CURRENT_USER must be set on window before initChat() is called.
+	// In main.js, fetch /api/auth/me first, then call initChat().
 	const CURRENT_USER = window.CURRENT_USER;
 
 	if (!CURRENT_USER) {
-		console.error("No current user available. Did you fetch it in main.js?");
+		console.error("initChat: window.CURRENT_USER is not set. Call /api/auth/me first");
 		return;
 	}
 
-	// Create WebSocket connection
-	chatSocket = new WebSocket(
-		`${location.protocol === "http:" ? "ws:" : "wss:"}//${location.host}/ws/chat/`
-	);
+	// Use wss:// in production (https), ws:// in development (http)
+	const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+	chatSocket = new WebSocket(`${wsProtocol}//${location.host}/ws/chat/`);
 
 	chatSocket.onopen = () => {
-		console.log("Connected to chat");
+		console.log("Chat WebSocket connected");
+		
+		// The backend reads the JWT from the cookie on connect (see consumers.py).
+		// We still send an "identify" message as a fallback / for extra context.
 		chatSocket.send(JSON.stringify({
 			type: "identify",
 			userId: CURRENT_USER.user_id,
 			name: CURRENT_USER.username,
-			token: CURRENT_USER.access_token
 		}));
 	}
 		
-	chatSocket.onclose = () => console.log("Chat disconnected");
+	chatSocket.onclose = () => {
+		console.log("Chat WebSocket disconnected");
+		// TODO: implement reconnect with exponential backoff if needed
+	};
+	
+	chatSocket.onerror = (err) => {
+		console.error("Chat WebSocket error:", err);
+	};
 
 	chatSocket.onmessage = (ev) => {
+		// All messages from the server are JSON
 		const data = JSON.parse(ev.data);
+		
+		switch (data.type) {
 
-		// Self identification
-		if (data.type === "self_id") {
-			myUserId = data.user_id;
-			myUserName = data.name || "Guest";
-			console.log("User ID:", CURRENT_USER.user_id);
-			console.log("User name:", CURRENT_USER.username);
-		}
+			// Server confirms our identity after connect
+			case "self_id":
+					myUserId = data.user_id;
+					myUserName = data.name || "Guest";
+					console.log(`Chat identified as: ${myUserName} (id: ${myUserId})`);
+					break;
 
-		// Chat message (global or private)
-		if (data.type === "chat") {
-			console.log("Incoming chat message:", data);
-			console.log("My user ID:", myUserId);
-			console.log("Message sender:", data.sender);
-			console.log("Message target:", data.target);
-			console.log("Is private?", data.private);
-
-			// Determine which channel this belongs to
-			let channelId;
-			
-			if (data.private) {
-				// Private message: determine the OTHER person's ID
-				if (String(data.sender) === String(myUserId)) {
-					// I sent this message - use the target's ID for the channel
-					channelId = data.target;
-					console.log("I sent this - channelId set to target:", channelId);
+			// Incoming chat message — either global or private DM
+			case "chat": {
+					// For private messages, the "channel" in the UI is the OTHER person.
+					// If I sent it: channel = target. If I received it: channel = sender.
+					// For global messages, channel is always "global";
+				let channelId;
+				
+				if (data.private) {
+					// String comparison because IDs may come as strings or numbers
+					if (String(data.sender) === String(myUserId)) {
+						// I sent this message - use the target's ID for the channel
+						channelId = data.target;
+						console.log("I sent this - channelId set to target:", channelId);
+					} else {
+						// Someone sent me a message - use their ID for the channel
+						channelId = data.sender;
+						console.log("Someone sent to me - channelId set to sender:", channelId);
+					}
 				} else {
-					// Someone sent me a message - use their ID for the channel
-					channelId = data.sender;
-					console.log("Someone sent to me - channelId set to sender:", channelId);
+					// Global message
+					channelId = "global";
+					console.log("Global message - channelId set to:", channelId);
 				}
-			} else {
-				// Global message
-				channelId = "global";
-				console.log("Global message - channelId set to:", channelId);
+
+				// Dispatch to main.js which owns the UI rendering
+				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
+					detail: {
+						channelId: channelId,
+						message: {
+							senderId: String(data.sender),
+							senderName: data.name || String(data.sender),
+							message: data.message
+						}
+					}
+				}));
+				break;
 			}
 
-			// Dispatch event so main.js can handle it
-			window.dispatchEvent(new CustomEvent("chatMessageReceived", {
-				detail: {
-					channelId: channelId,
-					message: {
-						senderId: String(data.sender),
-						senderName: data.name || data.sender,
-						message: data.message
-					}
-				}
-			}));
-		}
+			// Server sends the full list of online users whenever someone joins/leaves
+			case "online_users":
+				console.log("Received online_users message:", data.users);
+				onlineUsers = data.users;
+				window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
+				break;
 
-		// Online users update
-		if (data.type === "online_users") {
-			console.log("Received online_users message:", data.users);
-			onlineUsers = data.users;
-			window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
-		}
+			/// Another user started typing — show indicator (TODO in UI)
+			case "typing":
+				console.log(`${data.name || data.user} is typing...`);
+				// TODO: dispatch "typingStarted" event and show indicator in UI
+				break;
 
-		// Typing notifications
-		if (data.type === "typing") {
-			console.log(`${data.name || data.user} is typing...`);
-			// TODO: show typing indicator in UI
-		}
+			// Another user stopped typing
+			case "stop_typing":
+				console.log(`${data.name || data.user} stopped typing`);
+				// TODO: dispatch "typingStopped" event and hide indicator in UI
+				break;
 
-		if (data.type === "stop_typing") {
-			console.log(`${data.name || data.user} stopped typing`);
-			// TODO: hide typing indicator in UI
+			default:
+				console.warn("Unknown chat message type:", data.type);
 		}
 	};
 }
 
-// Send chat message (global or private)
+/**
+ * Send a chat message via the WebSocket, global or DM
+ * @param {string} message - The text content to send
+ * @param {string|null} target - User ID to send a private DM, or null for global chat
+ */
 export function sendChatMessage(message, target = null) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-		console.warn("Chat socket not ready");
+		console.warn("sendChatMessage: WebSocket not ready (state:", chatSocket?.readyState, ")");
 		return;
 	}
 
-	const payload = { 
-		type: "chat", 
+	const payload = {
+		type: "chat",
 		message 
 	};
 	
-	// If target is specified, send as private message
+	// Only add target if it's a private message — omitting it means global
 	if (target) {
 		payload.target = target;
 	}
@@ -121,27 +151,46 @@ export function sendChatMessage(message, target = null) {
 	chatSocket.send(JSON.stringify(payload));
 }
 
-// Typing indicator setup
+/**
+ * Attach typing indicator events to the chat textarea.
+ * Sends "typing" on input, then "stop_typing" after 1s of inactivity.
+ * @param {HTMLTextAreaElement} chatInput - The textarea element.
+ */
 export function initTyping(chatInput) {
-	if (!chatInput) return;
+	if (!chatInput) {
+		console.warn("initTyping: no chatInput element provided");
+		return;
+	}
 	if (!chatSocket) {
 		console.warn("Typing init: chatSocket not ready yet");
 		return;
 	}
 
+	// Stores the ID of the current countdown timer.
+	// Declared outside the event listener so it persists between keystrokes —
+	// if it were inside the listener, it would reset to undefined on every keystroke
+	// and clearTimeout() would never be able to cancel the previous timer.
 	let typingTimeout;
-
-	chatSocket.addEventListener("open", () => {
+	
+	// We wrap the listener setup in a function because we need to attach it
+	// in two different places below — either now if the socket is already open,
+	// or later when it opens.
+	 const attachTyping = () => {
 		chatInput.addEventListener("input", () => {
-			if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+			if (chatSocket.readyState !== WebSocket.OPEN) return;
 
+			// Tell the server this user is typing
 			chatSocket.send(JSON.stringify({
 				type: "typing",
 				user: myUserId,
-				name: myUserName
+				name: myUserName,
 			}));
-
+			
+			// Debounce: cancel the previous countdown and start a fresh one
+			// "stop_typing" only fires if the user stops typing for a full second
 			clearTimeout(typingTimeout);
+			// We don't care about the actual value of typingTimeout
+			// we only store it so we can pass it to clearTimeout on the next keystroke
 			typingTimeout = setTimeout(() => {
 				if (chatSocket.readyState === WebSocket.OPEN) {
 					chatSocket.send(JSON.stringify({
@@ -152,5 +201,15 @@ export function initTyping(chatInput) {
 				}
 			}, 1000);
 		});
-	});
+	};
+	
+	   if (chatSocket.readyState === WebSocket.OPEN) {
+		// Socket is already open, attach the listener now
+		attachTyping();
+	} else {
+		// Socket exists but is still connecting (readyState === 0).
+		// we are handing it to the browser to call later when the socket opens
+		// and the browswer "fires" the open event.
+		chatSocket.addEventListener("open", attachTyping, { once: true });
+	}
 }

@@ -478,8 +478,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 	// DOM elements
 	const chatContainer = document.getElementById("chatContainer");
-	const openSocialsBtn = document.getElementById("openSocialsBtn");
-	const closeSocialsBtn = document.getElementById("closeSocialsBtn");
+	const openChatBtn = document.getElementById("openChatBtn");
+	const closeChatBtn = document.getElementById("closeChatBtn");
 	const chatBtn = document.getElementById("chatBtn");
 	const chatInput = document.getElementById("chatInput");
 	const onlineUsersList = document.getElementById("onlineUsersList");
@@ -784,20 +784,20 @@ window.addEventListener("DOMContentLoaded", async () => {
 	// CHAT OPEN/CLOSE
 	// ============================================
 
-	if (openSocialsBtn && chatContainer) {
-		openSocialsBtn.style.display = "block";
-		openSocialsBtn.addEventListener("click", () => {
+	if (openChatBtn && chatContainer) {
+		openChatBtn.style.display = "block";
+		openChatBtn.addEventListener("click", () => {
 			chatContainer.style.display = "flex";
-			openSocialsBtn.style.display = "none";
+			openChatBtn.style.display = "none";
 			chatInput.focus();
 			renderOnlineUsers();
 		});
 	}
 
-	if (closeSocialsBtn && chatContainer && openSocialsBtn) {
-		closeSocialsBtn.addEventListener("click", () => {
+	if (closeChatBtn && chatContainer && openChatBtn) {
+		closeChatBtn.addEventListener("click", () => {
 			chatContainer.style.display = "none";
-			openSocialsBtn.style.display = "block";
+			openChatBtn.style.display = "block";
 		});
 	}
 
