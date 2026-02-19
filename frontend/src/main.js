@@ -535,7 +535,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 		chatInput.focus();
 	}
 
-	function openDMChannel(userId, userName) {
+	function openDMChannel(userId, userName, switchToChannel = true) {
 		// Don't open DM with yourself
 		if (userId === CURRENT_USER.user_id) return;
 
@@ -577,48 +577,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 			}
 		});
 
-		// Switch to the new channel
-		switchChannel(userId);
+		// Only switch if requested
+		if (switchToChannel) switchChannel(userId);
 	}
-	
-	function createDMTab(userId, userName) {
-		// Don't open DM with yourself
-		if (userId === CURRENT_USER.user_id) return;
 
-		// Create message history for this channel if it doesn't exist
-		if (!messageHistory[userId]) {
-			messageHistory[userId] = [];
-		}
-
-		// Create new tab
-		const tab = document.createElement("button");
-		tab.className = "channel-tab";
-		tab.dataset.channel = userId;
-
-		tab.innerHTML = `
-			<span class="font-bold opacity-80">@</span>
-			<span>${userName}</span>
-			<span class="close-tab" data-close="${userId}">  X</span>
-		`;
-
-		// Insert tab
-		channelTabs.appendChild(tab);
-
-		// Add click handlers
-		tab.addEventListener("click", (e) => {
-			if (e.target.classList.contains("close-tab")) {
-				// Close tab
-				e.stopPropagation();
-				closeDMChannel(userId);
-			} else {
-				// Switch to this channel
-				switchChannel(userId);
-			}
-		});
-
-		// not calling switchChannel here - just creating the tab
-	}
-	
 	function closeDMChannel(userId) {
 		// Remove tab
 		const tab = document.querySelector(`[data-channel="${userId}"]`);
@@ -761,8 +723,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 		if (channelId !== "global") {
 			const existingTab = document.querySelector(`[data-channel="${channelId}"]`);
 			if (!existingTab) {
-				// Create DM tab but DON'T switch to it
-				createDMTab(channelId, message.senderName);
+				// Create DM channel but DON'T switch to it
+				openDMChannel(channelId, message.senderName, false)
 			}
 		}
 		// Just add the message - don't auto-switch channels
