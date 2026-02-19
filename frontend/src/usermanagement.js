@@ -1,5 +1,6 @@
 import { t, updatePageTranslations } from './i18n/index.js';
 import { TranslationKey } from './i18n/keys.js';
+import { closeChat } from './chat.js';
 
 // --- Token refresh helper ---
 let refreshPromise = null;
@@ -95,6 +96,7 @@ export async function loginUser(username, password) {
 }
 
 export async function logoutUser() {
+    closeChat(); // close WebSocket — triggers disconnect() on backend
     await fetch('/api/auth/logout', { 
         method: 'POST',
         credentials: 'include'

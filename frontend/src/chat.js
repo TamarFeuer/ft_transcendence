@@ -213,3 +213,10 @@ export function initTyping(chatInput) {
 		chatSocket.addEventListener("open", attachTyping, { once: true });
 	}
 }
+
+export function closeChat() {
+    if (chatSocket) {
+        chatSocket.close();
+        chatSocket = null;
+    }
+}
