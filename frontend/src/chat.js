@@ -219,4 +219,9 @@ export function closeChat() {
         chatSocket.close();
         chatSocket = null;
     }
+	// Hide chat UI on logout
+    const chatContainer = document.getElementById("chatContainer");
+    const openChatBtn = document.getElementById("openChatBtn");
+    if (chatContainer) chatContainer.style.display = "none";
+    if (openChatBtn) openChatBtn.style.display = "none";
 }
