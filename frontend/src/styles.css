@@ -101,12 +101,6 @@
   font-weight: bold;
 }
 
-/* Channel icon (# for global, @ for DMs) */
-.channel-icon {
-  font-weight: bold;
-  opacity: 0.8;
-}
-
 /* Close tab button (only for DMs) */
 .close-tab {
   color: #ff77cc;
@@ -131,7 +125,7 @@
 }
 
 /* Main close button */
-#closeSocialsBtn {
+#closeChatBtn {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.85);
@@ -143,7 +137,7 @@
   flex-shrink: 0;
 }
 
-#closeSocialsBtn:hover {
+#closeChatBtn:hover {
   color: #fce7f3;
 }
 
@@ -185,25 +179,6 @@
 
 .user-item:hover {
   background: rgba(236, 72, 153, 0.2);
-}
-
-.user-item.self {
-  color: #4ade80;
-  font-weight: bold;
-  cursor: default;
-}
-
-.user-item.self:hover {
-  background: transparent;
-}
-
-/* Online status indicator */
-.user-status {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: #00FF00;
-  flex-shrink: 0;
 }
 
 /* Right side: Chat panel */
@@ -259,14 +234,6 @@
 /* DM-specific styling */
 .chat-message.dm-received .sender {
   color: #60a5fa; /* blue-400 */
-}
-
-/* Input wrapper */
-#chatInputWrapper {
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.8);
-  border-top: 1px solid rgba(236, 72, 153, 0.3);
-  flex-shrink: 0;
 }
 
 #chatInput::-webkit-scrollbar {
@@ -339,14 +306,4 @@
 #userManager .small {
   font-size: 0.85rem;
   color: #555;
-}
-
-.unread-badge {
-    background-color: #ef4444;
-    color: white;
-    font-size: 0.75rem;
-    padding: 0.125rem 0.375rem;
-    border-radius: 9999px;
-    margin-left: 0.5rem;
-    font-weight: bold;
 }

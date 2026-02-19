@@ -46,7 +46,7 @@
     <div id="chatHeader">
       <div id="channelTabs" class="flex-1 flex items-center gap-2 overflow-x-auto">
         <button class="channel-tab active" data-channel="global">
-          <span class="channel-icon">#</span>
+          <span class="font-bold opacity-80">#</span>
           <span>Global</span>
         </button>
       </div>
@@ -70,12 +70,12 @@
         <div id="channelTitle" class="px-4 py-2 border-b border-pink-600/30 text-sm font-semibold text-gray-300 flex-shrink-0">
           # Global Chat
         </div>
-        <div id="chatMessages"></div>
-        <div id="chatInputWrapper">
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
+        <div id="chatInputWrapper" class="p-4 bg-black/80 border-t border-pink-600/30 flex-shrink-0">
           <textarea id="chatInput" rows="2" placeholder="Type a message..."
             class="w-full px-3 py-2 bg-gray-800 text-white rounded resize-none 
                   focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
-          <button id="chatBtn"
+          <button id="sendChatBtn"
             class="mt-2 w-full py-2 bg-pink-500 hover:bg-pink-400 
                   rounded font-semibold transition-colors">
             Send

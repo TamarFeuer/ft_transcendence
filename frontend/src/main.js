@@ -480,7 +480,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 	const chatContainer = document.getElementById("chatContainer");
 	const openChatBtn = document.getElementById("openChatBtn");
 	const closeChatBtn = document.getElementById("closeChatBtn");
-	const chatBtn = document.getElementById("chatBtn");
+	const sendChatBtn = document.getElementById("sendChatBtn");
 	const chatInput = document.getElementById("chatInput");
 	const onlineUsersList = document.getElementById("onlineUsersList");
 	const channelTabs = document.getElementById("channelTabs");
@@ -557,7 +557,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 		tab.dataset.channel = userId;
 
 		tab.innerHTML = `
-			<span class="channel-icon">@</span>
+			<span class="font-bold opacity-80">@</span>
 			<span>${userName}</span>
 			<span class="close-tab" data-close="${userId}">  X</span>
 		`;
@@ -596,7 +596,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 		tab.dataset.channel = userId;
 
 		tab.innerHTML = `
-			<span class="channel-icon">@</span>
+			<span class="font-bold opacity-80">@</span>
 			<span>${userName}</span>
 			<span class="close-tab" data-close="${userId}">  X</span>
 		`;
@@ -670,7 +670,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 		const messages = messageHistory[channelId] || [];
 		messages.forEach(msg => {
 			const msgDiv = document.createElement("div");
-			msgDiv.className = "chat-message";
+			msgDiv.className = "chat-message text-base leading-relaxed text-gray-200";
 
 			const isOwnMessage = msg.senderId === CURRENT_USER.user_id;
 			if (isOwnMessage) {
@@ -709,52 +709,41 @@ window.addEventListener("DOMContentLoaded", async () => {
 	// ============================================
 
 	function renderOnlineUsers() {
-		if (!onlineUsersList) return;
-		
-		onlineUsersList.innerHTML = "";
+	if (!onlineUsersList) return;
+	
+	onlineUsersList.innerHTML = "";
 
-		if (!onlineUsers || onlineUsers.length === 0) {
-			onlineUsersList.innerHTML = '<div class="text-xs text-gray-500 px-2">No users online</div>';
-			return;
-		}
-
-		onlineUsers.forEach(user => {
-			// Skip yourself - don't render your own user in the list
-			if (user.id === CURRENT_USER.user_id) {
-				return; // ← Add this check
-			}
-			const div = document.createElement("div");
-			div.className = "user-item";
-			
-			// Highlight current user
-			if (user.id === CURRENT_USER.user_id) {
-				div.classList.add("self");
-			}
-
-			// Status indicator
-			const statusDot = document.createElement("span");
-			statusDot.className = "user-status";
-
-			// Username
-			const nameSpan = document.createElement("span");
-			nameSpan.textContent = user.name || user.id;
-			if (user.id === CURRENT_USER.user_id) {
-				nameSpan.textContent = "You";
-			}
-
-			div.appendChild(statusDot);
-			div.appendChild(nameSpan);
-
-			// Click to open DM (but not for yourself)
-			if (user.id !== CURRENT_USER.user_id) {
-				div.addEventListener("click", () => {
-					openDMChannel(user.id, user.name || user.id);
-				});
-			}
-
-			onlineUsersList.appendChild(div);
-		});
+	if (!onlineUsers || onlineUsers.length === 0) {
+		onlineUsersList.innerHTML = '<div class="text-xs text-gray-500 px-2">No users online</div>';
+		return;
 	}
+
+	onlineUsers.forEach(user => {
+		// Skip yourself — every user past this point is guaranteed to be someone else
+		if (user.id === CURRENT_USER.user_id) return;
+
+		const div = document.createElement("div");
+		div.className = "user-item";
+
+		// Online status dot
+		const statusDot = document.createElement("span");
+		statusDot.className = "w-2 h-2 rounded-full bg-[#00FF00] flex-shrink-0";
+
+		// Username
+		const nameSpan = document.createElement("span");
+		nameSpan.textContent = user.name || user.id;
+
+		div.appendChild(statusDot);
+		div.appendChild(nameSpan);
+
+		// Click to open DM
+		div.addEventListener("click", () => {
+			openDMChannel(user.id, user.name || user.id);
+		});
+
+		onlineUsersList.appendChild(div);
+	});
+}
 
 	// Listen for online users updates
 	window.addEventListener("onlineUsersUpdated", renderOnlineUsers);
@@ -807,7 +796,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 	initTyping(chatInput);
 
-	if (chatBtn && chatInput) {
+	if (sendChatBtn && chatInput) {
 		const sendMessage = () => {
 			const message = chatInput.value.trim();
 			if (!message) return;
@@ -822,7 +811,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 			chatInput.focus();
 		};
 
-		chatBtn.addEventListener("click", sendMessage);
+		sendChatBtn.addEventListener("click", sendMessage);
 		
 		chatInput.addEventListener("keypress", e => {
 			if (e.key === "Enter" && !e.shiftKey) {
