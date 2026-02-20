@@ -16,6 +16,7 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+      - redis
     networks:
       - pongnet
     expose:
@@ -52,13 +53,11 @@ services:
     ports:
       - "5432:5432"
 
-  # redis:
-  #   image: redis:7-alpine
-  #   ports:
-  #     - "6379:6379"
-  #   restart: unless-stopped
-  #   networks:
-  #     - pongnet
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - pongnet
 
   nginx:
     image: nginx:stable-alpine
