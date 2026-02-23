@@ -2,8 +2,6 @@
 dist/
 frontend/dist/
 
-db/
-
 # Dependencies
 node_modules/
 
