@@ -37,7 +37,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
             await self.close(code=4005)
             return
-        
+
         logger.warning(f"user obj={self.scope.get('user')}, id={getattr(self.scope.get('user'), 'id', None)}, type={type(self.scope.get('user'))}")
         # Add player to game
         # self.role = self.game.add_player(self.scope['user'], self.scope['id'])

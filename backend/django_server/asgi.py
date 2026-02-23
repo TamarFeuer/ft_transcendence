@@ -21,8 +21,4 @@ application = ProtocolTypeRouter({
             URLRouter(game_ws + chat_ws)
         )
     ),
-    
-    "websocket": AuthMiddlewareStack(
-    URLRouter(game_ws + chat_ws)
-)
 })
