@@ -117,6 +117,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		elif msg_type == "chat":
 			message = data.get("message", "")
+
+			# Reject messages over 300 characters — frontend should catch this too
+			if len(message) > 300:
+				return
+
 			target = data.get("target")  # Target user ID for private message or None for global
 
 			payload = {

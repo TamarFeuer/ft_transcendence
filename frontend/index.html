@@ -2,91 +2,92 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="styles.css"> 
-  <title>Pong</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="styles.css"> 
+	<title>Pong</title>
 </head>
 
 <body>
 
-  <!-- Fullscreen game container -->
-  <div class="container">
-    <!-- Babylon canvas -->
-    <canvas id="renderCanvas" class="absolute inset-0 w-full h-full"></canvas>
+	<!-- Fullscreen game container -->
+	<div class="container">
+		<!-- Babylon canvas -->
+		<canvas id="renderCanvas" class="absolute inset-0 w-full h-full"></canvas>
 
-    <!-- Game root for dynamic content -->
-    <div id="app-root"></div>
+		<!-- Game root for dynamic content -->
+		<div id="app-root"></div>
 
-    <!-- Language selector -->
-    <div id="languageSelectorBtn" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
-      <label data-i18n="LABEL_LANGUAGE">Language:</label>
-      <select id="languageSelect">
-        <option value="en">English</option>
-        <option value="nl">Nederlands</option>
-        <option value="tr">Türkçe</option>
-      </select>
-    </div>    
+		<!-- Language selector -->
+		<div id="languageSelectorBtn" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
+			<label data-i18n="LABEL_LANGUAGE">Language:</label>
+			<select id="languageSelect">
+				<option value="en">English</option>
+				<option value="nl">Nederlands</option>
+				<option value="tr">Türkçe</option>
+			</select>
+		</div>    
 
-    <!-- Launcher button -->
-    <button id="openChatBtn" style="display: none;" class="fixed bottom-16 right-16 px-6 py-6 
-      text-xl tracking-widest font-extrabold font-comic
-      bg-black text-white rounded-xl shadow-[0_0_15px_rgba(0,255,100,0.8)]
-      border-2 border-lime-400
-      tracking-wider
-      transition-colors duration-200 ease-in-out z-50">
-      Chat
-    </button>
+		<!-- Launcher button -->
+		<button id="openChatBtn" style="display: none;" class="fixed bottom-16 right-16 px-6 py-6 
+			text-xl tracking-widest font-extrabold font-comic
+			bg-black text-white rounded-xl shadow-[0_0_15px_rgba(0,255,100,0.8)]
+			border-2 border-lime-400
+			tracking-wider
+			transition-colors duration-200 ease-in-out z-50">
+			Chat
+		</button>
 
-    <!-- Chat window container -->
-  <div id="chatContainer" style="display:none;">
-    
-    <!-- Header with channel tabs -->
-    <div id="chatHeader">
-      <div id="channelTabs" class="flex-1 flex items-center gap-2 overflow-x-auto">
-        <button class="channel-tab active" data-channel="global">
-          <span class="font-bold opacity-80">#</span>
-          <span>Global</span>
-        </button>
-      </div>
-      <button id="closeChatBtn">✕</button>
-    </div>
+		<!-- Chat window container -->
+	<div id="chatContainer" style="display:none;">
+		
+		<!-- Header with channel tabs -->
+		<div id="chatHeader">
+			<div id="channelTabs" class="flex-1 flex items-center gap-2 overflow-x-auto">
+				<button class="channel-tab active" data-channel="global">
+					<span class="font-bold opacity-80">#</span>
+					<span>Global</span>
+				</button>
+			</div>
+			<button id="closeChatBtn">✕</button>
+		</div>
 
-    <!-- Main content: sidebar + chat -->
-    <div id="chatContent">
-      
-      <!-- Left sidebar: Online users -->
-      <div id="usersSidebar">
-        <div class="px-2 py-2 text-lg font-bold text-[#fce7f3] tracking-wider">
-          Online
-        </div>
-        <div id="onlineUsersList" class="flex-1 overflow-y-auto px-2 space-y-0.2">
-        </div>
-      </div>
+		<!-- Main content: sidebar + chat -->
+		<div id="chatContent">
+			
+			<!-- Left sidebar: Online users -->
+			<div id="usersSidebar">
+				<div class="px-2 py-2 text-lg font-bold text-[#fce7f3] tracking-wider">
+					Online
+				</div>
+				<div id="onlineUsersList" class="flex-1 overflow-y-auto px-2 space-y-0.2">
+				</div>
+			</div>
 
-      <!-- Right side: Chat panel -->
-      <div id="chatPanel">
-        <div id="channelTitle" class="px-4 py-2 border-b border-pink-600/30 text-sm font-semibold text-gray-300 flex-shrink-0">
-          # Global Chat
-        </div>
-        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
-        <div id="chatInputWrapper" class="p-4 bg-black/80 border-t border-pink-600/30 flex-shrink-0">
-          <textarea id="chatInput" rows="2" placeholder="Type a message..."
-            class="w-full px-3 py-2 bg-gray-800 text-white rounded resize-none 
-                  focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
-          <button id="sendChatBtn"
-            class="mt-2 w-full py-2 bg-pink-500 hover:bg-pink-400 
-                  rounded font-semibold transition-colors">
-            Send
-          </button>
-        </div>
-      </div>
+			<!-- Right side: Chat panel -->
+			<div id="chatPanel">
+				<div id="channelTitle" class="px-4 py-2 border-b border-pink-600/30 text-sm font-semibold text-gray-300 flex-shrink-0">
+					# Global Chat
+				</div>
+				<div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
+				<div id="chatInputWrapper" class="p-4 bg-black/80 border-t border-pink-600/30 flex-shrink-0">
+					<textarea id="chatInput" rows="2" placeholder="Type a message..."
+						class="w-full px-3 py-2 bg-gray-800 text-white rounded resize-none 
+									focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
+						<div id="charCounter" class="text-xs text-right mt-1 text-gray-400">0 / 300</div>
+						<button id="sendChatBtn"
+						class="mt-2 w-full py-2 bg-pink-500 hover:bg-pink-400 
+									rounded font-semibold transition-colors">
+						Send
+					</button>
+				</div>
+			</div>
 
-    </div>
-  </div>
+		</div>
+	</div>
 
-  <script type="module" src="src/main.js"></script>
+	<script type="module" src="src/main.js"></script>
 
 </body>
 
