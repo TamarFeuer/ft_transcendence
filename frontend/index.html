@@ -5,10 +5,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css"> 
   <title>Pong</title>
-  <style>
-
-  </style>
 </head>
 
 <body>
@@ -21,109 +19,70 @@
     <!-- Game root for dynamic content -->
     <div id="app-root"></div>
 
+    <!-- Language selector -->
+    <div id="languageSelectorBtn" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
+      <label data-i18n="LABEL_LANGUAGE">Language:</label>
+      <select id="languageSelect">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="tr">Türkçe</option>
+      </select>
+    </div>    
+
     <!-- Launcher button -->
-    <button id="openSocialsBtn" style="display: none;" class="fixed bottom-16 right-16 px-6 py-6 
+    <button id="openChatBtn" style="display: none;" class="fixed bottom-16 right-16 px-6 py-6 
       text-xl tracking-widest font-extrabold font-comic
       bg-black text-white rounded-xl shadow-[0_0_15px_rgba(0,255,100,0.8)]
       border-2 border-lime-400
       tracking-wider
       transition-colors duration-200 ease-in-out z-50">
-      Socials
+      Chat
     </button>
 
     <!-- Chat window container -->
-    <div id="chatContainer"
-      class="fixed bottom-10 right-10 w-[22rem] h-[52rem] bg-black/80 text-white rounded-lg shadow-lg flex flex-col z-50"
-      style="display:none;">
-
-      <!-- HEADER -->
-      <div id="chatHeader" class="flex items-center tracking-wider gap-4 bg-pink-600 p-2 overflow-visible">
-
-        <!-- Tab buttons -->
-        <!-- Broad Button -->
-        <button data-panel="chat" class="tab-btn !text-lg relative group">
-          Say Hi
-          <!-- Tooltip -->
-          <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
-            bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
-            opacity-0 group-hover:opacity-100 transition-opacity duration-200
-            pointer-events-none text-center z-50
-            w-28 h-10 leading-tight">
-            Broadcast to all logged-in users
-          </span>
+  <div id="chatContainer" style="display:none;">
+    
+    <!-- Header with channel tabs -->
+    <div id="chatHeader">
+      <div id="channelTabs" class="flex-1 flex items-center gap-2 overflow-x-auto">
+        <button class="channel-tab active" data-channel="global">
+          <span class="font-bold opacity-80">#</span>
+          <span>Global</span>
         </button>
+      </div>
+      <button id="closeChatBtn">✕</button>
+    </div>
 
-        <!-- Users Button -->
-        <button data-panel="users" class="tab-btn !text-lg relative group">
-          Users
-          <!-- Tooltip -->
-          <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
-            bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
-            opacity-0 group-hover:opacity-100 transition-opacity duration-200
-            pointer-events-none text-center z-50
-            w-28 h-10 leading-tight">
-            Chat with logged-in users
-          </span>
-        </button>
+    <!-- Main content: sidebar + chat -->
+    <div id="chatContent">
+      
+      <!-- Left sidebar: Online users -->
+      <div id="usersSidebar">
+        <div class="px-2 py-2 text-lg font-bold text-[#fce7f3] tracking-wider">
+          Online
+        </div>
+        <div id="onlineUsersList" class="flex-1 overflow-y-auto px-2 space-y-0.2">
+        </div>
+      </div>
 
-        <button data-panel="friends" class="tab-btn !text-lg relative group">
-          Friends
-          <!-- Tooltip -->
-          <span class="absolute top-full text-xs left-1/2 mt-1 -translate-x-1/2
-            bg-[#fff8e7]/80 text-black px-2 py-1 rounded border border-black
-            opacity-0 group-hover:opacity-100 transition-opacity duration-200
-            pointer-events-none text-center z-50
-            w-28 h-10 leading-tight">
-            Play with your friends
-          </span>
-        </button>
-
-        <!-- Close button -->
-        <button id="closeSocialsBtn"
-          class="absolute top-5 right-1 text-red font-comic font-extrabold px-2 py-1 hover:text-pink-400">
-          X
-        </button>
-
-        <!-- Right side -->
-        <div class="ml-auto flex items-center space-x-1">
-          <span id="newMsgCount" class="bg-white text-black text-xs px-2 py-0.5 rounded-full font-bold hidden">
-            1
-          </span>
-
-          <!-- Send button -->
-          <button id="chatBtn" class="w-11 h-8 flex items-center justify-center rounded bg-pink-500 hover:bg-pink-400">
+      <!-- Right side: Chat panel -->
+      <div id="chatPanel">
+        <div id="channelTitle" class="px-4 py-2 border-b border-pink-600/30 text-sm font-semibold text-gray-300 flex-shrink-0">
+          # Global Chat
+        </div>
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
+        <div id="chatInputWrapper" class="p-4 bg-black/80 border-t border-pink-600/30 flex-shrink-0">
+          <textarea id="chatInput" rows="2" placeholder="Type a message..."
+            class="w-full px-3 py-2 bg-gray-800 text-white rounded resize-none 
+                  focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
+          <button id="sendChatBtn"
+            class="mt-2 w-full py-2 bg-pink-500 hover:bg-pink-400 
+                  rounded font-semibold transition-colors">
             Send
           </button>
         </div>
       </div>
 
-      <!-- CHAT PANEL -->
-      <div id="panel-chat" class="panel flex-1 flex flex-col hidden">
-        <!-- Output box: scrolls if messages overflow -->
-        <div id="chatMessages" class="h-[40rem] flex-1 overflow-y-auto p-2 space-y-1 text-lg"></div>
-
-        <!-- Input box: stays fixed at bottom -->
-        <div id="chatInputWrapper" class="p-2 bg-black/80 flex">
-          <textarea id="chatInput" rows="3" class="flex-1 px-2 py-1 rounded bg-gray-800 text-white text-lg resize-none"
-            placeholder="Type a message..."></textarea>
-        </div>
-      </div>
-
-      <!-- USERS PANEL -->
-      <div id="panel-users" class="panel flex-1 flex flex-col p-2 hidden">
-        <div id="usersList" class="flex-1 overflow-y-auto">
-          <!-- user list will go here -->
-        </div>
-        <div id="userDetails" class="mt-4 p-4 border border-gray-600 bg-gray-800 text-white rounded-lg"
-          style="display: none;">
-          <!-- details for selected user -->
-        </div>
-      </div>
-
-      <!-- FRIENDS PANEL -->
-      <div id="panel-friends" class="panel flex-1 flex flex-col p-2 hidden text-lg">
-        Friends list goes here
-      </div>
     </div>
   </div>
 

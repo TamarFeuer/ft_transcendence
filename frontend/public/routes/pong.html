@@ -1,33 +1,37 @@
-<div id="menuOverlay"
-  class="absolute inset-0 flex items-start justify-center bg-black/60 z-10 pt-24"
+<div id="menuOverlay" class="absolute inset-0 flex items-start justify-center bg-black/60 z-10 pt-24"
   style="background-image: url('../assets/pong.jpg'); background-size: cover; background-repeat: no-repeat;">
 
   <div class="flex gap-8 ml-[24rem]">
-    <button id="localBtn"
-      class="w-40 h-40 bg-orange-500 text-black font-extrabold text-lg font-comic
+    <button id="localBtn" class="w-40 h-40 bg-orange-500 text-black font-extrabold text-lg font-comic
       rounded-xl border-2 border-black/40 shadow-lg
       hover:bg-orange-600
       transition-transform transition-colors duration-150
       active:scale-95 active:shadow-inner">
-      Local<br>Game
+      <span data-i18n="PONG_LOCAL">Local<br>Game</span>
     </button>
 
-    <button id="tournamentBtn"
-      class="w-40 h-40 bg-orange-500 text-black font-extrabold text-lg font-comic
+    <button id="AIBtn" class="w-40 h-40 bg-orange-500 text-black font-extrabold text-lg font-comic
       rounded-xl border-2 border-black/40 shadow-lg
       hover:bg-orange-600
       transition-transform transition-colors duration-150
       active:scale-95 active:shadow-inner">
-      Tournament
+      <span data-i18n="PONG_AI">AI Opponent<br>Game</span>
     </button>
 
-    <button id="onlineBtn"
-      class="w-40 h-40 bg-orange-500 text-black font-extrabold text-lg font-comic
+    <button id="tournamentBtn" class="w-40 h-40 bg-orange-500 text-black font-extrabold text-lg font-comic
       rounded-xl border-2 border-black/40 shadow-lg
       hover:bg-orange-600
       transition-transform transition-colors duration-150
       active:scale-95 active:shadow-inner">
-      Online<br>Game
+      <span data-i18n="PONG_TOURNAMENT">Tournament</span>
+    </button>
+
+    <button id="onlineBtn" class="w-40 h-40 bg-orange-500 text-black font-extrabold text-lg font-comic
+      rounded-xl border-2 border-black/40 shadow-lg
+      hover:bg-orange-600
+      transition-transform transition-colors duration-150
+      active:scale-95 active:shadow-inner">
+      <span data-i18n="PONG_ONLINE">Online<br>Game</span>
     </button>
   </div>
 </div>

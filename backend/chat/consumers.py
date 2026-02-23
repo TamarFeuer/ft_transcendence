@@ -1,145 +1,192 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
+import jwt
+from django.conf import settings
+from jwt import InvalidTokenError
+from django.utils import timezone
+from game.token_auth import get_user_from_token
 
 logger = logging.getLogger(__name__)
 
-ONLINE_USERS = set()
+# In-memory storage - these are module-level dictionaries shared across all
+# consumer instances. They survive as long as Daphne is running but are wiped
+# on restart. When PostgreSQL is added, messages should move to the database,
+# but ONLINE_USERS can stay in memory since online status is naturally ephemeral.
+ONLINE_USERS = {}  # user_id -> {id, username, avatar, created_at}
+CONNECTED_USERS = {}  # user_id -> set of channel_names
 
-# A dictionary because a user might have multiple tabs open, for private messages
-CONNECTED_USERS = {} # maps user_id -> set of channel_names
+# self is an instance of ChatConsumer, and ChatConsumer inherits from AsyncWebsocketConsumer​, 
+# so it has all the attributes that AsyncWebsocketConsumer provides by default:
+# self.channel_name - unique name Django Channels assigns to this specific connection,
+# self.channel_layer - the Redis channel layer, 
+# self.scope - info about the connection (cookies, headers, url route etc.)
+# And then we add our own attributes on top in connect():
+# self.user_id - the authenticated user's ID,
+# self.username - the authenticated user's username,
+# self.group_name - the global chat group name ("global_chat")
+
+#self.user_id - the ID of the logged in user, like "42". This is the same across all their tabs
+#self.channel_name - a unique ID that Django Channels assigns to this specific WebSocket connection, like "specific.abc123". Each tab gets a different one
 
 class ChatConsumer(AsyncWebsocketConsumer):
-	online_users = set()
-
 	async def connect(self):
-		# Called when a client opens a WebSocket connection.
-		# Parse user ID from query string passed through channels socket 
-		# and joins the global chat group
-
-		# 1. Parse user ID from query string (e.g., ws://.../ws/chat/?userId=u-alice)
-		query = self.scope['query_string'].decode()  # e.g., "userId=u-alice"
-		self.user_id = "u-guest"
 		
-		# 2. Look for 'userId' in the query string
-		for part in query.split('&'):
-			if part.startswith("userId="):
-				self.user_id = part.split('=')[1]
-				break
-
-		# 4. Set group name for broadcasting
+		# Every user joins the global group so they receive global messages
+		# DMs are handled separately via CONNECTED_USERS, not through groups
 		self.group_name = "global_chat"
 
-		# 5. Add this client to the global chat group
+		# Auth: read JWT from HTTP-only cookie set at login.
+		# If the token is missing or invalid, reject the connection immediately
+		token = self.scope["cookies"].get("access_token")
+		user = await get_user_from_token(token) # from game/token_auth, await because it hits the database
+
+		if not user or not user.is_authenticated:
+			await self.close()
+			return
+	
+		# get_user_from_token returns Django's proper User model object,
+		# which has .id and .username as standard Django fields
+		self.user_id = str(user.id)
+		self.username = user.username
+
+		# Join the global group via the channel layer (Redis).
 		await self.channel_layer.group_add(self.group_name, self.channel_name)
-		
-		# 6. Accept the WebSocket connection
 		await self.accept()
 
-		# 6.5 Add user to online list
-		ONLINE_USERS.add(self.user_id)
+		# Track channel for private messaging
+		# We use a set because the same user can have multiple tabs open,
+		# each with its own channel_name. DMs need to reach all of them.
+		CONNECTED_USERS.setdefault(self.user_id, set()).add(self.channel_name)
 
-		# --- store channel_name for private messages ---
-		if self.user_id not in CONNECTED_USERS:
-			CONNECTED_USERS[self.user_id] = set()
-		CONNECTED_USERS[self.user_id].add(self.channel_name)
+		# Register user as online
+		ONLINE_USERS[self.user_id] = {
+			"id": self.user_id,
+			"name": self.username,
+			"avatar": "👤"
+		}
 
-		# 7. Send the client its own user_id (so client knows who they are)
+		# Tell the client their own user_id and username so the frontend
+		# knows who it is (used in chat.js to determine message ownership)
 		await self.send(text_data=json.dumps({
 			"type": "self_id",
-			"user_id": self.user_id
+			"user_id": self.user_id,
+			"name": self.username
 		}))
 
-		# Notify all clients of updated online users
-		# will be looking for the function online_users
-		await self.channel_layer.group_send(
-			self.group_name,
-			{
-				"type": "online.users",
-				"users": list(ONLINE_USERS)
-			}
-		)
+		# Broadcast updated online users list to everyone
+		await self.broadcast_online_users()
 
 	async def disconnect(self, close_code):
-		logger.info("WebSocket disconnected, code: %s", close_code)
+		# Leave the global group
+		if hasattr(self, "group_name"):
+			await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-		await self.channel_layer.group_discard(self.group_name, self.channel_name)
-		if self.user_id in CONNECTED_USERS:
+		user_id = getattr(self, "user_id", None)
+		if user_id and user_id in CONNECTED_USERS:
+			# Remove this specific channel (tab) from the user's set
 			CONNECTED_USERS[self.user_id].discard(self.channel_name)
+			
+			# Only remove from ONLINE_USERS if this was their last tab -
+			# if they still have other tabs open, they're still online
 			if not CONNECTED_USERS[self.user_id]:
 				del CONNECTED_USERS[self.user_id]
-				ONLINE_USERS.discard(self.user_id)
+				ONLINE_USERS.pop(self.user_id, None)
 		
-		# Notify remaining clients
-		await self.channel_layer.group_send(
-			self.group_name,
-			{
-				"type": "online.users",
-				"users": list(ONLINE_USERS)
-			}
-		)
+		# Broadcast updated online users list to reflect the disconnection
+		await self.broadcast_online_users()
 
 	async def receive(self, text_data):
+		# Called whenever the client sends a message through the WebSocket
 		data = json.loads(text_data)
 		msg_type = data.get("type")
-		
+	
 		if msg_type in ["typing", "stop_typing"]:
-			# Handle typing notifications
+			# Broadcast typing indicator to everyone in the global group.
+			# "typing.notification" -> Django Channels calls typing_notification()
+			# on each consumer in the group (dot replaced by underscore)
 			await self.channel_layer.group_send(
 				self.group_name,
 				{
 					"type": "typing.notification",
 					"action": msg_type,
 					"user": self.user_id,
+					"name": self.username,
 				}
 			)
 
 		elif msg_type == "chat":
-			# Handle regular chat message (with optional target)
 			message = data.get("message", "")
-			target = data.get("target")  # optional: user_id or list of user_ids
+			target = data.get("target")  # Target user ID for private message or None for global
+
+			payload = {
+				"type": "chat.message", # calls chat_message() on receiving consumers
+				"message": message,
+				"sender": self.user_id,
+				"name": self.username,
+			}
 
 			if target:
-				# 1. If target is a single string, convert to a list
-				if isinstance(target, str):
-					target = [target] # convert single user ID to a list
+				# Private message: send only to target user
+				payload["private"] = True
+				payload["target"] = target
 				
-				# 2. Send message to a specific user on all its clients
-				# will need a chat_message function
-				for user_id in target:
-
-					# get all active channels for this user
-					for channel_name in CONNECTED_USERS.get(user_id, set()):
-						await self.channel_layer.send(channel_name, {
-						"type": "chat.message",
-						"message": message,
-						"sender": self.user_id
-					})
+				# DMs use channel_layer.send() (single channel) instead of
+				# group_send() (broadcast) - we send directly to each of the
+				# target user's channel names (one per open tab)
+				if target in CONNECTED_USERS:
+					for channel_name in CONNECTED_USERS[target]:
+						await self.channel_layer.send(channel_name, payload)
+				
+				# Also send back to the sender so they see their own DM —
+				# necessary because we're not using group_send here
+				if self.user_id in CONNECTED_USERS:
+					for channel_name in CONNECTED_USERS[self.user_id]:
+						await self.channel_layer.send(channel_name, payload)
+				
 			else:
-				# If no target specified, broadcast the message to everyone in the group
-				await self.channel_layer.group_send(self.group_name, {
-					"type": "chat.message",
-					"message": message,
-					"sender": self.user_id
-				})
+				# Global message: broadcast to everyone in the global group
+				payload["private"] = False
+				await self.channel_layer.group_send(self.group_name, payload)
 
+	# ─── Event handlers ───────────────────────────────────────────────────────
+	# These are called by the channel layer when a message arrives for this consumer.
+	# The method name must match the "type" field in the payload, with dots
+	# replaced by underscores - e.g. "chat.message" -> chat_message()
+	
 	async def chat_message(self, event):
-		# This runs for messages sent to this client
+		# Deliver a chat message (global or DM) to this consumer's client
 		await self.send(text_data=json.dumps({
 			"type": "chat",
 			"message": event["message"],
-			"sender": event["sender"]
+			"sender": event["sender"],
+			"name": event.get("name"),
+			"private": event.get("private", False), # True for DMs, False for global
+			"target": event.get("target") # user_id of DM recipient, or None for global
+		}))
+
+	async def typing_notification(self, event):
+		# Deliver a typing indicator to this consumer's client
+		await self.send(text_data=json.dumps({
+			"type": event["action"], # "typing" or "stop_typing"
+			"user": event["user"],
+			"name": event.get("name")
 		}))
 
 	async def online_users(self, event):
-		# Send updated online users to the client
+		# Deliver the updated online users list to this consumer's client
 		await self.send(text_data=json.dumps({
 			"type": "online_users",
 			"users": event["users"]
 		}))
 
-	async def typing_notification(self, event):
-		await self.send(text_data=json.dumps({
-			"type": event["action"],  # "typing" or "stop_typing"
-			"user": event["user"]
-		}))
+	async def broadcast_online_users(self):
+	 	# Send the current online users list to everyone in the global group.
+		# "online.users" -> calls online_users() on each consumer in the group
+		await self.channel_layer.group_send(
+			self.group_name,
+			{
+				"type": "online.users",
+				"users": list(ONLINE_USERS.values())
+			}
+		)
