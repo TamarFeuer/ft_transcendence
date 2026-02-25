@@ -90,7 +90,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.warning(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         logger.warning(f"Current players: {self.game.get_players()}")
 
-        # Check for duplicate connections - reject if user is ALREADY in the game
         players = self.game.get_players()
         if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
             logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
@@ -141,7 +140,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             self.game.start_game()
             # Update tournament game status to ongoing
             await sync_to_async(update_game_to_ongoing)(self.game_id)
-            
             # Refresh players after start
             players = self.game.get_players()
             p1 = players.get('left')
@@ -162,7 +160,36 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         logger.warning(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         if hasattr(self, 'game') and self.game:
+            players_before = self.game.get_players()
+            departing_user = self.scope.get('user')
+            departing_role = None
+            if players_before.get('left') == departing_user:
+                departing_role = 'left'
+            elif players_before.get('right') == departing_user:
+                departing_role = 'right'
+
+            status_before = self.game.status
             self.game.remove_player(self.scope['user'])
+
+            # If a participant disconnects during an active game, finish the game
+            # and award win to the remaining player to avoid freeze on opponent side.
+            if departing_role in ('left', 'right') and status_before == 'active':
+                players_after = self.game.get_players()
+                winner_user = players_after.get('right') if departing_role == 'left' else players_after.get('left')
+                winner_id = getattr(winner_user, 'id', None)
+                winner_name = getattr(winner_user, 'username', 'Player disconnected')
+
+                self.game.status = 'completed'
+                await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        'type': 'game_over',
+                        'winner': winner_name,
+                        'winner_id': winner_id
+                    }
+                )
             
             # If all players are gone, reset game to waiting state
             players = self.game.get_players()
@@ -172,7 +199,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 # Update tournament game status in database
                 await sync_to_async(reset_game_to_ready)(self.game_id)
             
-            if self.game.status == 'completed':
+            if self.game.status == 'completed' and status_before != 'active':
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {

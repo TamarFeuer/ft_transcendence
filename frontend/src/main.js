@@ -50,6 +50,7 @@ export function joinOnlineGame(gameId, IsTournament) {
 	let keyboardInterval = null;
 	let keyDownHandler = null;
 	let keyUpHandler = null;
+	let gameEnded = false;
 
 	const proto = location.protocol === "https:" ? "wss:" : "ws:";
 	// Cookies are automatically sent with WebSocket connections
@@ -143,6 +144,7 @@ export function joinOnlineGame(gameId, IsTournament) {
 			}
 
 			if (data.type === "gameOver") {
+				gameEnded = true;
 				alert(`${data.winner} wins!`);
 
 				// Clean up event listeners and intervals
@@ -173,6 +175,20 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 	ws.onclose = () => {
 		console.log("WS disconnected");
+		if (!gameEnded) {
+			clearInterval(keyboardInterval);
+			window.removeEventListener("pointermove", pointerHandler);
+			window.removeEventListener("keydown", keyDownHandler);
+			window.removeEventListener("keyup", keyUpHandler);
+			scene.dispose();
+			engine.dispose();
+			alert("Connection lost or opponent disconnected.");
+			if (IsTournament) {
+				navigate(`/tournament/${window.currentTournamentId}`);
+			} else {
+				navigate('/online');
+			}
+		}
 	};
 }
 
