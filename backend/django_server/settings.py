@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 # from corsheaders.defaults import default_headers
 
@@ -87,7 +88,58 @@ DATABASES = {
 
 STATIC_URL = 'static/'
 
+# Colored logging configuration
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter with ANSI color codes"""
+    COLORS = {
+        'DEBUG': '\033[36m',      # Cyan
+        'INFO': '\033[32m',       # Green
+        'WARNING': '\033[33m',    # Yellow
+        'ERROR': '\033[31m',      # Red
+        'CRITICAL': '\033[35m',   # Magenta
+    }
+    RESET = '\033[0m'
+    
+    def format(self, record):
+        log_color = self.COLORS.get(record.levelname, self.RESET)
+        record.levelname = f"{log_color}{record.levelname}{self.RESET}"
+        return super().format(record)
 
+# Configure logging with colors
+logging.basicConfig(
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.DEBUG
+)
+
+# Apply colored formatter to all handlers
+for handler in logging.root.handlers:
+    handler.setFormatter(ColoredFormatter(
+        fmt='%(asctime)s %(levelname)s %(name)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    ))
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'colored': {
+            '()': ColoredFormatter,
+            'format': '%(asctime)s %(levelname)s %(name)s: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'colored',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
 
 # # if using cookies for auth
 # CORS_ALLOW_CREDENTIALS = True

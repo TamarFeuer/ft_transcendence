@@ -1,10 +1,69 @@
 import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
 from .models import GameSession
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Helper functions for database operations (synchronous)
+def update_game_to_ready(game_id):
+    """Update tournament game status to ready"""
+    from tournament.models import TournamentGame
+    try:
+        tournament_game = TournamentGame.objects.get(game_id=game_id)
+        tournament_game.status = 'ready'
+        tournament_game.save()
+        logger.info(f"Tournament game {game_id} status updated to ready")
+        return True
+    except TournamentGame.DoesNotExist:
+        logger.warning(f"No tournament game found for game_id {game_id}")
+        return False
+
+def update_game_to_ongoing(game_id):
+    """Update tournament game status to ongoing"""
+    from tournament.models import TournamentGame
+    try:
+        tournament_game = TournamentGame.objects.get(game_id=game_id)
+        tournament_game.status = 'ongoing'
+        tournament_game.started_at = timezone.now()
+        tournament_game.save()
+        logger.info(f"Tournament game {game_id} status updated to ongoing")
+        return True
+    except TournamentGame.DoesNotExist:
+        logger.warning(f"No tournament game found for game_id {game_id}")
+        return False
+
+def reset_game_to_ready(game_id):
+    """Reset tournament game status to ready after all players disconnect"""
+    from tournament.models import TournamentGame
+    try:
+        tournament_game = TournamentGame.objects.get(game_id=game_id)
+        tournament_game.status = 'ready'
+        tournament_game.save()
+        logger.info(f"Tournament game {game_id} reset to ready after all players disconnected")
+        return True
+    except TournamentGame.DoesNotExist:
+        logger.warning(f"No tournament game found for game_id {game_id}")
+        return False
+
+def update_game_completed(game_id, winner_id, winner_name):
+    """Update tournament game with winner and completion status"""
+    from tournament.models import TournamentGame
+    try:
+        tournament_game = TournamentGame.objects.get(game_id=game_id)
+        tournament_game.status = 'completed'
+        tournament_game.completed_at = timezone.now()
+        if winner_id:
+            tournament_game.winner_id = winner_id
+        tournament_game.save()
+        logger.info(f"Tournament game {game_id} completed. Winner: {winner_name}")
+        return True
+    except TournamentGame.DoesNotExist:
+        logger.warning(f"No tournament game found for game_id {game_id}")
+        return False
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -35,6 +94,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         players = self.game.get_players()
         if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
             logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
+            self.game.status = 'ready'
+            # Update tournament game status in database
+            await sync_to_async(update_game_to_ready)(self.game_id)
             await self.close(code=4005)
             return
 
@@ -77,6 +139,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         # Start game if both players connected
         if self.game.can_start():
             self.game.start_game()
+            # Update tournament game status to ongoing
+            await sync_to_async(update_game_to_ongoing)(self.game_id)
+            
             # Refresh players after start
             players = self.game.get_players()
             p1 = players.get('left')
@@ -97,9 +162,17 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         logger.warning(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         if hasattr(self, 'game') and self.game:
-            # self.game.remove_player(self.scope['user'])
+            self.game.remove_player(self.scope['user'])
             
-            if self.game.status == 'finished':
+            # If all players are gone, reset game to waiting state
+            players = self.game.get_players()
+            if players['left'] is None and players['right'] is None and self.game.status != "completed":
+                logger.warning(f"All players disconnected from game {self.game_id}, resetting to waiting state")
+                self.game.status = 'waiting'
+                # Update tournament game status in database
+                await sync_to_async(reset_game_to_ready)(self.game_id)
+            
+            if self.game.status == 'completed':
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
@@ -151,6 +224,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                     winner_name = getattr(winner_user, 'username', 'Player 2')
                 
                 if result.get('winner'):
+                    # Update tournament game with winner and completion status
+                    logger.warning("FINISH")
+                    self.game.status = "completed"
+                    await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+                    
                     await self.channel_layer.group_send(
                         self.game_group_name,
                         {

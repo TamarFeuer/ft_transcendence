@@ -52,7 +52,7 @@ class TournamentGame(models.Model):
         ('0/2 players ready', '0/2 Players Ready'),
         ('1/2 players ready', '1/2 Players Ready'),
         ('ongoing', 'Ongoing'),
-         ('completed', 'Completed'),
+        ('completed', 'Completed'),
     ]
     
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='games')
