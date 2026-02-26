@@ -9,8 +9,9 @@
 }
 
 #app-root {
-  position: relative;
-  z-index: 10;
+  /* This ensures that if there is a background image on the <body>, 
+     the app-root doesn't hide it with a white background */
+  background-color: transparent;
 }
 
 #renderCanvas {
