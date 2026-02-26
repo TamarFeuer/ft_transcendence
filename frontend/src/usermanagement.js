@@ -1,5 +1,6 @@
 import { t, updatePageTranslations } from './i18n/index.js';
 import { TranslationKey } from './i18n/keys.js';
+import { closeChat } from './chat.js';
 
 // --- Token refresh helper ---
 let refreshPromise = null;
@@ -95,6 +96,7 @@ export async function loginUser(username, password) {
 }
 
 export async function logoutUser() {
+    closeChat(); // close WebSocket — triggers disconnect() on backend
     await fetch('/api/auth/logout', { 
         method: 'POST',
         credentials: 'include'
@@ -144,8 +146,14 @@ export function createUserManager() {
     function renderPanel() {
         getCurrentUser().then(user => {
             const username = localStorage.getItem('username') || '';
+            const openChatBtn = document.getElementById('openChatBtn');
             panel.innerHTML = '';
             if (user.authenticated) {
+                // User is logged in - show chat button
+            if (openChatBtn) {
+                openChatBtn.style.display = 'block';
+            }
+                
                 const info = document.createElement('div');
                 info.innerHTML = `<div><strong>${username || toggleBtn.textContent}</strong></div><div class="small" data-i18n="${TranslationKey.UM_LOGGED_IN}">Logged in</div>`;
                 const logoutBtn = document.createElement('button');
@@ -159,6 +167,11 @@ export function createUserManager() {
                 panel.appendChild(logoutBtn);
                 updatePageTranslations();
                 return;
+            }
+            
+            // User is NOT logged in - hide chat button
+            if (openChatBtn) {
+                openChatBtn.style.display = 'none';
             }
 
             // Tabs: Login / Register
@@ -189,7 +202,7 @@ export function createUserManager() {
                 const res = await loginUser(u, p);
                 if (res && res.success) {
                     alert('Login successful');
-                    renderPanel();
+                    window.location.reload();
                 } else {
                     alert(res.error || 'Login failed');
                 }
@@ -201,7 +214,7 @@ export function createUserManager() {
                 const res = await registerUser(u, p);
                 if (res && res.success) {
                     alert('Registration successful');
-                    renderPanel();
+                    window.location.reload();
                 } else {
                     alert(res.error || 'Registration failed');
                 }

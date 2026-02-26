@@ -37,9 +37,12 @@ ASGI_APPLICATION = 'django_server.asgi.application'
 
 # Channels configuration
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer'
-    }
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  # "redis" is the docker service name
+        },
+    },
 }
 
 # DATABASES = {
