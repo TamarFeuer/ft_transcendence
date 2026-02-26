@@ -17,7 +17,7 @@ function handleSendingRequest(addFriendSection, addFriendButton){
 			container.remove();
 			container = null;
 		} else{
-			
+			console.log('Add friend clicked');
 			container = document.createElement('div');
 			container.style.display = 'flex';
 			container.style.gap = '12px';
@@ -113,8 +113,15 @@ function renderPendingRequestsButton(pendingRequestsSection){
 	return pendingRequestsButton;
 }
 
-export function renderFriendsPanel(currentUserId) {
-	const friendsPanel = document.getElementById("panel-friends");
+export function renderFriendsPanel(currentUserId, targetElementId) {
+	console.log('renderFriendsPanel called with', currentUserId, targetElementId);
+
+	const friendsPanel = document.getElementById(targetElementId);
+
+	if (!friendsPanel){
+		console.error("Could not find element with id: ", targetElementId);
+		return ;
+	}
 	friendsPanel.innerHTML = "";
 
 	const addFriendSection = document.createElement('div');

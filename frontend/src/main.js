@@ -552,9 +552,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 		}
 
 		// Render panel-specific content
-		if (name === "friends") renderFriendsPanel(CURRENT_USER.id);
-		else if (name === "users") renderUsersPanel();
-		else if (name === "chat") renderChatPanel();
+		// if (name === "friends") renderFriendsPanel(CURRENT_USER.id);
+		// else if (name === "users") renderUsersPanel();
+		// else if (name === "chat") renderChatPanel();
 	}
 
 	// Panel renderers
