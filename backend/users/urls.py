@@ -5,4 +5,5 @@ urlpatterns = [
 	path('friends/pending', views.get_pending_requests, name='get_pending_requests'),
 	path('friends/accept', views.accept_request, name='accept_request'),
 	path('friends/delete', views.delete_request, name='delete_request'),
+	path('friends/list', views.get_friends, name='get_friends_list'),
 ]

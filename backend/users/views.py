@@ -5,6 +5,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.db.models import Q
 import json
 import jwt
 import logging
@@ -125,3 +126,27 @@ def delete_request(request):
 			return JsonResponse({'error': 'Friend Request does not exist'}, status=404)
 	except Exception as e:
 		return JsonResponse({'error': "Error declining friend request"}, status=500)
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_friends(request):
+	try:
+			
+		user, error = get_authenticated_user(request)
+		if error:
+			return error
+		accepted = FriendRequest.objects.filter(status='accepted').filter(Q(from_user=user) | Q(to_user=user))
+		friends = []
+		for fr in accepted:
+			if fr.from_user == user:
+				other = fr.to_user
+			else:
+				other = fr.from_user
+			friends.append({
+				'id': other.id,
+				'username': other.username,
+			})
+		return JsonResponse({'friends': friends}, status = 200)
+	except Exception as e:
+		logger.exception('Error getting friends list')
+		return JsonResponse({'error': 'internal error'}, status=500)

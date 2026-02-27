@@ -113,6 +113,45 @@ function renderPendingRequestsButton(pendingRequestsSection){
 	return pendingRequestsButton;
 }
 
+function renderFriendsButton(section){
+	const button = document.createElement('button');
+	button.style.display = 'block';
+	button.textContent = 'Friends';
+	section.appendChild(button);
+	return button;
+}
+
+function expandFriendsList(friendsListSection, button){
+	let friendsList = null;
+	button.addEventListener('click', function(){
+		if (friendsList){
+			friendsList.remove();
+			friendsList = null;
+		}
+		else{
+			friendsList = document.createElement('div');
+			friendsListSection.appendChild(friendsList);
+
+			fetchWithRefreshAuth('/api/friends/list').then(response => response.json())
+			.then(data => {
+				friendsList.innerHTML = '';
+				
+				if (!data.friends || data.friends.length === 0){
+					friendsList.textContent = 'No friends yet';
+					return;
+				}
+			data.friends.forEach(friend => {
+				const row = document.createElement('div');
+				row.textContent = friend.username;
+				friendsList.appendChild(row);
+			});
+		});
+
+
+		}
+	})
+}
+
 export function renderFriendsPanel(currentUserId, targetElementId) {
 	console.log('renderFriendsPanel called with', currentUserId, targetElementId);
 
@@ -133,32 +172,9 @@ export function renderFriendsPanel(currentUserId, targetElementId) {
 
 	const addFriendButton = renderAddFriendsButton(addFriendSection);
 	const pendingRequestsButton = renderPendingRequestsButton(pendingRequestsSection);
+	const friendsListButton = renderFriendsButton(friendsListSection);
 	handleSendingRequest(addFriendSection, addFriendButton);
 	expandPendingRequests(pendingRequestsSection, pendingRequestsButton);
-	// const me = FAKE_USERS[currentUserId];
-	// if (!me || !me.friends || me.friends.length === 0) {
-	// 	friendsPanel.textContent = "No friends yet";
-	// 	return;
-	// }
-
-	// me.friends.forEach(friendId => {
-	// 	const friend = FAKE_USERS[friendId];
-	// 	if (!friend) return;
-
-	// 	const div = document.createElement("div");
-	// 	div.className = "py-1 px-2 flex items-center gap-2";
-
-	// 	const isOnline = onlineUsers.includes(friendId);
-
-	// 	div.innerHTML = `
-	// 		<span class="font-semibold">${friend.name}</span>
-	// 		<span>${friend.avatar}</span>
-	// 		<span class="text-sm ${isOnline ? "text-green-400" : "text-gray-400"
-	// 		}">
-	// 			${isOnline ? "online" : "offline"}
-	// 		</span>
-	// 	`;
-
-	// 	friendsListSection.appendChild(div);
-	// });
+	expandFriendsList(friendsListSection, friendsListButton);
+	
 }
