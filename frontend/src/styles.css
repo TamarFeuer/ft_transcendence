@@ -178,7 +178,7 @@
 }
 
 .user-item:hover {
-  background: rgba(236, 72, 153, 0.2);
+      color: #4ade80;
 }
 
 /* Right side: Chat panel */
@@ -282,6 +282,10 @@
 }
 
 /* User manager panel */
+#chatUserMenu {
+  font-family: "ComicNeue", system-ui, sans-serif;
+}
+
 #userManager {
   position: fixed;
   top: 1rem;
