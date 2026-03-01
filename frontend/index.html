@@ -86,7 +86,23 @@
 
 		</div>
 	</div>
-
+	<!-- Context menu for online users — positioned at cursor on click -->
+	<div id="chatUserMenu" style="display:none;"
+		class="fixed z-[9999] bg-gray-900 border border-pink-600/40 rounded-lg shadow-xl py-1 min-w-[160px]">
+		<div id="chatUserMenuName" class="px-4 py-2 text-xs text-pink-300 font-bold border-b border-pink-600/20">
+		</div>
+		<button data-action="profile"
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">View
+			Profile</button>
+		<button data-action="invite"
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Invite
+			to Game</button>
+		<button data-action="chat"
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Chat</button>
+		<button data-action="block"
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Block
+			User</button>
+	</div>
 	<script type="module" src="src/main.js"></script>
 
 </body>
