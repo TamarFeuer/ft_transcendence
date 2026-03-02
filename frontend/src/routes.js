@@ -112,6 +112,14 @@ export function setupRoutes() {
         showStatus('createStatus', result.data?.error || 'Failed to create tournament', 'error');
       }
     });
+
+    // Submit on Enter from tournament name input
+    document.getElementById('tournamentName')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('createTournamentBtn')?.click();
+      }
+    });
     
     // Refresh button
     document.getElementById('refreshTournamentsBtn')?.addEventListener('click', () => {

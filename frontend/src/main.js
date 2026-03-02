@@ -11,6 +11,7 @@ import { updateTournamentGameResult } from "./tournament.js";
 // --- Game Variables ---
 let ws = null;
 let currentGameId = null;
+let isGameActive = false;
 
 export const routes = {};
 import { setupRoutes, handleTournamentRoute } from "./routes.js";
@@ -38,11 +39,46 @@ function handleRoute(path) {
 	}
 }
 
+// Close WebSocket before navigation
+function closeGameConnection() {
+	if (ws) {
+		console.log('Closing WebSocket connection');
+		isGameActive = false;
+		ws.close();
+		ws = null;
+	}
+}
+
 window.addEventListener('popstate', () => {
+	console.log('User navigated: back or forward');
+	console.log('Current pathname:', window.location.pathname);
+	// Close game connection before handling new route
+	if (isGameActive) {
+		closeGameConnection();
+		sessionStorage.removeItem('activeGameId');
+	}
 	handleRoute(window.location.pathname);
 });
 
+// Auto-reconnect to game if page was refreshed
+/*
+window.addEventListener('load', async () => {
+	const activeGameId = sessionStorage.getItem('activeGameId');
+	const isTournament = sessionStorage.getItem('activeTournamentId') ? true : false;
+	if (activeGameId && window.location.pathname.includes('/online')) {
+		console.log('Reconnecting to game:', activeGameId);
+		await new Promise(r => setTimeout(r, 500)); // Wait for page to be ready
+		joinOnlineGame(activeGameId, isTournament);
+	}
+});
+*/
+
 export function joinOnlineGame(gameId, IsTournament) {
+	// Store game context in session storage for refresh recovery
+	sessionStorage.setItem('activeGameId', gameId);
+	if (IsTournament) {
+		sessionStorage.setItem('activeTournamentId', window.currentTournamentId);
+	}
 	const canvas = document.getElementById("renderCanvas");
 	const engine = new Engine(canvas, true);
 	const scene = new Scene(engine);
@@ -66,6 +102,33 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 	ws.onopen = () => {
 		console.log("WS connected to game:", gameId);
+		isGameActive = true;
+		currentGameId = gameId;
+
+		const appRoot = document.getElementById("app-root");
+	
+
+		appRoot.innerHTML = `
+		<div id="gameContainer">
+			<canvas id="renderCanvas"></canvas>
+			<div class="absolute inset-0 flex justify-between items-start pt-32 px-8 z-20 pointer-events-none">
+				<div class="flex flex-col items-start">
+					<div id="playerNameleft" class="text-white font-bold text-lg tracking-wide">~</div>
+					<div id="scoreP1" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+				</div>
+				<div class="flex flex-col items-end">
+					<div id="playerNameright" class="text-white font-bold text-lg tracking-wide">~</div>
+					<div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+				</div>
+			</div>
+		</div>
+		`;
+
+		// window.gameObjects = initGameScene(scene, canvas, 2);
+
+		// engine.runRenderLoop(() => scene.render());
+
+
 	};
 
 	ws.onerror = (e) => console.error("WS error", e);
@@ -83,11 +146,11 @@ export function joinOnlineGame(gameId, IsTournament) {
 					<canvas id="renderCanvas"></canvas>
 					<div class="absolute inset-0 flex justify-between items-start pt-32 px-8 z-20 pointer-events-none">
 						<div class="flex flex-col items-start">
-							<div class="text-white font-bold text-lg tracking-wide">${data.P1}</div>
+							<div id="playerNameleft" class="text-white font-bold text-lg tracking-wide">${data.P1}</div>
 							<div id="scoreP1" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
 						</div>
 						<div class="flex flex-col items-end">
-							<div class="text-white font-bold text-lg tracking-wide">${data.P2}</div>
+							<div id="playerNameright" class="text-white font-bold text-lg tracking-wide">${data.P2}</div>
 							<div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
 						</div>
 					</div>
@@ -141,6 +204,12 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 			if (data.type === "assign") {
 				console.log("Assigned role:", data.role);
+				// Update the player name display for the current user's role
+				const currentUsername = window.CURRENT_USER?.username || 'Player';
+				const playerNameElem = document.getElementById(`playerName${data.role}`);
+				if (playerNameElem) {
+					playerNameElem.textContent = currentUsername;
+				}
 			}
 
 			if (data.type === "gameOver") {
@@ -164,6 +233,10 @@ export function joinOnlineGame(gameId, IsTournament) {
 				// Close websocket
 				ws?.close();
 				ws = null;
+				isGameActive = false;
+				// Clear session storage
+				sessionStorage.removeItem('activeGameId');
+				sessionStorage.removeItem('activeTournamentId');
 				// Navigate back to tournament with tournament id
           		navigate(`/tournament/${window.currentTournamentId}`);
 			}
@@ -175,6 +248,7 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 	ws.onclose = () => {
 		console.log("WS disconnected");
+		isGameActive = false;
 		if (!gameEnded) {
 			clearInterval(keyboardInterval);
 			window.removeEventListener("pointermove", pointerHandler);
@@ -182,6 +256,9 @@ export function joinOnlineGame(gameId, IsTournament) {
 			window.removeEventListener("keyup", keyUpHandler);
 			scene.dispose();
 			engine.dispose();
+			// Clear session storage
+			sessionStorage.removeItem('activeGameId');
+			sessionStorage.removeItem('activeTournamentId');
 			alert("Connection lost or opponent disconnected.");
 			if (IsTournament) {
 				navigate(`/tournament/${window.currentTournamentId}`);
