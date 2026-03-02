@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # consumer instances. They survive as long as Daphne is running but are wiped
 # on restart. When PostgreSQL is added, messages should move to the database,
 # but ONLINE_USERS can stay in memory since online status is naturally ephemeral.
-ONLINE_USERS = {}  # user_id -> {id, username, avatar, created_at}
+ONLINE_USERS = {}  # user_id -> username
 CONNECTED_USERS = {}  # user_id -> set of channel_names
 
 # self is an instance of ChatConsumer, and ChatConsumer inherits from AsyncWebsocketConsumer​, 
@@ -60,11 +60,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		CONNECTED_USERS.setdefault(self.user_id, set()).add(self.channel_name)
 
 		# Register user as online
-		ONLINE_USERS[self.user_id] = {
-			"id": self.user_id,
-			"name": self.username,
-			"avatar": "👤"
-		}
+		ONLINE_USERS[self.user_id] = self.username
 
 		# Tell the client their own user_id and username so the frontend
 		# knows who it is (used in chat.js to determine message ownership)
@@ -192,6 +188,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			self.group_name,
 			{
 				"type": "online.users",
-				"users": list(ONLINE_USERS.values())
+				"users": ONLINE_USERS
 			}
 		)
