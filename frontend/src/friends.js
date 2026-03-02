@@ -9,6 +9,47 @@ function renderAddFriendsButton(addFriendSection){
 	return addFriendButton;
 }
 
+function clearOnNextClick(message){
+	function handler(){
+		message.textContent = '';
+		document.removeEventListener('click', handler);
+	}
+	setTimeout(() => {
+		document.addEventListener('click', handler);
+	}, 0);
+}
+
+function sendFriendRequest(friendInput, status) {
+	const friendUsername = friendInput.value;
+	if (!friendUsername) return;
+  
+	status.textContent = '';
+  
+	fetch('/api/friends/send', {
+	  method: 'POST',
+	  headers: { 'Content-Type': 'application/json' },
+	  body: JSON.stringify({ to_username: friendUsername })
+	})
+	  .then(response => response.json())
+	  .then(data => {
+		if (data.success) {
+		  status.style.color = 'lightgreen';
+		  status.textContent = 'Friend Request Sent';
+		  clearOnNextClick(status);
+		} else if (data.error) {
+		  status.style.color = 'red';
+		  status.textContent = data.error;
+		  clearOnNextClick(status);
+		}
+	  })
+	  .catch(err => {
+		console.error('Error sending friend request', err);
+		status.style.color = 'red';
+		status.textContent = 'Could not send friend request';
+		clearOnNextClick(status);
+	  });
+  }
+
 function handleSendingRequest(addFriendSection, addFriendButton){
 	let container = null;
 		addFriendButton.addEventListener('click', function(){
@@ -33,13 +74,21 @@ function handleSendingRequest(addFriendSection, addFriendButton){
 			sendButton.style.color = 'lightblue';
 			sendButton.style.fontSize = '30px';
 			container.appendChild(sendButton);
+
+			//message showing success or failure of send request
+			const status = document.createElement('div');
+			status.style.color = 'lightgreen';
+			container.appendChild(status);
+
+			//clear old message
 			sendButton.addEventListener('click', function(){
-				const friendUsername = friendInput.value;
-				fetch('/api/friends/send', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json'},
-					body: JSON.stringify({to_username: friendUsername})
-				})
+				sendFriendRequest(friendInput, status);
+			});
+
+			friendInput.addEventListener('keydown', function(event){
+				if (event.key === 'Enter'){
+					sendFriendRequest(friendInput, status);
+				}
 			})
 		}
 
@@ -121,6 +170,25 @@ function renderFriendsButton(section){
 	return button;
 }
 
+function renderFriends(friendsList, onlineFriends, offlineFriends){
+	onlineFriends.forEach(friend => {
+		const row = document.createElement('div');
+		//green dot
+		const dot = document.createElement('span');
+		dot.className = 'inline-block w-2 h-2 rounded-full bg-green-400 mr-2';
+		row.appendChild(dot);
+		row.appendChild(document.createTextNode(friend.username));
+		friendsList.appendChild(row);
+	})
+
+	offlineFriends.forEach(friend => {
+		const row = document.createElement('div');
+		row.appendChild(document.createTextNode(friend.username));
+		friendsList.appendChild(row);
+	})
+
+}
+
 function expandFriendsList(friendsListSection, button){
 	let friendsList = null;
 	button.addEventListener('click', function(){
@@ -140,11 +208,19 @@ function expandFriendsList(friendsListSection, button){
 					friendsList.textContent = 'No friends yet';
 					return;
 				}
-			data.friends.forEach(friend => {
-				const row = document.createElement('div');
-				row.textContent = friend.username;
-				friendsList.appendChild(row);
+				//logic to show online friends first and then offline
+				const onlineFriends = [];
+				const offlineFriends = [];
+				data.friends.forEach(friend => {
+				const idStr = String(friend.id);
+				const isOnline = onlineUsers.some(user => user.id === idStr);
+				if (isOnline){
+					onlineFriends.push(friend);
+				} else {
+					offlineFriends.push(friend);
+				}
 			});
+			renderFriends(friendsList, onlineFriends, offlineFriends);
 		});
 
 
