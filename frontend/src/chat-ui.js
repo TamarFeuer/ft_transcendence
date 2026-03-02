@@ -191,8 +191,9 @@ export function initChatUI(CURRENT_USER) {
 			div.appendChild(nameSpan);
 
 			// Click to open DM with this user
-			div.addEventListener("click", () => {
-				openDMChannel(user.id, user.name || user.id);
+			div.addEventListener("click", (e) => {
+				e.stopPropagation(); // prevent the document click from closing it immediately
+				showChatUserMenu(user, e.clientX, e.clientY);
 			});
 
 			onlineUsersList.appendChild(div);
@@ -237,6 +238,60 @@ export function initChatUI(CURRENT_USER) {
 			openChatBtn.style.display = "block";
 		});
 	}
+	
+	// ── Online user menu ─────────────────────────────────────────────────────
+
+	const chatUserMenu = document.getElementById("chatUserMenu");
+	const chatUserMenuName = document.getElementById("chatUserMenuName");
+	let chatMenuUser = null; // the user the menu is currently open for
+
+	function showChatUserMenu(user, mouseX, mouseY) {
+		chatMenuUser = user;
+		chatUserMenuName.textContent = user.name || user.id;
+
+		// Position at cursor - nudge left/up if too close to screen edge
+		const menuWidth = 160;
+		const menuHeight = 160;
+		const x = mouseX + menuWidth > window.innerWidth ? mouseX - menuWidth : mouseX;
+		const y = mouseY + menuHeight > window.innerHeight ? mouseY - menuHeight : mouseY;
+
+		chatUserMenu.style.left = `${x}px`;
+		chatUserMenu.style.top = `${y}px`;
+		chatUserMenu.style.display = "block";
+	}
+
+	function hideChatUserMenu() {
+		chatUserMenu.style.display = "none";
+		chatMenuUser = null;
+	}
+
+	// Handle menu option clicks
+	chatUserMenu.addEventListener("click", (e) => {
+		const action = e.target.dataset.action;
+		if (!action || !chatMenuUser) return;
+
+		if (action === "profile") {
+			// TODO: show user profile
+			console.log("View profile:", chatMenuUser);
+		} else if (action === "invite") {
+			// TODO: send game invite
+			console.log("Invite to game:", chatMenuUser);
+		} else if (action === "chat") {
+			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
+		} else if (action === "block") {
+			// TODO: block user
+			console.log("Block user:", chatMenuUser);
+		}
+
+		hideChatUserMenu();
+	});
+
+	// Close menu when clicking anywhere outside it
+	document.addEventListener("click", (e) => {
+		if (!chatUserMenu.contains(e.target)) {
+			hideChatUserMenu();
+		}
+	});
 
 	// ── Send message ──────────────────────────────────────────────────────────
 	
