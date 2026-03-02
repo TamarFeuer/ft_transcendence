@@ -1,4 +1,5 @@
 import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame, initAIGame } from './main.js';
+import { renderFriendsPanel } from './friends.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
@@ -124,4 +125,14 @@ export function setupRoutes() {
       }
     });
   };
+  
+  routes['/profile'] = async() => {
+    await loadTemplate('profile');
+    console.log('PROFILE ROUTE RUNNING');
+    const user = window.CURRENT_USER;
+  
+    if (user){
+      renderFriendsPanel(user.id, "friends-management-container");
+    }
+  }
 }

@@ -4,6 +4,7 @@ import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat } from './chat.js';
 import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
+import { renderFriendsPanel } from "./friends.js";
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 import { initChatUI } from './chat-ui.js';
 
