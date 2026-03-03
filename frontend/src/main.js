@@ -79,6 +79,8 @@ export function joinOnlineGame(gameId, IsTournament) {
 	if (IsTournament) {
 		sessionStorage.setItem('activeTournamentId', window.currentTournamentId);
 	}
+	const currentUserId = String(window.CURRENT_USER?.user_id ?? '');
+	const currentUsername = window.CURRENT_USER?.username || 'Player';
 	const canvas = document.getElementById("renderCanvas");
 	const engine = new Engine(canvas, true);
 	const scene = new Scene(engine);
@@ -205,7 +207,6 @@ export function joinOnlineGame(gameId, IsTournament) {
 			if (data.type === "assign") {
 				console.log("Assigned role:", data.role);
 				// Update the player name display for the current user's role
-				const currentUsername = window.CURRENT_USER?.username || 'Player';
 				const playerNameElem = document.getElementById(`playerName${data.role}`);
 				if (playerNameElem) {
 					playerNameElem.textContent = currentUsername;
@@ -214,8 +215,8 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 			if (data.type === "gameOver") {
 				gameEnded = true;
-				alert(`${data.winner} wins!`);
-
+				// alert(`${data.winner} wins!`);
+				console.log("after yes");
 				// Clean up event listeners and intervals
 				clearInterval(keyboardInterval);
 				window.removeEventListener("pointermove", pointerHandler);
@@ -224,7 +225,10 @@ export function joinOnlineGame(gameId, IsTournament) {
 				console.log("data:", data);
 				console.log("gameId:", gameId);
 				console.log("data.winner.id:", data.winner_id);
-				if (IsTournament)
+				console.log("window.CURRENT_USER?.user_id:", String(window.CURRENT_USER?.user_id));
+
+				const didCurrentUserWin = Boolean(currentUserId) && String(data.winner_id) === currentUserId;
+				if (IsTournament && didCurrentUserWin)
 					await updateTournamentGameResult(gameId, data.winner_id);
 				// Dispose engine and scene
 				scene.dispose();
@@ -259,7 +263,7 @@ export function joinOnlineGame(gameId, IsTournament) {
 			// Clear session storage
 			sessionStorage.removeItem('activeGameId');
 			sessionStorage.removeItem('activeTournamentId');
-			alert("Connection lost or opponent disconnected.");
+			// alert("Connection lost or opponent disconnected.");
 			if (IsTournament) {
 				navigate(`/tournament/${window.currentTournamentId}`);
 			} else {

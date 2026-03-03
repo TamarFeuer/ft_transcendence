@@ -532,7 +532,7 @@ async function loadTournamentGames() {
 
         const result = await tournamentAPI.startTournamentGame(gameId);
         if (result.ok) {
-          alert(`Game started! Game ID: ${result.data.game_id}`);
+          alert(`Game started!`);
           // Redirect to the game
           joinOnlineGame(result.data.game_id, true);
 
