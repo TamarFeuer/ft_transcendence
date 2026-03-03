@@ -39,7 +39,7 @@ function sendFriendRequest(friendInput, status) {
   
 	status.textContent = '';
   
-	fetch('/api/friends/send', {
+	fetchWithRefreshAuth('/api/friends/send', {
 	  method: 'POST',
 	  headers: { 'Content-Type': 'application/json' },
 	  body: JSON.stringify({ to_username: friendUsername })
