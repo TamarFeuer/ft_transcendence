@@ -1,5 +1,8 @@
 import { onlineUsers } from "./chat";
 import { fetchWithRefreshAuth } from "./usermanagement";
+
+let latestPendingList = null;
+let latestFriendsList = null;
 // creates the add friend Button
 function renderAddFriendsButton(addFriendSection){
 	const addFriendButton = document.createElement('button');
@@ -19,6 +22,17 @@ function clearOnNextClick(message){
 	}, 0);
 }
 
+function updatePendingRequestsList(){
+	if (!latestPendingList)
+		return;
+	latestPendingList.innerHTML = '';
+
+	fetchWithRefreshAuth('/api/friends/pending').then(res => res.json())
+	.then(data => {
+		createPendingRequestsElements(latestPendingList, data);
+	})
+}
+
 function sendFriendRequest(friendInput, status) {
 	const friendUsername = friendInput.value;
 	if (!friendUsername) return;
@@ -35,6 +49,11 @@ function sendFriendRequest(friendInput, status) {
 		if (data.success) {
 		  status.style.color = 'lightgreen';
 		  status.textContent = 'Friend Request Sent';
+		  
+		  //Every time a requests is sent we check to see if pending requests is open to update it
+		//   if (latestPendingList)
+		//   	updatePendingRequestsList(); 
+
 		  clearOnNextClick(status);
 		} else if (data.error) {
 		  status.style.color = 'red';
@@ -102,6 +121,7 @@ function handleAccept(requestId){
 		credentials: 'include',
 		body: JSON.stringify({request_id: requestId})
 	});
+	updatePendingRequestsList();
 }
 
 function handleDelete(requestId){
@@ -111,6 +131,7 @@ function handleDelete(requestId){
 		credentials: 'include',
 		body: JSON.stringify({request_id: requestId})
 	});
+	updatePendingRequestsList();
 }
 
 function createPendingRequestsElements(requestsList, data){
@@ -145,10 +166,12 @@ function expandPendingRequests(pendingRequestsSection, pendingRequestsButton){
 		if (requestsList){
 			requestsList.remove();
 			requestsList = null;
+			latestFriendsList = null;
 		} else {
 			requestsList = document.createElement('div');
 			pendingRequestsSection.appendChild(requestsList);
-			
+			latestPendingList = requestsList;
+
 			fetchWithRefreshAuth('/api/friends/pending')
 			.then(response => response.json()).then(data => {
 				console.log(data);
