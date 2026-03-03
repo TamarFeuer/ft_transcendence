@@ -114,6 +114,10 @@ function handleDelete(requestId){
 }
 
 function createPendingRequestsElements(requestsList, data){
+	if (!data || data.requests.length === 0){
+		requestsList.textContent = 'No Pending Requests yet';
+		return ;
+	}
 	data.requests.forEach(request => {
 		const singlePendingRequest = document.createElement('div');
 		const acceptButton = document.createElement('button');
@@ -132,6 +136,7 @@ function createPendingRequestsElements(requestsList, data){
 		singlePendingRequest.appendChild(declineButton);
 		requestsList.appendChild(singlePendingRequest);
 	});
+	
 }
 
 function expandPendingRequests(pendingRequestsSection, pendingRequestsButton){
@@ -142,7 +147,6 @@ function expandPendingRequests(pendingRequestsSection, pendingRequestsButton){
 			requestsList = null;
 		} else {
 			requestsList = document.createElement('div');
-			requestsList.textContent = 'requests will appear here'
 			pendingRequestsSection.appendChild(requestsList);
 			
 			fetchWithRefreshAuth('/api/friends/pending')
