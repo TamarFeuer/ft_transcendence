@@ -16,7 +16,7 @@ INSTALLED_APPS = [
     'channels',
     'game',
     'chat',
-    'users',
+    'friends',
     # 'corsheaders',
 ]
 
