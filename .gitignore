@@ -20,3 +20,8 @@ Thumbs.db
 # Database
 *.sqlite3
 db/postgres/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
