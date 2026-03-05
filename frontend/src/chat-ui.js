@@ -40,8 +40,8 @@ export function initChatUI(CURRENT_USER) {
 		if (channelId === "global") {
 			channelTitle.textContent = "# Global Chat";
 		} else {
-			const user = onlineUsers.find(u => u.id === channelId);
-			channelTitle.textContent = user ? `@ ${user.name}` : "@ Direct Message";
+			const name = onlineUsers[channelId];
+			channelTitle.textContent =  name ? `@ ${name}` : "@ Direct Message";
 		}
 
 		renderMessages(channelId);
@@ -174,9 +174,9 @@ export function initChatUI(CURRENT_USER) {
 			return;
 		}
 
-		onlineUsers.forEach(user => {
+		Object.entries(onlineUsers).forEach(([id, name]) => {
 			// Skip yourself — every user past this point is someone else
-			if (user.id === CURRENT_USER.user_id) return;
+			if (id === CURRENT_USER.user_id) return;
 
 			const div = document.createElement("div");
 			div.className = "user-item";
@@ -185,14 +185,15 @@ export function initChatUI(CURRENT_USER) {
 			statusDot.className = "w-2 h-2 rounded-full bg-[#00FF00] flex-shrink-0";
 
 			const nameSpan = document.createElement("span");
-			nameSpan.textContent = user.name || user.id;
+			nameSpan.textContent = name;
 
 			div.appendChild(statusDot);
 			div.appendChild(nameSpan);
 
 			// Click to open DM with this user
-			div.addEventListener("click", () => {
-				openDMChannel(user.id, user.name || user.id);
+			div.addEventListener("click", (e) => {
+				e.stopPropagation(); // prevent the document click from closing it immediately
+				showChatUserMenu({id, name}, e.clientX, e.clientY);
 			});
 
 			onlineUsersList.appendChild(div);
@@ -237,6 +238,60 @@ export function initChatUI(CURRENT_USER) {
 			openChatBtn.style.display = "block";
 		});
 	}
+	
+	// ── Online user menu ─────────────────────────────────────────────────────
+
+	const chatUserMenu = document.getElementById("chatUserMenu");
+	const chatUserMenuName = document.getElementById("chatUserMenuName");
+	let chatMenuUser = null; // the user the menu is currently open for
+
+	function showChatUserMenu(user, mouseX, mouseY) {
+		chatMenuUser = user;
+		chatUserMenuName.textContent = user.name || user.id;
+
+		// Position at cursor - nudge left/up if too close to screen edge
+		const menuWidth = 160;
+		const menuHeight = 160;
+		const x = mouseX + menuWidth > window.innerWidth ? mouseX - menuWidth : mouseX;
+		const y = mouseY + menuHeight > window.innerHeight ? mouseY - menuHeight : mouseY;
+
+		chatUserMenu.style.left = `${x}px`;
+		chatUserMenu.style.top = `${y}px`;
+		chatUserMenu.style.display = "block";
+	}
+
+	function hideChatUserMenu() {
+		chatUserMenu.style.display = "none";
+		chatMenuUser = null;
+	}
+
+	// Handle menu option clicks
+	chatUserMenu.addEventListener("click", (e) => {
+		const action = e.target.dataset.action;
+		if (!action || !chatMenuUser) return;
+
+		if (action === "profile") {
+			// TODO: show user profile
+			console.log("View profile:", chatMenuUser);
+		} else if (action === "invite") {
+			// TODO: send game invite
+			console.log("Invite to game:", chatMenuUser);
+		} else if (action === "chat") {
+			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
+		} else if (action === "block") {
+			// TODO: block user
+			console.log("Block user:", chatMenuUser);
+		}
+
+		hideChatUserMenu();
+	});
+
+	// Close menu when clicking anywhere outside it
+	document.addEventListener("click", (e) => {
+		if (!chatUserMenu.contains(e.target)) {
+			hideChatUserMenu();
+		}
+	});
 
 	// ── Send message ──────────────────────────────────────────────────────────
 	
