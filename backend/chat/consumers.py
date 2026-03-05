@@ -94,7 +94,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def receive(self, text_data):
 		# Called whenever the client sends a message through the WebSocket
-		data = json.loads(text_data)
+		try:
+			data = json.loads(text_data)
+		except json.JSONDecodeError:
+			logger.warning(f"Received invalid JSON from {self.username}: {text_data}")
+			return  # ignore bad messages, don't crash
+		
 		msg_type = data.get("type")
 	
 		if msg_type in ["typing", "stop_typing"]:
