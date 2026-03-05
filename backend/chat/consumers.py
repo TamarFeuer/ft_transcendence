@@ -32,10 +32,6 @@ CONNECTED_USERS = {}  # user_id -> set of channel_names
 class ChatConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
 		
-		# Every user joins the global group so they receive global messages
-		# DMs are handled separately via CONNECTED_USERS, not through groups
-		self.group_name = "global_chat"
-
 		# Auth: read JWT from HTTP-only cookie set at login.
 		# If the token is missing or invalid, reject the connection immediately
 		token = self.scope["cookies"].get("access_token")
@@ -44,6 +40,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		if not user or not user.is_authenticated:
 			await self.close()
 			return
+
+		# Every user joins the global group so they receive global messages
+		# DMs are handled separately via CONNECTED_USERS, not through groups
+		self.group_name = "global_chat"
 	
 		# get_user_from_token returns Django's proper User model object,
 		# which has .id and .username as standard Django fields
