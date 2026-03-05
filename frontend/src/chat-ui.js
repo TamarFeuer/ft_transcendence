@@ -40,8 +40,8 @@ export function initChatUI(CURRENT_USER) {
 		if (channelId === "global") {
 			channelTitle.textContent = "# Global Chat";
 		} else {
-			const user = onlineUsers.find(u => u.id === channelId);
-			channelTitle.textContent = user ? `@ ${user.name}` : "@ Direct Message";
+			const name = onlineUsers[channelId];
+			channelTitle.textContent =  name ? `@ ${name}` : "@ Direct Message";
 		}
 
 		renderMessages(channelId);
@@ -174,9 +174,9 @@ export function initChatUI(CURRENT_USER) {
 			return;
 		}
 
-		onlineUsers.forEach(user => {
+		Object.entries(onlineUsers).forEach(([id, name]) => {
 			// Skip yourself — every user past this point is someone else
-			if (user.id === CURRENT_USER.user_id) return;
+			if (id === CURRENT_USER.user_id) return;
 
 			const div = document.createElement("div");
 			div.className = "user-item";
@@ -185,7 +185,7 @@ export function initChatUI(CURRENT_USER) {
 			statusDot.className = "w-2 h-2 rounded-full bg-[#00FF00] flex-shrink-0";
 
 			const nameSpan = document.createElement("span");
-			nameSpan.textContent = user.name || user.id;
+			nameSpan.textContent = name;
 
 			div.appendChild(statusDot);
 			div.appendChild(nameSpan);
@@ -193,7 +193,7 @@ export function initChatUI(CURRENT_USER) {
 			// Click to open DM with this user
 			div.addEventListener("click", (e) => {
 				e.stopPropagation(); // prevent the document click from closing it immediately
-				showChatUserMenu(user, e.clientX, e.clientY);
+				showChatUserMenu({id, name}, e.clientX, e.clientY);
 			});
 
 			onlineUsersList.appendChild(div);
