@@ -277,9 +277,7 @@ function loadAndRenderFriends(friendsList){
 		}
 	});
 	renderFriends(friendsList, onlineFriends, offlineFriends);
-}).catcherror('Error loading friends list', err);
-friendsList.textContent = 'Could not load friends list';
-
+})
 }
 
 function expandFriendsList(friendsListSection, button){
