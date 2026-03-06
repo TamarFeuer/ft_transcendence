@@ -3,6 +3,7 @@ import { fetchWithRefreshAuth } from "./usermanagement";
 
 let latestPendingList = null;
 let latestFriendsList = null;
+
 // creates the add friend Button
 function renderAddFriendsButton(addFriendSection){
 	const addFriendButton = document.createElement('button');
@@ -20,6 +21,13 @@ function clearOnNextClick(message){
 	setTimeout(() => {
 		document.addEventListener('click', handler);
 	}, 0);
+}
+
+function updateFriendsList(){
+	if (!latestFriendsList)
+		return;
+	
+	loadAndRenderFriends(latestFriendsList);
 }
 
 function updatePendingRequestsList(){
@@ -197,6 +205,27 @@ function renderFriendsButton(section){
 	return button;
 }
 
+function renderRemoveButton(friend){
+	const removeButton = document.createElement('button');
+	
+	removeButton.textContent = 'Remove';
+	removeButton.className = 'ml-2 px-2 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-100 rounded';
+	removeButton.addEventListener('click', () => {
+		fetchWithRefreshAuth('/api/friends/remove', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({ friend_id: friend.id}),
+	}).then(res => {
+		if (!res.ok) {
+			console.error('Failed to remove friend');
+			return ;
+		}
+		updateFriendsList();
+	})
+	})
+	return removeButton;
+}
+
 function renderFriends(friendsList, onlineFriends, offlineFriends){
 	onlineFriends.forEach(friend => {
 		const row = document.createElement('div');
@@ -205,14 +234,51 @@ function renderFriends(friendsList, onlineFriends, offlineFriends){
 		dot.className = 'inline-block w-2 h-2 rounded-full bg-green-400 mr-2';
 		row.appendChild(dot);
 		row.appendChild(document.createTextNode(friend.username));
+		
+		//create and append remove button
+		const removeButton = renderRemoveButton(friend);
+		row.appendChild(removeButton);
 		friendsList.appendChild(row);
 	})
 
 	offlineFriends.forEach(friend => {
 		const row = document.createElement('div');
 		row.appendChild(document.createTextNode(friend.username));
+
+		//create and append remove button
+		const removeButton = renderRemoveButton(friend);
+		row.appendChild(removeButton);
+		friendsList.appendChild(row);
+
 		friendsList.appendChild(row);
 	})
+
+}
+
+function loadAndRenderFriends(friendsList){
+
+	fetchWithRefreshAuth('/api/friends/list').then(response => response.json())
+	.then(data => {
+		friendsList.innerHTML = '';
+		
+		if (!data.friends || data.friends.length === 0){
+			friendsList.textContent = 'No friends yet';
+			return;
+		}
+		//logic to show online friends first and then offline
+		const onlineFriends = [];
+		const offlineFriends = [];
+		data.friends.forEach(friend => {
+		const isOnline = onlineUsers[friend.id];
+		if (isOnline){
+			onlineFriends.push(friend);
+		} else {
+			offlineFriends.push(friend);
+		}
+	});
+	renderFriends(friendsList, onlineFriends, offlineFriends);
+}).catcherror('Error loading friends list', err);
+friendsList.textContent = 'Could not load friends list';
 
 }
 
@@ -222,35 +288,14 @@ function expandFriendsList(friendsListSection, button){
 		if (friendsList){
 			friendsList.remove();
 			friendsList = null;
+			latestFriendsList = null;
 		}
 		else{
 			friendsList = document.createElement('div');
 			friendsListSection.appendChild(friendsList);
 
-			fetchWithRefreshAuth('/api/friends/list').then(response => response.json())
-			.then(data => {
-				friendsList.innerHTML = '';
-				
-				if (!data.friends || data.friends.length === 0){
-					friendsList.textContent = 'No friends yet';
-					return;
-				}
-				//logic to show online friends first and then offline
-				const onlineFriends = [];
-				const offlineFriends = [];
-				data.friends.forEach(friend => {
-				const idStr = String(friend.id);
-				const isOnline = onlineUsers.some(user => user.id === idStr);
-				if (isOnline){
-					onlineFriends.push(friend);
-				} else {
-					offlineFriends.push(friend);
-				}
-			});
-			renderFriends(friendsList, onlineFriends, offlineFriends);
-		});
-
-
+			latestFriendsList = friendsList;
+			loadAndRenderFriends(friendsList);
 		}
 	})
 }

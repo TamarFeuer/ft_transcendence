@@ -10,8 +10,17 @@ import json
 import jwt
 import logging
 from .models import FriendRequest
+from .services import remove_friend_from_db
 
 logger = logging.getLogger(__name__)
+
+def get_recipient(request):
+	data = json.loads(request.body.decode())
+	to_username = data.get('to_username')
+	to_user = User.objects.get(username=to_username)
+
+	return to_user
+
 
 def get_authenticated_user(request):
 	try:
@@ -29,6 +38,28 @@ def get_authenticated_user(request):
 		return (None, JsonResponse({'error': 'user does not exist'}, status=404))
 	return (user, None)
 
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def  remove_friend(request):
+	try:
+		user, error = get_authenticated_user(request)
+		if (error):
+			return error
+		data = json.loads(request.body.decode())
+		friend_id = data.get('friend_id')
+		if not friend_id:
+			return JsonResponse({'error': 'friend_id is required'}, status=400)
+		to_user = User.objects.get(id=friend_id)
+		# to_user = get_recipient(request)
+		remove_friend_from_db(user, to_user)
+		return JsonResponse({
+			'success': True,
+			'message': f'You have successfully removed {to_user.username} from your friends list'
+		})
+	except Exception as e:
+		return (JsonResponse({'error': 'Cannot remove friend'}, status=500))
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def send_friend_request(request):
@@ -36,9 +67,7 @@ def send_friend_request(request):
 		from_user, error = get_authenticated_user(request)
 		if error:
 			return error
-		data = json.loads(request.body.decode())
-		to_username = data.get('to_username')
-		to_user = User.objects.get(username=to_username)
+		to_user = get_recipient(request)
 		if from_user == to_user:
 			return JsonResponse({'error': 'Cannot make a friend request to yourself'}, status=400)
 		if FriendRequest.objects.filter(from_user=from_user, to_user=to_user, status='accepted').exists():
@@ -46,10 +75,10 @@ def send_friend_request(request):
 		existing = FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exclude(status='declined').exists()
 		if existing:
 			return JsonResponse({'error': 'Friend request pending'}, status=400)
-		friend_request = FriendRequest.objects.create(from_user=from_user, to_user=to_user)
+		FriendRequest.objects.create(from_user=from_user, to_user=to_user)
 		return JsonResponse({
 			'success': True,
-			'message': f'Friend request sent to {to_username}'
+			'message': f'Friend request sent to {to_user.username}'
 		})
 	except jwt.ExpiredSignatureError:
 		return JsonResponse({'error': 'token expired'}, status=401)
