@@ -1,8 +1,8 @@
 import uuid
 import time
 from threading import Lock
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 
 class GameSession:
     """In-memory game session management"""
@@ -178,7 +178,7 @@ class GameSession:
 class Player(models.Model):
     # If user is deleted, all child records (matches, achievements) will be deleted as well.
     # Related name 'profile' allows us to access Player from User via user.profile
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     
     total_games = models.IntegerField(default=0)
     total_wins = models.IntegerField(default=0)
