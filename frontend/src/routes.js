@@ -4,6 +4,7 @@ import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
 import { checkAuthRequired } from './usermanagement.js';
 import { updatePageTranslations } from './i18n';
+import { initChessGame } from './chess.js';
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -32,6 +33,12 @@ export function setupRoutes() {
     document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
     
   };
+
+  routes['/chess'] = async () => {
+    await loadTemplate('chess');
+    initChessGame();
+  }
+
 
   routes['/pong'] = async () => {
     await loadTemplate('pong');
