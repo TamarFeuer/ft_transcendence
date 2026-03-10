@@ -2,9 +2,9 @@
 services:
   backend:
     build: ./backend
-    volumes:
-    - ./backend/db.sqlite3:/code/db.sqlite3
     container_name: pong_backend
+    volumes:
+      - ./backend:/app
     environment:
       - DJANGO_SETTINGS_MODULE=django_server.settings
       - DEBUG=True
@@ -28,7 +28,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: pong_frontend_dev
+    container_name: pong_frontend
     ports:
       - "5173:5173"
     volumes:
@@ -40,7 +40,7 @@ services:
       - VITE_BACKEND_URL=http://backend:3000
 
   db:
-    container_name: transcendence_db
+    container_name: pong_db
     image: postgres:17-alpine
     environment:
       - POSTGRES_DB=transcendence
@@ -54,6 +54,7 @@ services:
       - "5432:5432"
 
   redis:
+    container_name: pong_redis
     image: redis:7-alpine
     restart: unless-stopped
     networks:
