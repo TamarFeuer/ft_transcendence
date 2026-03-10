@@ -74,10 +74,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.broadcast_online_users()
 
 	async def disconnect(self, close_code):
-		# Leave the global group
+		# Only leave the global group if we successfully joined it in connect()
+		#If connect() failed early (e.g. invalid token), group_name was never set
 		if hasattr(self, "group_name"):
 			await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
+		# Only clean up user data if we successfully authenticated in connect()
+		# getattr with default None avoids AttributeError if user_id was never set
 		user_id = getattr(self, "user_id", None)
 		if user_id and user_id in CONNECTED_USERS:
 			# Remove this specific channel (tab) from the user's set
@@ -89,8 +92,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				del CONNECTED_USERS[self.user_id]
 				ONLINE_USERS.pop(self.user_id, None)
 		
-		# Broadcast updated online users list to reflect the disconnection
-		await self.broadcast_online_users()
+		# Only broadcast if group_name exists; if connect() failed early, it was never set
+		if hasattr(self, "group_name"):
+			# Broadcast updated online users list to reflect the disconnection
+			await self.broadcast_online_users()
 
 	async def receive(self, text_data):
 		# Called whenever the client sends a message through the WebSocket
