@@ -1,22 +1,55 @@
 import { Chess } from 'chess.js'
 
+let selectedSquare = null;
+
 const pieces = {
     w: { k: '♔', q: '♕', r: '♖', b: '♗', n: '♘', p: '♙' },
     b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }
 };
 
+function handleSquareClick(game, square){
+	if (!selectedSquare){
+		const piece = game.get(square.dataset.notation);
+		console.log('piece is', piece);
+		if (piece){
+			//TODO highlight possible moves
+
+			if (piece.color === game.turn()){
+				square.className += ' ring-4 ring-yellow-400';
+			}
+		}
+	}
+}
+
 export function initChessGame(){
 	const game = new Chess();
+	console.log('initChessGame called');
 	const boardEl = document.getElementById('chess-board');
-	const turnEl = document.getElementById('turn-indicator');
+	// const turnEl = document.getElementById('turn-indicator');
 
 
 	boardEl.className = 'grid grid-cols-8 w-[36rem] h-[36rem] auto-rows-fr';
+	// console.log('it goes before click');
+	boardEl.addEventListener('click', (e) => {
+		const square = e.target.closest('[data-notation]');
+		// console.log('square is ', square);
+		if (square){
+			// console.log('goes in here');
+			handleSquareClick(game, square);
+		}
+	})
 	renderBoard(game, boardEl);
 }
 
+function getNotation(rowIndex, columnIndex){
+	const rows = ['8', '7', '6', '5', '4', '3', '2', '1'];
+	const columns = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+	return columns[columnIndex] + rows[rowIndex];
+}
+
 function renderBoard(game, boardEl){
-	console.log(game.board());
+	// console.log(game.board());
 
 	boardEl.innerHTML = '';
 	//go through each row to render the pieces and the board
@@ -26,9 +59,13 @@ function renderBoard(game, boardEl){
 			//which square needs to be light
 			const isLight = (rowIndex + cellIndex) % 2 === 0
 			square.className = `w-full h-full flex items-center justify-center text-4xl ${isLight ? 'bg-amber-100' : 'bg-amber-800'}`;
+
+			//name the square
+			square.dataset.notation = getNotation(rowIndex, cellIndex);
+
 			//if cell has a piece then render the piece
 			if (cell){
-				console.log('cell type', cell.type);
+				// console.log('cell type', cell.type, 'in square ', square.dataset.notation);
 				const symbol = pieces[cell.color][cell.type];
 				square.textContent = symbol;
 			}

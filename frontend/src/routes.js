@@ -37,6 +37,7 @@ export function setupRoutes() {
 
   routes['/chess'] = async () => {
     await loadTemplate('chess');
+    document.getElementById('renderCanvas').style.display = 'none';
     initChessGame();
   }
 
