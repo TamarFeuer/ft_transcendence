@@ -1,4 +1,3 @@
-Based dir: /app
 [
 {
   "model": "auth.user",
@@ -97,7 +96,7 @@ Based dir: /app
     "password": "pbkdf2_sha256$1000000$NABaAIXUag5CirYfjNReeK$0PmfC1cGQKpYiNjjjxi988f9aKTLGt+yW0YWjg6SDWk=",
     "last_login": null,
     "is_superuser": false,
-    "username": "The cat",
+    "username": "The_cat",
     "first_name": "",
     "last_name": "",
     "email": "",
