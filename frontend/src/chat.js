@@ -76,11 +76,11 @@ export function initChat() {
 					// String comparison because IDs may come as strings or numbers
 					if (String(data.sender) === String(myUserId)) {
 						// I sent this message - use the target's ID for the channel
-						channelId = data.target;
+						channelId = String(data.target);
 						console.log("I sent this - channelId set to target:", channelId);
 					} else {
 						// Someone sent me a message - use their ID for the channel
-						channelId = data.sender;
+						channelId = String(data.sender);
 						console.log("Someone sent to me - channelId set to sender:", channelId);
 					}
 				} else {
