@@ -20,8 +20,8 @@ function startTournamentAutoRefresh(callback, intervalMs = 5000) {
   tournamentAutoRefreshInterval = setInterval(callback, intervalMs);
 }
 
-function showToast(message, type = 'info', duration = 2500) {
-  const containerId = 'toast-container';
+function showMessage(message, type = 'info', duration = 2500) {
+  const containerId = 'Message-container';
   let container = document.getElementById(containerId);
 
   if (!container) {
@@ -37,13 +37,13 @@ function showToast(message, type = 'info', duration = 2500) {
     info: 'bg-blue-600 border-blue-400'
   };
 
-  const toast = document.createElement('div');
-  toast.className = `pointer-events-auto text-white px-4 py-2 rounded-md border shadow-lg ${typeClass[type] || typeClass.info}`;
-  toast.textContent = message;
-  container.appendChild(toast);
+  const Message = document.createElement('div');
+  Message.className = `pointer-events-auto text-white px-4 py-2 rounded-md border shadow-lg ${typeClass[type] || typeClass.info}`;
+  Message.textContent = message;
+  container.appendChild(Message);
 
   setTimeout(() => {
-    toast.remove();
+    Message.remove();
     if (container && container.childElementCount === 0) {
       container.remove();
     }
@@ -118,7 +118,7 @@ export function setupRoutes() {
   routes['/tournament'] = async () => {
     stopTournamentAutoRefresh();
     if (await checkAuthRequired() == true) {
-      showToast('You need to be logged in to access tournaments.', 'error');
+      showMessage('You need to be logged in to access tournaments.', 'error');
       navigate('/');
       return;
     }
@@ -279,12 +279,12 @@ export function setupRoutes() {
           
           const result = await tournamentAPI.joinTournament(tournamentId);
           if (result.ok) {
-            showToast('Joined tournament successfully!', 'success');
+            showMessage('Joined tournament successfully!', 'success');
             btn.disabled = false;
             btn.textContent = 'Cancel';
             loadAllTournaments();
           } else {
-            showToast(result.data?.error || 'Failed to join tournament', 'error');
+            showMessage(result.data?.error || 'Failed to join tournament', 'error');
             btn.disabled = false;
             btn.textContent = 'Join';
           }
@@ -302,10 +302,10 @@ export function setupRoutes() {
           const result = await tournamentAPI.startTournament(tournamentId);
           // result.ok = false; // TEMPORARY DISABLE STARTING TO PREVENT ISSUES WHILE TESTING
           if (result.ok) {
-            showToast('Tournament started!', 'success');
+            showMessage('Tournament started!', 'success');
             loadAllTournaments();
           } else {
-            showToast(result.data?.error || 'Failed to start tournament', 'error');
+            showMessage(result.data?.error || 'Failed to start tournament', 'error');
             btn.disabled = false;
             btn.textContent = 'Start';
           }
@@ -322,10 +322,10 @@ export function setupRoutes() {
           
           const result = await tournamentAPI.cancelTournament(tournamentId);
           if (result.ok) {
-            showToast('Tournament cancelled', 'success');
+            showMessage('Tournament cancelled', 'success');
             loadAllTournaments();
           } else {
-            showToast(result.data?.error || 'Failed to cancel tournament', 'error');
+            showMessage(result.data?.error || 'Failed to cancel tournament', 'error');
             btn.disabled = false;
             btn.textContent = 'Cancel';
           }
@@ -427,7 +427,7 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if (await checkAuthRequired() == true)
       {
-      showToast('You need to be logged in to access online games.', 'error');
+      showMessage('You need to be logged in to access online games.', 'error');
       return;
     }
 
@@ -484,7 +484,7 @@ export function setupRoutes() {
       } catch (error) {
         console.error('Failed to create game:', error);
         document.getElementById('lobbyStatus').innerHTML = `<p class="text-red-400">Failed to create game. Please try again.</p>`;
-        showToast('Failed to create game. Please try again.', 'error');
+        showMessage('Failed to create game. Please try again.', 'error');
       }
     });
   };
@@ -492,7 +492,7 @@ export function setupRoutes() {
   routes['/tournament/:tournamentId'] = async (tournamentId) => {
     stopTournamentAutoRefresh();
     if (await checkAuthRequired() == true) {
-      showToast('You need to be logged in to access tournaments.', 'error');
+      showMessage('You need to be logged in to access tournaments.', 'error');
       navigate('/tournament');
       return;
     }
@@ -599,7 +599,7 @@ async function loadTournamentGames() {
     listEl.querySelectorAll('.start-game-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         if (await checkAuthRequired()) {
-          showToast('You need to be logged in to start games.', 'error');
+          showMessage('You need to be logged in to start games.', 'error');
           return;
         }
 
@@ -609,14 +609,12 @@ async function loadTournamentGames() {
 
         const result = await tournamentAPI.startTournamentGame(gameId);
         if (result.ok) {
-          showToast('Game started!', 'success');
+          showMessage('Game started!', 'success');
           // Redirect to the game
           stopTournamentAutoRefresh();
           joinOnlineGame(result.data.game_id, true);
-
-          // window.location.href = `/online?gameId=${result.data.game_id}`;
         } else {
-          showToast(result.data?.error || 'Failed to start game', 'error');
+          showMessage(result.data?.error || 'Failed to start game', 'error');
           btn.disabled = false;
           btn.textContent = 'Start Game';
         }
