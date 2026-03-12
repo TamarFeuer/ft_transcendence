@@ -60,7 +60,7 @@ export function initChat() {
 
 			// Server confirms our identity after connect
 			case "self_id":
-					wsUserId = data.user_id;
+					wsUserId = String(data.user_id);
 					wsUserName = data.name || "Guest";
 					console.log(`Chat identified as: ${wsUserName} (id: ${wsUserId})`);
 					break;
