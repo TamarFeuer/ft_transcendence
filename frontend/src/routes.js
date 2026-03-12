@@ -20,14 +20,15 @@ function startTournamentAutoRefresh(callback, intervalMs = 5000) {
   tournamentAutoRefreshInterval = setInterval(callback, intervalMs);
 }
 
-function showMessage(message, type = 'info', duration = 2500) {
+export function showMessage(message, type = 'info', duration = 2500) {
   const containerId = 'Message-container';
   let container = document.getElementById(containerId);
 
   if (!container) {
     container = document.createElement('div');
     container.id = containerId;
-    container.className = 'fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none';
+    container.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none';
+
     document.body.appendChild(container);
   }
 

@@ -7,6 +7,7 @@ import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 import { initChatUI } from './chat-ui.js';
 import { updateTournamentGameResult } from "./tournament.js";
+import { showMessage } from "./routes.js"
 
 // --- Game Variables ---
 let ws = null;
@@ -215,7 +216,8 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 			if (data.type === "gameOver") {
 				gameEnded = true;
-				// alert(`${data.winner} wins!`);
+
+				showMessage(`${data.winner} wins!`)
 				console.log("after yes");
 				// Clean up event listeners and intervals
 				clearInterval(keyboardInterval);
@@ -263,7 +265,7 @@ export function joinOnlineGame(gameId, IsTournament) {
 			// Clear session storage
 			sessionStorage.removeItem('activeGameId');
 			sessionStorage.removeItem('activeTournamentId');
-			// alert("Connection lost or opponent disconnected.");
+
 			if (IsTournament) {
 				navigate(`/tournament/${window.currentTournamentId}`);
 			} else {
@@ -459,7 +461,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 				scene.onBeforeRenderObservable.remove(renderObserver);
 
 				if (!tournament) {
-					alert(scoreP1int >= 10 ? "Player 1 wins!" : "Player 2 wins!");
+					showMessage(scoreP1int >= 10 ? "Player 1 wins!" : "Player 2 wins!");
 					navigate('/');
 				}
 
@@ -601,7 +603,7 @@ export function initAIGame(scene, gameObjects, tournament) {
 				scene.onBeforeRenderObservable.remove(renderObserver);
 
 				if (!tournament) {
-					alert(scoreP1int >= 10 ? "AI wins!" : "You win!");
+					showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
 					navigate('/');
 				}
 
@@ -628,7 +630,7 @@ export async function startTournament(playerCount) {
 	const scores = new Array(playerCount).fill(0);
 
 	for (const [i, j] of schedule) {
-		alert(`Match: ${players[i]} vs ${players[j]}`);
+		showMessage(`Match: ${players[i]} vs ${players[j]}`);
 
 		const appRoot = document.getElementById("app-root");
 		appRoot.innerHTML = `
@@ -665,7 +667,7 @@ export async function startTournament(playerCount) {
 		if (scores[i] > scores[winner]) winner = i;
 	}
 
-	alert(`Tournament Winner: ${players[winner]} with ${scores[winner]} wins!`);
+	showMessage(`Tournament Winner: ${players[winner]} with ${scores[winner]} wins!`);
 	navigate('/');
 }
 
