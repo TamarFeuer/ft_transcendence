@@ -9,8 +9,8 @@
 // WebSocket.CLOSED      // 3 - closed
 
 let chatSocket = null; // Single shared WebSocket connection for all chat
-let myUserId = null; // Set after server sends "self_id" confirmation
-let myUserName = null;
+let wsUserId = null; // Set after server sends "self_id" confirmation
+let wsUserName = null;
 
 // Exported so other modules (e.g. main.js) can read the current online users
 // Shape: { user_id: username } e.g. { "42": "tamar", "7": "rik" }
@@ -60,9 +60,9 @@ export function initChat() {
 
 			// Server confirms our identity after connect
 			case "self_id":
-					myUserId = data.user_id;
-					myUserName = data.name || "Guest";
-					console.log(`Chat identified as: ${myUserName} (id: ${myUserId})`);
+					wsUserId = data.user_id;
+					wsUserName = data.name || "Guest";
+					console.log(`Chat identified as: ${wsUserName} (id: ${wsUserId})`);
 					break;
 
 			// Incoming chat message — either global or private DM
@@ -74,7 +74,7 @@ export function initChat() {
 				
 				if (data.private) {
 					// String comparison because IDs may come as strings or numbers
-					if (String(data.sender) === String(myUserId)) {
+					if (String(data.sender) === String(wsUserId)) {
 						// I sent this message - use the target's ID for the channel
 						channelId = String(data.target);
 						console.log("I sent this - channelId set to target:", channelId);
@@ -183,8 +183,8 @@ export function initTyping(chatInput) {
 			// Tell the server this user is typing
 			chatSocket.send(JSON.stringify({
 				type: "typing",
-				user: myUserId,
-				name: myUserName,
+				user: wsUserId,
+				name: wsUserName,
 			}));
 			
 			// Debounce: cancel the previous countdown and start a fresh one
@@ -196,8 +196,8 @@ export function initTyping(chatInput) {
 				if (chatSocket.readyState === WebSocket.OPEN) {
 					chatSocket.send(JSON.stringify({
 						type: "stop_typing",
-						user: myUserId,
-						name: myUserName
+						user: wsUserId,
+						name: wsUserName
 					}));
 				}
 			}, 1000);
