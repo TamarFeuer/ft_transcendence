@@ -52,7 +52,7 @@ export function initChatUI() {
 	// switchToChannel=true (default) — switches to the tab immediately.
 	// switchToChannel=false — creates the tab silently (used when a DM arrives
 	// while the user is in a different channel, so we don't interrupt them).
-	function openDMChannel(userId, userName, switchToChannel = true) {
+	function openDMChannel(userId, userName, switchToChannel = true, fetchHistory = true) {
 		// Don't open DM with yourself
 		if (userId === verifiedUserId) return;
 
@@ -75,7 +75,7 @@ export function initChatUI() {
 		`;
 
 		channelTabs.appendChild(tab);
-		fetchDMHistory(userId);  // fetch history when opening DM
+		if(fetchHistory) fetchDMHistory(userId);
 
 		tab.addEventListener("click", (e) => {
 			if (e.target.classList.contains("close-tab")) {
@@ -107,7 +107,7 @@ export function initChatUI() {
 		messageHistory[channelId].push(message);
 
 		if (channelId === activeChannel) {
-			// User is already viewing this channel — render immediately
+			// User is already viewing this channel, render immediately
 			renderMessages(channelId);
 		} else {
 			// User is elsewhere — increment unread badge on the tab
@@ -214,7 +214,8 @@ export function initChatUI() {
 		if (channelId !== "global") {
 			const existingTab = document.querySelector(`[data-channel="${channelId}"]`);
 			if (!existingTab) {
-				openDMChannel(channelId, message.senderName, false);
+				// second false means don't fetch history
+				openDMChannel(channelId, message.senderName, false, false);
 			}
 		}
 
