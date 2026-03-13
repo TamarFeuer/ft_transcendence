@@ -484,5 +484,5 @@ window.addEventListener("DOMContentLoaded", async () => {
 	// Initial route handling
 	handleRoute(window.location.pathname);
 
-	initChatUI(CURRENT_USER);
+	initChatUI();
 });
