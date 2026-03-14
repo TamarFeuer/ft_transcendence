@@ -46,6 +46,9 @@ export function initChat() {
 					verifiedUserId = data.user_id;
 					verifiedUserName = data.name || "Guest";
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
+					window.dispatchEvent(new CustomEvent("userIdentified", {
+						detail: { userId: verifiedUserId }
+					}));
 					break;
 
 			// Incoming chat message — either global or private DM

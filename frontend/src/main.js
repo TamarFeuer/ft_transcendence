@@ -470,12 +470,6 @@ setupRoutes();
 
 window.addEventListener("DOMContentLoaded", async () => {
 
-	// Fetch current user from backend
-	const CURRENT_USER = await fetchCurrentUser();
-	CURRENT_USER.user_id = String(CURRENT_USER.user_id);
-	window.CURRENT_USER = CURRENT_USER;
-
-	console.log("Current user:", CURRENT_USER);
 	initChat();
 
 	// Create user manager UI
