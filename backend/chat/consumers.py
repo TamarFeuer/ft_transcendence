@@ -126,7 +126,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				payload["private"] = True
 				payload["target"] = target
 				if target in CONNECTED_USERS:
-					logger.warning(f"CONNECTED_USERS[{target}]: {CONNECTED_USERS[target]}")
 					for channel_name in CONNECTED_USERS[target]:
 						await self.channel_layer.send(channel_name, payload)
 				if self.user_id in CONNECTED_USERS:
