@@ -7,7 +7,7 @@ const pieces = {
     b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }
 };
 
-function handleSquareClick(game, square){
+function handleSquareClick(game, square, selectedSquare, boardEl){
 	if (!selectedSquare){
 		const piece = game.get(square.dataset.notation);
 		console.log('piece is', piece);
@@ -15,7 +15,8 @@ function handleSquareClick(game, square){
 			//TODO highlight possible moves
 
 			if (piece.color === game.turn()){
-				square.className += ' ring-4 ring-yellow-400';
+				selectedSquare = square.dataset.notation;
+				renderBoard(game, boardEl, selectedSquare);
 			}
 		}
 	}
@@ -35,10 +36,10 @@ export function initChessGame(){
 		// console.log('square is ', square);
 		if (square){
 			// console.log('goes in here');
-			handleSquareClick(game, square);
+			handleSquareClick(game, square, selectedSquare, boardEl);
 		}
 	})
-	renderBoard(game, boardEl);
+	renderBoard(game, boardEl, selectedSquare);
 }
 
 function getNotation(rowIndex, columnIndex){
@@ -48,7 +49,7 @@ function getNotation(rowIndex, columnIndex){
 	return columns[columnIndex] + rows[rowIndex];
 }
 
-function renderBoard(game, boardEl){
+function renderBoard(game, boardEl, selectedSquare){
 	// console.log(game.board());
 
 	boardEl.innerHTML = '';
@@ -68,6 +69,11 @@ function renderBoard(game, boardEl){
 				// console.log('cell type', cell.type, 'in square ', square.dataset.notation);
 				const symbol = pieces[cell.color][cell.type];
 				square.textContent = symbol;
+			}
+
+			//if user clicks their piece, highlight it
+			if (square.dataset.notation === selectedSquare){
+				square.className += ' [box-shadow:inset_0_0_0_3px_rgb(250_204_21)]';
 			}
 			boardEl.appendChild(square);
 		})
