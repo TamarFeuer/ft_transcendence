@@ -7,7 +7,7 @@ const pieces = {
     b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }
 };
 
-function handleSquareClick(game, square, selectedSquare, boardEl){
+function handleSquareClick(game, square, boardEl){
 	if (!selectedSquare){
 		const piece = game.get(square.dataset.notation);
 		console.log('piece is', piece);
@@ -18,6 +18,14 @@ function handleSquareClick(game, square, selectedSquare, boardEl){
 				selectedSquare = square.dataset.notation;
 				renderBoard(game, boardEl, selectedSquare);
 			}
+		}
+	}
+	else {
+		const piece = game.get(square.dataset.notation);
+		if (piece && piece.color === game.turn()) {
+			// switch selection to the new piece
+			selectedSquare = square.dataset.notation;
+			renderBoard(game, boardEl, selectedSquare);
 		}
 	}
 }
@@ -36,7 +44,7 @@ export function initChessGame(){
 		// console.log('square is ', square);
 		if (square){
 			// console.log('goes in here');
-			handleSquareClick(game, square, selectedSquare, boardEl);
+			handleSquareClick(game, square, boardEl);
 		}
 	})
 	renderBoard(game, boardEl, selectedSquare);
@@ -49,17 +57,34 @@ function getNotation(rowIndex, columnIndex){
 	return columns[columnIndex] + rows[rowIndex];
 }
 
+function drawDot(square){
+	const dotWrap = document.createElement('div');
+	dotWrap.className = 'absolute inset-0 flex items-center justify-center pointer-events-none';
+
+	const dot = document.createElement('div');
+	dot.className = 'w-3 h-3 rounded-full bg-gray-400/70';
+
+	dotWrap.appendChild(dot);
+	square.appendChild(dotWrap);
+}
+
 function renderBoard(game, boardEl, selectedSquare){
 	// console.log(game.board());
+	let possibleMoves = [];
 
 	boardEl.innerHTML = '';
+	if (selectedSquare){
+		possibleMoves = game.moves({
+			square: selectedSquare,
+			verbose: true}).map(m => m.to); //return an array of only the "to" squares the piece can move
+		}		
 	//go through each row to render the pieces and the board
 	game.board().forEach((row, rowIndex) => {
 		row.forEach((cell, cellIndex) => {
 			const square = document.createElement('div');
 			//which square needs to be light
 			const isLight = (rowIndex + cellIndex) % 2 === 0
-			square.className = `w-full h-full flex items-center justify-center text-4xl ${isLight ? 'bg-amber-100' : 'bg-amber-800'}`;
+			square.className = `relative w-full h-full flex items-center justify-center text-4xl ${isLight ? 'bg-amber-100' : 'bg-amber-800'}`;
 
 			//name the square
 			square.dataset.notation = getNotation(rowIndex, cellIndex);
@@ -74,6 +99,13 @@ function renderBoard(game, boardEl, selectedSquare){
 			//if user clicks their piece, highlight it
 			if (square.dataset.notation === selectedSquare){
 				square.className += ' [box-shadow:inset_0_0_0_3px_rgb(250_204_21)]';
+			}
+
+			//highlight possible moves if user clicks their own piece
+			if (possibleMoves.includes(square.dataset.notation)){
+				//TODO draw the dot
+				drawDot(square);
+
 			}
 			boardEl.appendChild(square);
 		})
