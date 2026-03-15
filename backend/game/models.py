@@ -3,6 +3,8 @@ import time
 from threading import Lock
 from django.db import models
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class GameSession:
     """In-memory game session management"""
@@ -218,6 +220,37 @@ class Player(models.Model):
         if self.total_win_points + self.total_loss_points == 0:
             return 0
         return self.total_win_points * 100 / (self.total_win_points + self.total_loss_points)
+    
+    def player_wins(self, win_point, opponent_elo):
+        self.total_games += 1
+        self.total_wins += 1
+        
+        k = 10 #k factor can be changed
+        self.elo_rating += 10 * (1 - 1 / (1 + 10 ** ((opponent_elo - self.elo_rating) / 400)))
+        
+        self.total_win_points += win_point
+        
+        self.current_win_streak += 1
+        self.current_loss_streak = 0
+        
+        if self.current_win_streak > self.best_win_streak:
+            self.best_win_streak = self.current_win_streak
+        
+        self.save()
+    
+    def player_loses(self, loss_point, opponent_elo):
+        self.total_games += 1
+        self.total_losses += 1
+        
+        k = 10
+        self.elo_rating += k * (0 - 1 / (1 + 10 ** ((opponent_elo - self.elo_rating) / 400)))
+        
+        self.total_loss_points += loss_point
+        
+        self.current_loss_streak += 1
+        self.current_win_streak = 0
+        
+        self.save()
 
     class Meta:
         ordering = ['-elo_rating', '-total_wins']  # highest ELO first, then most wins (- for descending order)
@@ -286,3 +319,9 @@ class PlayerAchievement(models.Model):
         unique_together = ('player', 'achievement')  # prevent duplicate achievements for the same player
         ordering = ['-timestamp']  # most recent achievements first
         db_table = 'stats_player_achievements'
+
+# added a post_save signal to auto-create a Player row whenever a new user is created
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_player_profile(sender, instance, created, **kwargs):
+    if created:
+        Player.objects.create(user=instance)
