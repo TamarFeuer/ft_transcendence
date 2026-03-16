@@ -5,7 +5,7 @@ import jwt
 from django.conf import settings
 from jwt import InvalidTokenError
 from django.utils import timezone
-from game.token_auth import get_user_from_token
+from users.token_auth import get_user_from_token
 
 logger = logging.getLogger(__name__)
 

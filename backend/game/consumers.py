@@ -19,7 +19,7 @@ def update_game_to_ready(game_id):
         logger.info(f"Tournament game {game_id} status updated to ready")
         return True
     except TournamentGame.DoesNotExist:
-        logger.warning(f"No tournament game found for game_id {game_id}")
+        logger.debug(f"No tournament game found for game_id {game_id}")
         return False
 
 def update_game_to_ongoing(game_id):
@@ -33,7 +33,7 @@ def update_game_to_ongoing(game_id):
         logger.info(f"Tournament game {game_id} status updated to ongoing")
         return True
     except TournamentGame.DoesNotExist:
-        logger.warning(f"No tournament game found for game_id {game_id}")
+        logger.debug(f"No tournament game found for game_id {game_id}")
         return False
 
 def reset_game_to_ready(game_id):
@@ -46,7 +46,7 @@ def reset_game_to_ready(game_id):
         logger.info(f"Tournament game {game_id} reset to ready after all players disconnected")
         return True
     except TournamentGame.DoesNotExist:
-        logger.warning(f"No tournament game found for game_id {game_id}")
+        logger.debug(f"No tournament game found for game_id {game_id}")
         return False
 
 def update_game_completed(game_id, winner_id, winner_name):
@@ -62,7 +62,7 @@ def update_game_completed(game_id, winner_id, winner_name):
         logger.info(f"Tournament game {game_id} completed. Winner: {winner_name}")
         return True
     except TournamentGame.DoesNotExist:
-        logger.warning(f"No tournament game found for game_id {game_id}")
+        logger.debug(f"No tournament game found for game_id {game_id}")
         return False
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -81,14 +81,14 @@ class GameConsumer(AsyncWebsocketConsumer):
         headers = dict(self.scope.get('headers', []))
         cookies = self.scope.get('cookies', {})
         
-        print("Headers:", headers)
-        print("Cookies:", cookies)
-        print("Authorization:", headers.get(b'authorization'))
+        logger.debug(f"Cookies: {cookies}")
+        logger.debug(f"Headers: {headers}")
+        logger.debug(f"Authorization: {headers.get(b'authorization')}")
 
         # Check for duplicate connections
-        logger.warning(f"Scope: {self.scope}")
-        logger.warning(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
-        logger.warning(f"Current players: {self.game.get_players()}")
+        logger.debug(f"Scope: {self.scope}")
+        logger.debug(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
+        logger.debug(f"Current players: {self.game.get_players()}")
 
         players = self.game.get_players()
         if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
@@ -99,11 +99,11 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.close(code=4005)
             return
 
-        logger.warning(f"user obj={self.scope.get('user')}, id={getattr(self.scope.get('user'), 'id', None)}, type={type(self.scope.get('user'))}")
+        logger.debug(f"user obj={self.scope.get('user')}, id={getattr(self.scope.get('user'), 'id', None)}, type={type(self.scope.get('user'))}")
         # Add player to game
         # self.role = self.game.add_player(self.scope['user'], self.scope['id'])
         self.role = self.game.add_player(self.scope['user'], getattr(self.scope.get('user'), 'id', None))
-        logger.warning(f"Assigned role: {self.role} to: {self.scope['user']}")
+        logger.debug(f"Assigned role: {self.role} to: {self.scope['user']}")
         # Join game group
         await self.channel_layer.group_add(
             self.game_group_name,
@@ -120,7 +120,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         else:
             await self.accept()
     
-        logger.warning(f"Send assign: {self.role} to: {self.scope['user']}")
+        logger.debug(f"Send assign: {self.role} to: {self.scope['user']}")
         # Send role assignment
         user_id = None
         try:
@@ -133,7 +133,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             'role': self.role,
             'user_id': user_id
         }))
-        logger.warning(f"Start game?: {self.game.can_start()}")
+        logger.debug(f"Start game?: {self.game.can_start()}")
 
         # Start game if both players connected
         if self.game.can_start():
@@ -158,7 +158,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             asyncio.create_task(self.game_loop())
 
     async def disconnect(self, close_code):
-        logger.warning(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
+        logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         if hasattr(self, 'game') and self.game:
             players_before = self.game.get_players()
             departing_user = self.scope.get('user')
@@ -194,7 +194,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             # If all players are gone, reset game to waiting state
             players = self.game.get_players()
             if players['left'] is None and players['right'] is None and self.game.status != "completed":
-                logger.warning(f"All players disconnected from game {self.game_id}, resetting to waiting state")
+                logger.info(f"All players disconnected from game {self.game_id}, resetting to waiting state")
                 self.game.status = 'waiting'
                 # Update tournament game status in database
                 await sync_to_async(reset_game_to_ready)(self.game_id)
@@ -252,7 +252,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 
                 if result.get('winner'):
                     # Update tournament game with winner and completion status
-                    logger.warning("FINISH")
+                    logger.info("FINISH")
                     self.game.status = "completed"
                     await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
                     
@@ -287,7 +287,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     async def game_over(self, event):
         """Handle game over broadcast"""
-        logger.warning(f"Game over event received: {event}")
+        logger.info(f"Game over event received: {event}")
         await self.send(text_data=json.dumps({
             'type': 'gameOver',
             'winner': event['winner'],

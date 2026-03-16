@@ -12,10 +12,13 @@ def get_user_from_token(token: str):
     from django.contrib.auth import get_user_model
     from django.contrib.auth.models import AnonymousUser
 
+    if not token:
+        logger.warning("No token provided")
+        return AnonymousUser()
     User = get_user_model()
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        logger.warning(f"get_user_from_token: decoding payload token: {payload}")
+        logger.debug(f"get_user_from_token: decoding payload token: {payload}")
         
         # Verify it's an access token (not a refresh token)
         token_type = payload.get('type')
@@ -51,7 +54,7 @@ class TokenAuthMiddleware:
 
     async def __call__(self, scope, receive, send):
         # Only operate on websocket connections (safe-guard)
-        logger.warning(f"TokenAuthMiddleware: scope type: {scope.get('type')}")
+        logger.info(f"TokenAuthMiddleware: scope type: {scope.get('type')}")
         
         token = None
         
@@ -94,9 +97,9 @@ class TokenAuthMiddleware:
         
         if token:
             # Attempt to resolve token -> user
-            logger.warning(f"TokenAuth: received token: {token}")
+            logger.debug(f"TokenAuth: received token: {token}")
             user = await get_user_from_token(token)
-            logger.warning(f"TokenAuth: decoded user: {user}")
+            logger.debug(f"TokenAuth: decoded user: {user}")
 
             # copy scope to avoid mutating shared dicts
             scope = dict(scope)

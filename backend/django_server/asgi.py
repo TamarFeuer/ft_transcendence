@@ -11,7 +11,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_server.settings')
 # modules that access Django models (token_auth imports auth models).
 django_asgi_app = get_asgi_application()
 
-from game.token_auth import TokenAuthMiddleware
+from users.token_auth import TokenAuthMiddleware
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
