@@ -14,15 +14,10 @@ django_asgi_app = get_asgi_application()
 from game.token_auth import TokenAuthMiddleware
 
 application = ProtocolTypeRouter({
-    "http": django_asgi_app,
-    # Use AuthMiddlewareStack for session auth; TokenAuthMiddleware can populate scope['user'] from JWT query.
-    "websocket": AuthMiddlewareStack(
-        TokenAuthMiddleware(
-            URLRouter(game_ws + chat_ws)
-        )
-    ),
-    
-    "websocket": AuthMiddlewareStack(
-    URLRouter(game_ws + chat_ws)
-)
+	"http": django_asgi_app,
+	"websocket": AuthMiddlewareStack(
+		TokenAuthMiddleware(
+			URLRouter(game_ws + chat_ws)
+		)
+	),
 })
