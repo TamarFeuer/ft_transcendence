@@ -3,16 +3,16 @@
     <div class="p-6 bg-zinc-800 rounded-lg w-80">
     <h2 class="text-white text-2xl font-semibold text-center mb-6">Login</h2>
     <form id="login-form">
-        <input type="text" placeholder="Username"
+        <input id="login-username"  type="text" placeholder="Username"
         class="w-full mt-2 p-2 rounded bg-zinc-700 text-white
         focus:outline-none focus:ring-2 focus:ring-violet-500">
-        <input type="password" placeholder="Password" 
+        <input id="login-password" type="password" placeholder="Password" 
         class="w-full mt-4 p-2 rounded bg-zinc-700 text-white
         focus:outline-none focus:ring-2 focus:ring-violet-500"> 
-        <button type="submit" class="w-full mt-6 py-3 rounded bg-violet-500 text-zinc-900
+        <button  id="login-submit" type="submit" class="w-full mt-6 py-3 rounded bg-violet-500 text-zinc-900
         font-semibold hover:bg-violet-400 transition transform hover:scale-105
         focus:outline-none focus:ring-2 focus:ring-violet-400">Sign in</button>
-        <button type="button" class="w-full mt-4 py-2 text-zinc-300
+        <button id="login-create-account" type="button" class="w-full mt-4 py-2 text-zinc-300
         font-semibold hover:text-white transition transition transform hover:scale-105">Create account</button>
     </form>
 </div>
@@ -20,5 +20,4 @@
     <button type="button" class="text-sm2 text-zinc-500 hover:text-zinc-300 transition">
         Play as guest</button>
     </div>
-    <script src="login.js"></script>
 </div>
