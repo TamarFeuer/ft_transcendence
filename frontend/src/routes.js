@@ -26,12 +26,15 @@ async function loadTemplate(name) {
 
 export function setupRoutes() {
   routes['/'] = async () => {
-    await loadTemplate('home');
-    document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
-    document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
-    document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
-    
+      await loadTemplate('login');
   };
+  routes['/home'] = async () =>{
+        await loadTemplate('home');
+      document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
+      document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
+      document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
+  
+  }
 
   routes['/pong'] = async () => {
     await loadTemplate('pong');
