@@ -25,3 +25,6 @@ db/postgres/
 __pycache__/
 *.pyc
 *.pyo
+
+# Venv
+venv/
