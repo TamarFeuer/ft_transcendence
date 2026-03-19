@@ -9,8 +9,8 @@
 // WebSocket.CLOSED      // 3 - closed
 
 let chatSocket = null; // Single shared WebSocket connection for all chat
-let myUserId = null; // Set after server sends "self_id" confirmation
-let myUserName = null;
+export let verifiedUserId = null; // Set after server sends "self_id" confirmation
+let verifiedUserName = null;
 
 // Exported so other modules (e.g. main.js) can read the current online users
 // Shape: { user_id: username } e.g. { "42": "tamar", "7": "rik" }
@@ -18,29 +18,12 @@ export let onlineUsers = {};
 
 export function initChat() {
 	
-	// CURRENT_USER must be set on window before initChat() is called.
-	// In main.js, fetch /api/auth/me first, then call initChat().
-	const CURRENT_USER = window.CURRENT_USER;
-
-	if (!CURRENT_USER) {
-		console.error("initChat: window.CURRENT_USER is not set. Call /api/auth/me first");
-		return;
-	}
-
 	// Use wss:// in production (https), ws:// in development (http)
 	const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
 	chatSocket = new WebSocket(`${wsProtocol}//${location.host}/ws/chat/`);
 
 	chatSocket.onopen = () => {
 		console.log("Chat WebSocket connected");
-		
-		// The backend reads the JWT from the cookie on connect (see consumers.py).
-		// We still send an "identify" message as a fallback / for extra context.
-		chatSocket.send(JSON.stringify({
-			type: "identify",
-			userId: CURRENT_USER.user_id,
-			name: CURRENT_USER.username,
-		}));
 	}
 		
 	chatSocket.onclose = () => {
@@ -60,9 +43,12 @@ export function initChat() {
 
 			// Server confirms our identity after connect
 			case "self_id":
-					myUserId = data.user_id;
-					myUserName = data.name || "Guest";
-					console.log(`Chat identified as: ${myUserName} (id: ${myUserId})`);
+					verifiedUserId = data.user_id;
+					verifiedUserName = data.name || "Guest";
+					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
+					window.dispatchEvent(new CustomEvent("userIdentified", {
+						detail: { userId: verifiedUserId }
+					}));
 					break;
 
 			// Incoming chat message — either global or private DM
@@ -73,8 +59,7 @@ export function initChat() {
 				let channelId;
 				
 				if (data.private) {
-					// String comparison because IDs may come as strings or numbers
-					if (String(data.sender) === String(myUserId)) {
+					if (data.sender === verifiedUserId) {
 						// I sent this message - use the target's ID for the channel
 						channelId = data.target;
 						console.log("I sent this - channelId set to target:", channelId);
@@ -94,8 +79,8 @@ export function initChat() {
 					detail: {
 						channelId: channelId,
 						message: {
-							senderId: String(data.sender),
-							senderName: data.name || String(data.sender),
+							senderId: data.sender,
+							senderName: data.name || "unknown",
 							message: data.message
 						}
 					}
@@ -108,6 +93,15 @@ export function initChat() {
 				console.log("Received online_users message:", data.users);
 				onlineUsers = data.users;
 				window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
+				break;
+
+			case "dm_history":
+				window.dispatchEvent(new CustomEvent("dmHistoryReceived", {
+					detail: {
+						channelId: data.target,
+						messages: data.messages
+					}
+				}));
 				break;
 
 			/// Another user started typing — show indicator (TODO in UI)
@@ -183,8 +177,8 @@ export function initTyping(chatInput) {
 			// Tell the server this user is typing
 			chatSocket.send(JSON.stringify({
 				type: "typing",
-				user: myUserId,
-				name: myUserName,
+				user: verifiedUserId,
+				name: verifiedUserName,
 			}));
 			
 			// Debounce: cancel the previous countdown and start a fresh one
@@ -196,8 +190,8 @@ export function initTyping(chatInput) {
 				if (chatSocket.readyState === WebSocket.OPEN) {
 					chatSocket.send(JSON.stringify({
 						type: "stop_typing",
-						user: myUserId,
-						name: myUserName
+						user: verifiedUserId,
+						name: verifiedUserName
 					}));
 				}
 			}, 1000);
@@ -216,13 +210,21 @@ export function initTyping(chatInput) {
 }
 
 export function closeChat() {
-    if (chatSocket) {
-        chatSocket.close();
-        chatSocket = null;
-    }
+	if (chatSocket) {
+		chatSocket.close();
+		chatSocket = null;
+	}
 	// Hide chat UI on logout
-    const chatContainer = document.getElementById("chatContainer");
-    const openChatBtn = document.getElementById("openChatBtn");
-    if (chatContainer) chatContainer.style.display = "none";
-    if (openChatBtn) openChatBtn.style.display = "none";
+	const chatContainer = document.getElementById("chatContainer");
+	const openChatBtn = document.getElementById("openChatBtn");
+	if (chatContainer) chatContainer.style.display = "none";
+	if (openChatBtn) openChatBtn.style.display = "none";
+}
+
+export function fetchDMHistory(targetId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "fetch_history",
+		target: targetId
+	}));
 }

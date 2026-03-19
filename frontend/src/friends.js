@@ -298,8 +298,8 @@ function expandFriendsList(friendsListSection, button){
 	})
 }
 
-export function renderFriendsPanel(currentUserId, targetElementId) {
-	console.log('renderFriendsPanel called with', currentUserId, targetElementId);
+export function renderFriendsPanel(targetElementId) {
+	// console.log('renderFriendsPanel called with', currentUserId, targetElementId);
 
 	const friendsPanel = document.getElementById(targetElementId);
 
