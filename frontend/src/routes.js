@@ -5,6 +5,8 @@ import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
 import { checkAuthRequired } from './usermanagement.js';
 import { updatePageTranslations } from './i18n';
+import { initLoginPage } from './loginPage.js';
+import { registerPage } from './register.js';
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -28,13 +30,18 @@ async function loadTemplate(name) {
 export function setupRoutes() {
   routes['/'] = async () => {
       await loadTemplate('login');
+      initLoginPage();
   };
   routes['/home'] = async () =>{
         await loadTemplate('home');
       document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
       document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
       document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
-  
+  }
+
+  routes['/register'] = async () =>{
+    await loadTemplate('register');
+    registerPage
   }
 
   routes['/pong'] = async () => {
