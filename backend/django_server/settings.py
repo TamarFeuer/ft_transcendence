@@ -1,12 +1,15 @@
 import os
 import logging
 from pathlib import Path
+from dotenv import load_dotenv
 # from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR.parent / '.env')
 SECRET_KEY = 'your-secret-key-change-in-production'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Make cookies accessible to JavaScript
 SESSION_COOKIE_HTTPONLY = False
@@ -38,6 +41,7 @@ INSTALLED_APPS = [
     'chat',
     'tournament',
     'users',
+    'friends',
     # 'corsheaders',
 ]
 

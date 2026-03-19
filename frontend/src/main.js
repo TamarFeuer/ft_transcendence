@@ -4,6 +4,7 @@ import { initGameScene } from "./game.js";
 import { createUserManager } from './usermanagement.js';
 import { initChat } from './chat.js';
 import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
+import { renderFriendsPanel } from "./friends.js";
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 import { initChatUI } from './chat-ui.js';
 import { updateTournamentGameResult } from "./tournament.js";
@@ -675,12 +676,6 @@ setupRoutes();
 
 window.addEventListener("DOMContentLoaded", async () => {
 
-	// Fetch current user from backend
-	const CURRENT_USER = await fetchCurrentUser();
-	CURRENT_USER.user_id = String(CURRENT_USER.user_id);
-	window.CURRENT_USER = CURRENT_USER;
-
-	console.log("Current user:", CURRENT_USER);
 	initChat();
 
 	// Create user manager UI
@@ -689,5 +684,5 @@ window.addEventListener("DOMContentLoaded", async () => {
 	// Initial route handling
 	handleRoute(window.location.pathname);
 
-	initChatUI(CURRENT_USER);
+	initChatUI();
 });
