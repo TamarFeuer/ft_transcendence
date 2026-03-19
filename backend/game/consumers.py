@@ -112,10 +112,12 @@ class GameConsumer(AsyncWebsocketConsumer):
         
         # Accept WebSocket connection with subprotocol if provided
         headers = dict(self.scope.get('headers', []))
+        
         subprotocol = headers.get(b'sec-websocket-protocol')
         if subprotocol:
             # Echo back the first subprotocol (JWT token)
             protocol_str = subprotocol.decode().split(',')[0].strip()
+            logger.debug(f"protocolstr = {protocol_str}")
             await self.accept(subprotocol=protocol_str)
         else:
             await self.accept()

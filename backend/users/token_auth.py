@@ -73,28 +73,6 @@ class TokenAuthMiddleware:
             except Exception:
                 pass
         
-        # 2. Try Sec-WebSocket-Protocol header (subprotocol)
-        if not token:
-            proto_val = headers.get(b'sec-websocket-protocol')
-            if proto_val:
-                try:
-                    # header may contain comma-separated subprotocols; take the first
-                    proto_str = proto_val.decode()
-                    token_candidate = proto_str.split(',')[0].strip()
-                    if token_candidate:
-                        token = token_candidate
-                except Exception:
-                    pass
-        
-        # 3. Fallback to query string ?token=...
-        if not token:
-            try:
-                query_string = scope.get('query_string', b'').decode()
-            except Exception:
-                query_string = ''
-            qs = parse_qs(query_string)
-            token = qs.get('token', [None])[0]
-        
         if token:
             # Attempt to resolve token -> user
             logger.debug(f"TokenAuth: received token: {token}")
