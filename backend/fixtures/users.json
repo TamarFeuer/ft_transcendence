@@ -1,0 +1,164 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$vXrFrKUvbhLszz7EkbmELu$twTWMjy02orhvppiHuKYCKgSAxvzbPKe13/UcGPHbVM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Tamar",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-10T05:53:21.360Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$FVzbQl52vQFfwZ5oiNiKFi$JQm/v0gr/2TQwNmRfp1yYatR12FEBf178sQK9Ie6mxw=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Rik",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-10T05:53:21.789Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$VpH6XBsyjpv5jNHdd5aCZU$2x15ImpgVqllDeoTBhoyNGdvi+5qt8eVoy2JZR5QDOE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Niko",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-10T05:53:22.180Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$tDxgIRtk9I7jqSZOpalfCh$LQg44GxLuBu8OM7xabkETLIThK2UF52i9xMFWuy8ppw=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Stan",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-10T05:53:22.547Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$QIeVQaY53hWZru9Mexh7EL$MlM4uWgPDFwAtsbCyEtS6QAvnmimGPX+i/iT4V80Ngk=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Goksu",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-10T05:53:22.978Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$NABaAIXUag5CirYfjNReeK$0PmfC1cGQKpYiNjjjxi988f9aKTLGt+yW0YWjg6SDWk=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "The_cat",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-10T05:53:23.347Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "profiles.userprofile",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "avatar": "",
+    "bio": "Chat developer"
+  }
+},
+{
+  "model": "profiles.userprofile",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "avatar": "",
+    "bio": "Game and auth developer"
+  }
+},
+{
+  "model": "profiles.userprofile",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "avatar": "",
+    "bio": "Friends and chess developer"
+  }
+},
+{
+  "model": "profiles.userprofile",
+  "pk": 4,
+  "fields": {
+    "user": 4,
+    "avatar": "",
+    "bio": "Frontend developer"
+  }
+},
+{
+  "model": "profiles.userprofile",
+  "pk": 5,
+  "fields": {
+    "user": 5,
+    "avatar": "",
+    "bio": "Stats developer"
+  }
+},
+{
+  "model": "profiles.userprofile",
+  "pk": 6,
+  "fields": {
+    "user": 6,
+    "avatar": "",
+    "bio": "Servers maintainer in AlasCode"
+  }
+}
+]
