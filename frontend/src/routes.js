@@ -587,18 +587,6 @@ export function setupRoutes() {
   };
 }
 
-// Handler for tournament game route with parameter
-export function handleTournamentRoute(path) {
-  const match = path.match(/^\/tournament\/(\d+)$/);
-  if (match) {
-    const tournamentId = match[1];
-    const handler = routes['/tournament/:tournamentId'];
-    if (handler) {
-      handler(tournamentId);
-    }
-  }
-}
-
 async function loadTournamentGames() {
   const tournamentId = window.currentTournamentId;
   
@@ -785,4 +773,16 @@ async function loadTournamentGames() {
 				}, {once: true});
 		}
 	}
+}
+
+// Handler for tournament game route with parameter
+export function handleTournamentRoute(path) {
+  const match = path.match(/^\/tournament\/(\d+)$/);
+  if (match) {
+    const tournamentId = match[1];
+    const handler = routes['/tournament/:tournamentId'];
+    if (handler) {
+      handler(tournamentId);
+    }
+  }
 }

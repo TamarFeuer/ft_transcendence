@@ -25,7 +25,7 @@ export function initChat() {
 	chatSocket.onopen = () => {
 		console.log("Chat WebSocket connected");
 	}
-		
+	
 	chatSocket.onclose = () => {
 		console.log("Chat WebSocket disconnected");
 		// TODO: implement reconnect with exponential backoff if needed

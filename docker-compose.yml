@@ -9,8 +9,8 @@ services:
       - DJANGO_SETTINGS_MODULE=django_server.settings
       - DEBUG=True
       - DB_NAME=transcendence
-      - DB_USER=short_name
-      - DB_PASSWORD=short_pass
+      - DB_USER=transcendence_user
+      - DB_PASSWORD=transcendence_pass
       - DB_HOST=db
       - DB_PORT=5432
     restart: unless-stopped
@@ -44,12 +44,14 @@ services:
     image: postgres:17-alpine
     environment:
       - POSTGRES_DB=transcendence
-      - POSTGRES_USER=short_name
-      - POSTGRES_PASSWORD=short_pass
+      - POSTGRES_USER=transcendence_user
+      - POSTGRES_PASSWORD=transcendence_pass
     volumes:
       - ./db/postgres:/var/lib/postgresql/data
     networks:
       - pongnet
+    ports:
+      - "5432:5432"
 
   redis:
     container_name: pong_redis
