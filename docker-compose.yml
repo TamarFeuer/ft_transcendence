@@ -3,6 +3,8 @@ services:
   backend:
     build: ./backend
     container_name: pong_backend
+    volumes:
+      - ./backend:/app
     environment:
       - DJANGO_SETTINGS_MODULE=django_server.settings
       - DEBUG=True
@@ -26,7 +28,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: pong_frontend_dev
+    container_name: pong_frontend
     ports:
       - "5173:5173"
     volumes:
@@ -50,6 +52,7 @@ services:
       - pongnet
 
   redis:
+    container_name: pong_redis
     image: redis:7-alpine
     restart: unless-stopped
     networks:

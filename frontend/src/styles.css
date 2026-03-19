@@ -8,6 +8,12 @@
   height: 100%;
 }
 
+#app-root {
+  /* This ensures that if there is a background image on the <body>, 
+     the app-root doesn't hide it with a white background */
+  background-color: transparent;
+}
+
 #renderCanvas {
   @apply w-full h-full block;
   position: absolute;
@@ -178,7 +184,7 @@
 }
 
 .user-item:hover {
-  background: rgba(236, 72, 153, 0.2);
+      color: #4ade80;
 }
 
 /* Right side: Chat panel */
@@ -282,6 +288,10 @@
 }
 
 /* User manager panel */
+#chatUserMenu {
+  font-family: "ComicNeue", system-ui, sans-serif;
+}
+
 #userManager {
   position: fixed;
   top: 1rem;
