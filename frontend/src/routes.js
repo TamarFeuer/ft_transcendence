@@ -1,4 +1,8 @@
-import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame, initAIGame } from './main.js';
+import { routes, initAIGame } from './main.js';
+import { handleRoute, navigate } from "./route_helpers.js";
+import { joinOnlineGame } from './game.js';
+import { initOfflineGame } from './local_game.js';
+import { startLocalTournament } from './local_tournament.js';
 import { renderFriendsPanel } from './friends.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
