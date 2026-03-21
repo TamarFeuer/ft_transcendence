@@ -469,7 +469,8 @@ export async function startTournament(playerCount) {
 setupRoutes();
 
 window.addEventListener("DOMContentLoaded", async () => {
-
+	
+	await fetchCurrentUser(); // wait for token refresh, ignore the result
 	initChat();
 
 	// Create user manager UI

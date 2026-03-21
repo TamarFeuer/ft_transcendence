@@ -202,7 +202,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		}))
 
 	async def broadcast_online_users(self):
-	 	# Send the current online users list to everyone in the global group.
+		logger.warning(f"broadcast_online_users called by {self.username}, ONLINE_USERS: {ONLINE_USERS}")
+		# Send the current online users list to everyone in the global group.
 		# "online.users" -> calls online_users() on each consumer in the group
 		await self.channel_layer.group_send(
 			self.group_name,

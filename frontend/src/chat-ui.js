@@ -37,15 +37,21 @@ export function initChatUI() {
 		if (activeTab) activeTab.classList.add("active");
 
 		// Update channel title
+		const channelTitle = document.getElementById("channelTitle");
 		if (channelId === "global") {
 			channelTitle.textContent = "# Global Chat";
 		} else {
 			const name = onlineUsers[channelId];
-			channelTitle.textContent =  name ? `@ ${name}` : "@ Direct Message";
+			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
+		}
+
+		// If this is a DM with no history loaded yet, fetch it now
+		if (channelId !== "global" && (!messageHistory[channelId] || messageHistory[channelId].length === 0)) {
+			fetchDMHistory(channelId);
 		}
 
 		renderMessages(channelId);
-		chatInput.focus();
+		document.getElementById("chatInput").focus();
 	}
 
 	// Opens a DM channel tab.

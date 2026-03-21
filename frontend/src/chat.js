@@ -107,6 +107,7 @@ export function initChat() {
 				break;
 				
 			case "conversations":
+				console.log("conversations received:", data.conversations);
 				window.dispatchEvent(new CustomEvent("conversationsReceived", {
 					detail: { conversations: data.conversations }
 				}));
