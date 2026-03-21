@@ -12,7 +12,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from game.routing import websocket_urlpatterns as game_ws
 from chat.routing import websocket_urlpatterns as chat_ws
-from game.token_auth import TokenAuthMiddleware
+from users.token_auth import TokenAuthMiddleware
 
 application = ProtocolTypeRouter({
 	"http": django_asgi_app,
