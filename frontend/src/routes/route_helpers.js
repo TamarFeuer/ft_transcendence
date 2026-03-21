@@ -1,6 +1,7 @@
 
-import { routes } from "./main.js";
-import { updatePageTranslations } from './i18n';
+import { routes } from "../main.js";
+import { updatePageTranslations } from '../i18n/index.js';
+import { handleTournamentRoute } from './routes.js';
 
 export function navigate(path) {
     window.history.pushState({}, path, window.location.origin + path);

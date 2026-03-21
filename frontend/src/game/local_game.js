@@ -1,4 +1,5 @@
-import "./styles.css";
+import "../styles.css";
+import { showMessage } from "../utils/utils.js"
 
 export function initOfflineGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {

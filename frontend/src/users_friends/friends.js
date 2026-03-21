@@ -1,4 +1,4 @@
-import { onlineUsers } from "./chat";
+import { onlineUsers } from "../chat/chat";
 import { fetchWithRefreshAuth } from "./usermanagement";
 
 let latestPendingList = null;

@@ -9,9 +9,10 @@ import {
   DynamicTexture
 } from "@babylonjs/core";
 
-import { updateTournamentGameResult } from "./tournament.js";
-import "./styles.css";
+import { updateTournamentGameResult } from "../tournament/tournament_api.js";
+import "../styles.css";
 import { Engine, Scene } from "@babylonjs/core";
+import { showMessage } from "../utils/utils.js"
 
 // Close WebSocket before navigation
 export function closeGameConnection() {
