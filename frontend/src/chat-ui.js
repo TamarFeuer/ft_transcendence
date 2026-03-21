@@ -235,6 +235,14 @@ export function initChatUI() {
 		if (channelId === activeChannel) renderMessages(channelId);
 	});
 	
+	// Restore DM tabs from previous conversations on page load
+	window.addEventListener("conversationsReceived", (e) => {
+		const { conversations } = e.detail;
+		Object.entries(conversations).forEach(([userId, userName]) => {
+			openDMChannel(userId, userName, false, false);
+		});
+	});
+	
 	// ── Chat open/close ───────────────────────────────────────────────────────
 
 	if (openChatBtn && chatContainer) {

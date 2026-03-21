@@ -49,6 +49,8 @@ export function initChat() {
 					window.dispatchEvent(new CustomEvent("userIdentified", {
 						detail: { userId: verifiedUserId }
 					}));
+					// Fetch previous DM conversations to restore tabs
+					chatSocket.send(JSON.stringify({ type: "get_conversations" }));
 					break;
 
 			// Incoming chat message — either global or private DM
@@ -101,6 +103,12 @@ export function initChat() {
 						channelId: data.target,
 						messages: data.messages
 					}
+				}));
+				break;
+				
+			case "conversations":
+				window.dispatchEvent(new CustomEvent("conversationsReceived", {
+					detail: { conversations: data.conversations }
 				}));
 				break;
 

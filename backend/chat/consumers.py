@@ -151,7 +151,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"target": other_id,
 				"messages": messages
 			}))
-  
+		
+		elif msg_type == "get_conversations":
+			conversations = await self.get_conversations(self.user_id)
+			await self.send(text_data=json.dumps({
+				"type": "conversations",
+				"conversations": conversations
+			}))
+
 		elif msg_type in ["typing", "stop_typing"]:
 			await self.channel_layer.group_send(
 				self.group_name,
@@ -223,3 +230,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			}
 			for msg in reversed(list(messages))
 		]
+
+	@database_sync_to_async
+	def get_conversations(self, user_id):
+		from chat.models import Message
+		from django.db.models import Q
+		messages = Message.objects.filter(
+			Q(sender_id=user_id) | Q(recipient_id=user_id)
+		).values('sender_id', 'sender__username', 'recipient_id', 'recipient__username').distinct()
+		
+		conversations = {}
+		for msg in messages:
+			if str(msg['sender_id']) != user_id:
+				conversations[str(msg['sender_id'])] = msg['sender__username']
+			if str(msg['recipient_id']) != user_id:
+				conversations[str(msg['recipient_id'])] = msg['recipient__username']
+		
+		return conversations
