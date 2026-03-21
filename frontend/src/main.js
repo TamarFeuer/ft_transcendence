@@ -470,14 +470,15 @@ setupRoutes();
 
 window.addEventListener("DOMContentLoaded", async () => {
 	
-	await fetchCurrentUser(); // wait for token refresh, ignore the result
-	initChat();
+	const currentUser = await fetchCurrentUser(); // wait for token refresh, ignore the result
+	if (currentUser.authenticated) {
+		initChat();
+		initChatUI();
+	}
 
 	// Create user manager UI
 	createUserManager();
-
 	// Initial route handling
 	handleRoute(window.location.pathname);
-
-	initChatUI();
+	
 });
