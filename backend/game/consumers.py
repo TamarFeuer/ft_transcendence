@@ -4,6 +4,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import GameSession
 from django.utils import timezone
+from channels.db import database_sync_to_async
+from .models import GameSession, Player
+from .services import match_ends
 import logging
 
 logger = logging.getLogger(__name__)
@@ -265,6 +268,12 @@ class GameConsumer(AsyncWebsocketConsumer):
                             'winner': winner_name,
                             'winner_id': winner_id
                         }
+                    )
+                    # Run DB work in sync thread; pass users and resolve profiles in service.
+                    await database_sync_to_async(match_ends)(
+                        self.game,
+                        self.game.players['left'],
+                        self.game.players['right'],
                     )
                     break
             
