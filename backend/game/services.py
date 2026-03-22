@@ -2,6 +2,13 @@
 
 from .models import Match, Player, Achievement, PlayerAchievement
 
+
+def _resolve_player(entity):
+    if isinstance(entity, Player):
+        return entity
+    player, _ = Player.objects.get_or_create(user=entity)
+    return player
+
 def match_ends(game_session, p1, p2):
     
     # game_session.state 
@@ -10,6 +17,9 @@ def match_ends(game_session, p1, p2):
     # 'score': {'p1': 0, 'p2': 0},
     # 'winningScore': 5
     
+    p1 = _resolve_player(p1)
+    p2 = _resolve_player(p2)
+
     p1_score = game_session.state['score']['p1']
     p2_score = game_session.state['score']['p2']
 
@@ -32,7 +42,7 @@ def match_ends(game_session, p1, p2):
     w.player_wins(win_point = winner_score, opponent_elo = l.elo_rating)
     l.player_loses(loss_point = loser_score, opponent_elo = w.elo_rating)
 
-    # correct player achievements
+    # TO DO: correct player achievements
 
     return match
 
