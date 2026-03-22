@@ -269,8 +269,12 @@ class GameConsumer(AsyncWebsocketConsumer):
                             'winner_id': winner_id
                         }
                     )
-                    # a worker thread created, so that it doesn't block the event loop
-                    await database_sync_to_async(match_ends)(self.game, self.game.players['left'], self.game.players['right'].profile)
+                    # Run DB work in sync thread; pass users and resolve profiles in service.
+                    await database_sync_to_async(match_ends)(
+                        self.game,
+                        self.game.players['left'],
+                        self.game.players['right'],
+                    )
                     break
             
             await asyncio.sleep(1/60)  # 60 FPS
