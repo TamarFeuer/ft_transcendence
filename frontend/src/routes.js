@@ -41,7 +41,7 @@ export function setupRoutes() {
 
   routes['/register'] = async () =>{
     await loadTemplate('register');
-    registerPage
+    registerPage();
   }
 
 	routes['/pong'] = async () => {

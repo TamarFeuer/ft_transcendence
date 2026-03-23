@@ -18,13 +18,15 @@ export function registerPage(){
 
         const result = await registerUser(username, password);
 
-        console.log("here");
         if(result.username)
-        {
             navigate("/home");
-            console.log("there");
-        }
+    })
 
+    const backLoginBtn = document.getElementById("register-back-login");
+    if(!backLoginBtn)
+        return;
+    backLoginBtn.addEventListener("click", () => {
+        navigate("/");
     })
 
 }
