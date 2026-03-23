@@ -1,4 +1,5 @@
 import { showMessage } from "../utils/utils.js";
+import { handleRoute, navigate } from "../routes/route_helpers.js";
 
 export function initAIGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {

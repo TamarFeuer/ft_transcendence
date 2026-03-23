@@ -11,11 +11,7 @@ import { showMessage } from "./utils/utils.js"
 import { initOfflineGame } from './game/local_game.js';
 import { closeGameConnection } from './game/game.js';
 import { handleRoute } from './routes/route_helpers.js';
-
-// --- Game Variables ---
-let ws = null;
-let currentGameId = null;
-let isGameActive = false;
+import { isGameActive } from './game/game.js'
 
 export const routes = {};
 import { setupRoutes } from "./routes/routes.js";

@@ -1,6 +1,9 @@
 import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 import * as tournamentAPI from './tournament_api.js';
 import { showMessage } from "../utils/utils.js"
+import { checkAuthRequired } from '../users_friends/usermanagement.js';
+import { stopTournamentAutoRefresh } from '../tournament/tournament_lobby_utils.js';
+import { joinOnlineGame } from '../game/game.js';
 
 export async function loadTournamentGames() {
   
@@ -13,28 +16,30 @@ export async function loadTournamentGames() {
 
 // Tournament Util functions
 async function loadLeaderBoard() {
-// Load leaderboard
-  const leaderboardResult = await tournamentAPI.getTournamentLeaderboard(tournamentId);
-  console.log("Tournament leaderboard:", leaderboardResult);
-  if (leaderboardResult.ok && leaderboardResult.data) {
-    const tbody = document.getElementById('leaderboardBody');
-    tbody.innerHTML = '';
-    leaderboardResult.data.forEach((participant, index) => {
-      const row = document.createElement('tr');
-      row.className = 'border-b border-gray-700 hover:bg-gray-800';
-      row.innerHTML = `
-        <td class="py-2">${participant.rank || index + 1}</td>
-        <td class="py-2">${participant.username}</td>
-        <td class="text-right py-2">${participant.score}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
+    // Load leaderboard
+    const tournamentId = window.currentTournamentId;
+    const leaderboardResult = await tournamentAPI.getTournamentLeaderboard(tournamentId);
+    console.log("Tournament leaderboard:", leaderboardResult);
+    if (leaderboardResult.ok && leaderboardResult.data) {
+        const tbody = document.getElementById('leaderboardBody');
+        tbody.innerHTML = '';
+        leaderboardResult.data.forEach((participant, index) => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-gray-700 hover:bg-gray-800';
+        row.innerHTML = `
+            <td class="py-2">${participant.rank || index + 1}</td>
+            <td class="py-2">${participant.username}</td>
+            <td class="text-right py-2">${participant.score}</td>
+        `;
+        tbody.appendChild(row);
+        });
+    }
 
 }
 
 async function loadReadyGames() {
     // Load user's ready games
+    const tournamentId = window.currentTournamentId;
     const readyResult = await tournamentAPI.getTournamentUserReadyGames(tournamentId);
     if (readyResult.ok && readyResult.data && readyResult.data.length > 0) {
         const listEl = document.getElementById('readyGamesList');
