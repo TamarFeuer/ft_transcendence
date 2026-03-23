@@ -139,6 +139,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				)
 				# Increment unread counter for recipient
 				await redis_client.incr(f"unread:{target}:from:{self.user_id}")
+				# New message arriving — reopen conversation for recipient
+				await redis_client.srem(f"closed:{target}", self.user_id)
 			else:
 				payload["private"] = False
 				await self.channel_layer.group_send(self.group_name, payload)
@@ -167,6 +169,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				return
 			# Delete the unread counter for this conversation
 			await redis_client.delete(f"unread:{self.user_id}:from:{other_id}")
+
+		elif msg_type == "close_conversation":
+			other_id = data.get("target")
+			if not other_id:
+				return
+			# Mark this conversation as closed by the user
+			await redis_client.sadd(f"closed:{self.user_id}", other_id)
 
 		elif msg_type in ["typing", "stop_typing"]:
 			await self.channel_layer.group_send(
@@ -244,16 +253,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def get_conversations(self, user_id):
 		# First fetch all conversations from the database
 		conversations = await self._get_conversations_from_db(user_id)
+
+		# Get conversations the user explicitly closed
+		closed = await redis_client.smembers(f"closed:{user_id}")
+
+		result = {}
+
 		# Then enrich each conversation with the unread count from Redis.
 		# Redis key: "unread:{user_id}:from:{other_id}" — incremented on each
 		# incoming DM, deleted when the user opens the tab (mark_read)
 		for other_id in conversations:
 			count = await redis_client.get(f"unread:{user_id}:from:{other_id}")
-			conversations[other_id] = {
-				"name": conversations[other_id],
-				"unread": int(count) if count else 0
-			}
-		return conversations
+			unread = int(count) if count else 0
+			
+			# Restore tab if not closed OR has unread messages waiting
+			if other_id not in closed or unread > 0:
+				result[other_id] = {
+					"name": conversations[other_id],
+					"unread": unread
+				}
+		
+		return result
 
 	@database_sync_to_async
 	def _get_conversations_from_db(self, user_id):

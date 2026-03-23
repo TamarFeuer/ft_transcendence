@@ -2,7 +2,7 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead } from './chat.js';
+import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation } from './chat.js';
 
 export function initChatUI() {
 
@@ -103,8 +103,8 @@ export function initChatUI() {
 		// If we were viewing this channel, fall back to global
 		if (activeChannel === userId) switchChannel("global");
 
-		// Message history is kept in case the user reopens the DM
-		// To clear it instead: delete messageHistory[userId];
+		closeConversation(userId);
+		// Keep message history in memory in case conversation reopens
 	}
 
 	// ── Message management ────────────────────────────────────────────────────

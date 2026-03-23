@@ -245,3 +245,11 @@ export function markRead(targetId) {
 		target: targetId
 	}));
 }
+
+export function closeConversation(targetId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "close_conversation",
+		target: targetId
+	}));
+}
