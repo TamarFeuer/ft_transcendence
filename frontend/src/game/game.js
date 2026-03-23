@@ -129,7 +129,9 @@ export function joinOnlineGame(gameId, IsTournament) {
       <div id="waitingModal" class="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 pointer-events-auto">
         <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
           <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
-          <p class="text-gray-300 mb-6">Game will start soon</p>
+          <p class="text-gray-300 mb-2">Game will start soon</p>
+          <div class="text-4xl font-mono font-bold text-green-400 mb-6" id="countdownTimer">60</div>
+          <p class="text-gray-400 text-sm mb-6">Game will proceed automatically when timer expires</p>
           <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
             Leave Game
           </button>
@@ -242,8 +244,22 @@ export function joinOnlineGame(gameId, IsTournament) {
         }
       }
 
+      if (data.type === "timeUpdate") {
+        // Update countdown timer
+        const timerElem = document.getElementById("countdownTimer");
+        if (timerElem) {
+          timerElem.textContent = data.remaining_time;
+        }
+      }
+
       if (data.type === "gameOver") {
         gameEnded = true;
+        
+        // Remove waiting modal if it still exists
+        const waitingModal = document.getElementById("waitingModal");
+        if (waitingModal) {
+          waitingModal.remove();
+        }
 
         showMessage(`${data.winner} wins!`)
         console.log("after yes");
@@ -261,8 +277,10 @@ export function joinOnlineGame(gameId, IsTournament) {
         if (IsTournament && didCurrentUserWin)
           await updateTournamentGameResult(gameId, data.winner_id);
         // Dispose engine and scene
-        scene.dispose();
-        engine.dispose();
+        if (window.gameObjects) {
+          scene.dispose();
+          engine.dispose();
+        }
 
         // Close websocket
         ws?.close();

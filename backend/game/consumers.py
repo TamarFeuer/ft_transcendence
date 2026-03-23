@@ -65,6 +65,21 @@ def update_game_completed(game_id, winner_id, winner_name):
         logger.debug(f"No tournament game found for game_id {game_id}")
         return False
 
+def update_game_completed_tie(game_id):
+    """Update tournament game as a tie with no winner"""
+    from tournament.models import TournamentGame
+    try:
+        tournament_game = TournamentGame.objects.get(game_id=game_id)
+        tournament_game.status = 'completed'
+        tournament_game.completed_at = timezone.now()
+        tournament_game.winner_id = None  # No winner in a tie
+        tournament_game.save()
+        logger.info(f"Tournament game {game_id} completed as a tie (no players joined)")
+        return True
+    except TournamentGame.DoesNotExist:
+        logger.debug(f"No tournament game found for game_id {game_id}")
+        return False
+
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.game_id = self.scope['url_route']['kwargs']['game_id']
@@ -158,6 +173,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
             # Start game loop
             asyncio.create_task(self.game_loop())
+        else:
+            # Start timeout checker if this is a tournament game in waiting state
+            asyncio.create_task(self.check_join_timeout())
 
     async def disconnect(self, close_code):
         logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
@@ -295,3 +313,67 @@ class GameConsumer(AsyncWebsocketConsumer):
             'winner': event['winner'],
             'winner_id': event['winner_id']
         }))
+    
+    async def check_join_timeout(self):
+        """Check for join timeout and handle results if expired"""
+        while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
+            # Send remaining time update every second
+            remaining_time = self.game.get_remaining_time()
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    'type': 'time_update',
+                    'remaining_time': remaining_time
+                }
+            )
+            
+            # Check if timeout has expired
+            if self.game.is_timeout_expired() and not self.game.timeout_handled:
+                self.game.timeout_handled = True
+                winner_role, winner_name, winner_id, is_tie = self.game.get_timeout_result()
+                
+                self.game.status = 'completed'
+                
+                if is_tie:
+                    # No players joined - it's a tie
+                    await sync_to_async(update_game_completed_tie)(self.game_id)
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {
+                            'type': 'game_over',
+                            'winner': 'Tie - No players joined',
+                            'winner_id': None
+                        }
+                    )
+                else:
+                    # One player joined - they win by default
+                    await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {
+                            'type': 'game_over',
+                            'winner': winner_name,
+                            'winner_id': winner_id
+                        }
+                    )
+                # Close all client connections
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        'type': 'close_connection'
+                    }
+                )
+                break
+            
+            await asyncio.sleep(1)  # Check every second
+    
+    async def time_update(self, event):
+        """Send remaining time to client"""
+        await self.send(text_data=json.dumps({
+            'type': 'timeUpdate',
+            'remaining_time': event['remaining_time']
+        }))
+    
+    async def close_connection(self, event):
+        """Close the websocket connection"""
+        await self.close(code=1008)

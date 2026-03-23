@@ -10,6 +10,8 @@ class GameSession:
     _games = {}
     _lock = Lock()
     
+    JOIN_TIMEOUT = 60  # Maximum time in seconds to wait for both players to join
+    
     def __init__(self, game_id=None):
         self.id = game_id or str(uuid.uuid4())
         self.state = {
@@ -20,9 +22,12 @@ class GameSession:
         }
         self.isTournamentGame = False
         self.players = {'left': None, 'right': None}
+        self.players_ids = {'left': None, 'right': None}
         self.clients = set()
         self.status = 'waiting'  # waiting, active, finished
         self.last_tick = time.time()
+        self.created_at = time.time()  # Track when game was created
+        self.timeout_handled = False  # Flag to prevent timeout from being handled twice
         
     def get_players(self):
         """Return current players"""
@@ -60,12 +65,12 @@ class GameSession:
         """Add a player or spectator to the game"""
         if not self.players['left']:
             self.players['left'] = name
-            self.players['left_id'] = id
+            self.players_ids['left'] = id
             self.clients.add(name)
             return 'left'
         elif not self.players['right']:
             self.players['right'] = name
-            self.players['right_id'] = id
+            self.players_ids['right'] = id
             self.clients.add(name)
             return 'right'
         else:
@@ -93,6 +98,43 @@ class GameSession:
         """Check if the game can start"""
         return (self.players['left'] and self.players['right'] and 
                 self.status == 'waiting')
+    
+    def get_remaining_time(self):
+        """Get remaining time in seconds before timeout"""
+        if self.status != 'waiting':
+            return 0
+        elapsed = time.time() - self.created_at
+        remaining = self.JOIN_TIMEOUT - elapsed
+        return max(0, int(remaining))
+    
+    def is_timeout_expired(self):
+        """Check if the join timeout has expired"""
+        return self.get_remaining_time() <= 0 and self.status == 'waiting'
+    
+    def get_timeout_result(self):
+        """Get the game result based on who has joined
+        Returns tuple: (winner_role, winner_name, winner_id, is_tie)
+        - If no players: (None, "No players joined", None, True)
+        - If one player: (role, player_name, player_id, False)
+        - Should not be called if both players have joined
+        """
+        left_player = self.players['left']
+        right_player = self.players['right']
+        
+        if not left_player and not right_player:
+            # Both players failed to join - tie
+            return (None, "No players joined", None, True)
+        elif left_player and not right_player:
+            # Only left player joined - they win
+            return ('left', getattr(left_player, 'username', 'Player 1'), 
+                   self.players_ids['left'], False)
+        elif not left_player and right_player:
+            # Only right player joined - they win
+            return ('right', getattr(right_player, 'username', 'Player 2'), 
+                   self.players_ids['right'], False)
+        else:
+            # Both players joined
+            return (None, None, None, False)
     
     def start_game(self):
         """Start the game"""
