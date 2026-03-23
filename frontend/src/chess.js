@@ -9,10 +9,9 @@ const pieces = {
 
 function checkGameEnd(game){
 	if (game.isCheckmate()) {
-		// game over — the player who just moved won
+
 		const winner = game.turn() === 'w' ? 'Black' : 'White'; // turn has already switched
 		alert(`${winner} wins by checkmate!`);
-		// optionally navigate away or reset
 	}
 	if (game.isDraw()) {
 		alert('Draw!');
