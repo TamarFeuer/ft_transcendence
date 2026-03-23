@@ -6,6 +6,7 @@ import bgImage from '../assets/background.jpg';
 import { checkAuthRequired, getCurrentUser } from './usermanagement.js';
 import * as tournamentAPI from './tournament.js';
 import { updatePageTranslations } from './i18n';
+import { initChessGame } from './chess.js';
 import { verifiedUserId } from './chat.js';
 
 let tournamentAutoRefreshInterval = null;
@@ -81,6 +82,12 @@ export function setupRoutes() {
     document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
     
   };
+
+  routes['/chess'] = async () => {
+    await loadTemplate('chess');
+    document.getElementById('renderCanvas').style.display = 'none';
+    initChessGame();
+  }
 
 
   routes['/pong'] = async () => {
