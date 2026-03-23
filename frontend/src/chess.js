@@ -29,7 +29,11 @@ function handleSquareClick(game, square, boardEl){
 		else{
 			// console.log("square we wanna go to ", square.dataset.notation);
 			//move the piece to desired square
-			game.move(square.dataset.notation);
+			const resultedMove = game.move({from: selectedSquare, to: square.dataset.notation});
+			if (!resultedMove){
+				//TODO show that move is illegal with an animation or sound
+			}
+			selectedSquare = null;
 			renderBoard(game, boardEl, selectedSquare);
 		}
 	}
