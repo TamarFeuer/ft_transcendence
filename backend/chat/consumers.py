@@ -5,7 +5,8 @@ import jwt
 from django.conf import settings
 from jwt import InvalidTokenError
 from django.utils import timezone
-from game.token_auth import get_user_from_token
+from users.token_auth import get_user_from_token
+from channels.db import database_sync_to_async
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	
 		# get_user_from_token returns Django's proper User model object,
 		# which has .id and .username as standard Django fields
+		self.user = user
 		self.user_id = str(user.id)
 		self.username = user.username
 
@@ -98,19 +100,59 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			await self.broadcast_online_users()
 
 	async def receive(self, text_data):
-		# Called whenever the client sends a message through the WebSocket
+		from chat.models import Message
 		try:
 			data = json.loads(text_data)
 		except json.JSONDecodeError:
 			logger.warning(f"Received invalid JSON from {self.username}: {text_data}")
-			return  # ignore bad messages, don't crash
-		
+			return
+
 		msg_type = data.get("type")
-	
-		if msg_type in ["typing", "stop_typing"]:
-			# Broadcast typing indicator to everyone in the global group.
-			# "typing.notification" -> Django Channels calls typing_notification()
-			# on each consumer in the group (dot replaced by underscore)
+
+		if msg_type == "chat":
+			message = data.get("message", "")
+			if len(message) > 300:
+				return
+
+			target = data.get("target")
+			payload = {
+				"type": "chat.message",
+				"message": message,
+				"sender": self.user_id,
+				"name": self.username,
+			}
+
+			if target:
+				payload["private"] = True
+				payload["target"] = target
+				if target in CONNECTED_USERS:
+					for channel_name in CONNECTED_USERS[target]:
+						await self.channel_layer.send(channel_name, payload)
+				if self.user_id in CONNECTED_USERS:
+					for channel_name in CONNECTED_USERS[self.user_id]:
+						await self.channel_layer.send(channel_name, payload)
+				# Save only DMs to database
+				await Message.objects.acreate(
+					sender=self.user,
+					recipient_id=target,
+					content=message
+				)
+			else:
+				payload["private"] = False
+				await self.channel_layer.group_send(self.group_name, payload)
+		
+		elif msg_type == "fetch_history":
+			other_id = data.get("target")
+			if not other_id:
+				return
+			messages = await self.get_dm_history(self.user_id, other_id)
+			await self.send(text_data=json.dumps({
+				"type": "dm_history",
+				"target": other_id,
+				"messages": messages
+			}))
+  
+		elif msg_type in ["typing", "stop_typing"]:
 			await self.channel_layer.group_send(
 				self.group_name,
 				{
@@ -120,45 +162,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 					"name": self.username,
 				}
 			)
-
-		elif msg_type == "chat":
-			message = data.get("message", "")
-
-			# Reject messages over 300 characters — frontend should catch this too
-			if len(message) > 300:
-				return
-
-			target = data.get("target")  # Target user ID for private message or None for global
-
-			payload = {
-				"type": "chat.message", # calls chat_message() on receiving consumers
-				"message": message,
-				"sender": self.user_id,
-				"name": self.username,
-			}
-
-			if target:
-				# Private message: send only to target user
-				payload["private"] = True
-				payload["target"] = target
-				
-				# DMs use channel_layer.send() (single channel) instead of
-				# group_send() (broadcast) - we send directly to each of the
-				# target user's channel names (one per open tab)
-				if target in CONNECTED_USERS:
-					for channel_name in CONNECTED_USERS[target]:
-						await self.channel_layer.send(channel_name, payload)
-				
-				# Also send back to the sender so they see their own DM —
-				# necessary because we're not using group_send here
-				if self.user_id in CONNECTED_USERS:
-					for channel_name in CONNECTED_USERS[self.user_id]:
-						await self.channel_layer.send(channel_name, payload)
-				
-			else:
-				# Global message: broadcast to everyone in the global group
-				payload["private"] = False
-				await self.channel_layer.group_send(self.group_name, payload)
 
 	# ─── Event handlers ───────────────────────────────────────────────────────
 	# These are called by the channel layer when a message arrives for this consumer.
@@ -201,3 +204,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"users": ONLINE_USERS
 			}
 		)
+
+	@database_sync_to_async
+	def get_dm_history(self, user_id, other_id):
+		from chat.models import Message
+		from django.db.models import Q
+		messages = Message.objects.filter(
+			Q(sender_id=user_id, recipient_id=other_id) |
+			Q(sender_id=other_id, recipient_id=user_id)
+		).order_by('-created_at')[:50]
+		
+		return [
+			{
+				"sender_id": msg.sender_id,
+				"sender_name": msg.sender.username if msg.sender else "deleted user",
+				"message": msg.content,
+				"created_at": msg.created_at.isoformat()
+			}
+			for msg in reversed(list(messages))
+		]

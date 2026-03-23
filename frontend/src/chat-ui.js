@@ -2,9 +2,9 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping } from './chat.js';
+import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory } from './chat.js';
 
-export function initChatUI(CURRENT_USER) {
+export function initChatUI() {
 
 	// ── DOM elements ──────────────────────────────────────────────────────────
 	const chatContainer = document.getElementById("chatContainer");
@@ -52,9 +52,9 @@ export function initChatUI(CURRENT_USER) {
 	// switchToChannel=true (default) — switches to the tab immediately.
 	// switchToChannel=false — creates the tab silently (used when a DM arrives
 	// while the user is in a different channel, so we don't interrupt them).
-	function openDMChannel(userId, userName, switchToChannel = true) {
+	function openDMChannel(userId, userName, switchToChannel = true, fetchHistory = true) {
 		// Don't open DM with yourself
-		if (userId === CURRENT_USER.user_id) return;
+		if (userId === verifiedUserId) return;
 
 		// If tab already exists just switch to it
 		const existingTab = document.querySelector(`[data-channel="${userId}"]`);
@@ -75,6 +75,7 @@ export function initChatUI(CURRENT_USER) {
 		`;
 
 		channelTabs.appendChild(tab);
+		if(fetchHistory) fetchDMHistory(userId);
 
 		tab.addEventListener("click", (e) => {
 			if (e.target.classList.contains("close-tab")) {
@@ -106,7 +107,7 @@ export function initChatUI(CURRENT_USER) {
 		messageHistory[channelId].push(message);
 
 		if (channelId === activeChannel) {
-			// User is already viewing this channel — render immediately
+			// User is already viewing this channel, render immediately
 			renderMessages(channelId);
 		} else {
 			// User is elsewhere — increment unread badge on the tab
@@ -131,7 +132,7 @@ export function initChatUI(CURRENT_USER) {
 			const msgDiv = document.createElement("div");
 			msgDiv.className = "chat-message text-base leading-relaxed text-gray-200";
 
-			const isOwnMessage = msg.senderId === CURRENT_USER.user_id;
+			const isOwnMessage = msg.senderId === verifiedUserId;
 			if (isOwnMessage) {
 				msgDiv.classList.add("self");
 			} else if (channelId !== "global") {
@@ -176,7 +177,7 @@ export function initChatUI(CURRENT_USER) {
 
 		Object.entries(onlineUsers).forEach(([id, name]) => {
 			// Skip yourself — every user past this point is someone else
-			if (id === CURRENT_USER.user_id) return;
+			if (id === verifiedUserId) return;
 
 			const div = document.createElement("div");
 			div.className = "user-item";
@@ -213,13 +214,27 @@ export function initChatUI(CURRENT_USER) {
 		if (channelId !== "global") {
 			const existingTab = document.querySelector(`[data-channel="${channelId}"]`);
 			if (!existingTab) {
-				openDMChannel(channelId, message.senderName, false);
+				// second false means don't fetch history
+				openDMChannel(channelId, message.senderName, false, false);
 			}
 		}
 
 		addMessage(channelId, message);
 	});
 
+	// chat.js dispatches this when DM history is fetched from the database
+	window.addEventListener("dmHistoryReceived", (e) => {
+		const { channelId, messages } = e.detail;
+		if (!messageHistory[channelId]) messageHistory[channelId] = [];
+		// Prepend history — database messages come first, then live messages on top
+		messageHistory[channelId] = [...messages.map(msg => ({
+			senderId: String(msg.sender_id), //sender_id comes back from the database as an integer
+			senderName: msg.sender_name,
+			message: msg.message
+		})), ...messageHistory[channelId]];
+		if (channelId === activeChannel) renderMessages(channelId);
+	});
+	
 	// ── Chat open/close ───────────────────────────────────────────────────────
 
 	if (openChatBtn && chatContainer) {

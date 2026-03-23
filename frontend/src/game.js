@@ -4,7 +4,9 @@ import {
   StandardMaterial,
   Color3,
   MeshBuilder,
-  Vector3
+  Vector3,
+  Texture,
+  DynamicTexture
 } from "@babylonjs/core";
 
 export function initGameScene(scene, canvas, playerCount) {
@@ -17,8 +19,23 @@ export function initGameScene(scene, canvas, playerCount) {
   const paddleMat = new StandardMaterial("paddleMat", scene);
   paddleMat.diffuseColor = new Color3(0.3, 0.6, 1);
 
+  // Create striped ball texture for visible spin
   const ballMat = new StandardMaterial("ballMat", scene);
-  ballMat.diffuseColor = new Color3(1, 0.4, 0.2);
+  const dynamicTexture = new DynamicTexture("ballTexture", 512, scene);
+  const ctx = dynamicTexture.getContext();
+  
+  // Draw orange base
+  ctx.fillStyle = "#FF6633";
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Draw black vertical stripes
+  ctx.fillStyle = "#000000";
+  for (let i = 0; i < 512; i += 64) {
+    ctx.fillRect(i, 0, 32, 512);
+  }
+  
+  dynamicTexture.update();
+  ballMat.diffuseTexture = dynamicTexture;
 
   const paddleLeft = MeshBuilder.CreateBox("paddleLeft", { height: 1.5, width: 0.25, depth: 0.2 }, scene);
   paddleLeft.material = paddleMat;
