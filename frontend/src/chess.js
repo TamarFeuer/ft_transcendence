@@ -7,6 +7,18 @@ const pieces = {
     b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }
 };
 
+function checkGameEnd(game){
+	if (game.isCheckmate()) {
+		// game over — the player who just moved won
+		const winner = game.turn() === 'w' ? 'Black' : 'White'; // turn has already switched
+		alert(`${winner} wins by checkmate!`);
+		// optionally navigate away or reset
+	}
+	if (game.isDraw()) {
+		alert('Draw!');
+	}
+}
+
 function handleSquareClick(game, square, boardEl){
 	if (!selectedSquare){
 		const piece = game.get(square.dataset.notation);
@@ -34,6 +46,8 @@ function handleSquareClick(game, square, boardEl){
 				//TODO show that move is illegal with an animation or sound
 			}
 			selectedSquare = null;
+			//check if game ended and alert players
+			checkGameEnd(game);
 			renderBoard(game, boardEl, selectedSquare);
 		}
 	}
