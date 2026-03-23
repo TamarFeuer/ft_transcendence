@@ -1,12 +1,12 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
-import jwt
-from django.conf import settings
-from jwt import InvalidTokenError
-from django.utils import timezone
 from users.token_auth import get_user_from_token
 from channels.db import database_sync_to_async
+import redis.asyncio as aioredis
+
+# create a Redis client object that knows how to connect to your Redis server
+redis_client = aioredis.from_url("redis://redis:6379", decode_responses=True)
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +137,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 					recipient_id=target,
 					content=message
 				)
+				# Increment unread counter for recipient
+				await redis_client.incr(f"unread:{target}:from:{self.user_id}")
 			else:
 				payload["private"] = False
 				await self.channel_layer.group_send(self.group_name, payload)
@@ -158,6 +160,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"type": "conversations",
 				"conversations": conversations
 			}))
+
+		elif msg_type == "mark_read":
+			other_id = data.get("target")
+			if not other_id:
+				return
+			# Delete the unread counter for this conversation
+			await redis_client.delete(f"unread:{self.user_id}:from:{other_id}")
 
 		elif msg_type in ["typing", "stop_typing"]:
 			await self.channel_layer.group_send(
@@ -232,10 +241,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			for msg in reversed(list(messages))
 		]
 
+	async def get_conversations(self, user_id):
+		# First fetch all conversations from the database
+		conversations = await self._get_conversations_from_db(user_id)
+		# Then enrich each conversation with the unread count from Redis.
+		# Redis key: "unread:{user_id}:from:{other_id}" — incremented on each
+		# incoming DM, deleted when the user opens the tab (mark_read)
+		for other_id in conversations:
+			count = await redis_client.get(f"unread:{user_id}:from:{other_id}")
+			conversations[other_id] = {
+				"name": conversations[other_id],
+				"unread": int(count) if count else 0
+			}
+		return conversations
+
 	@database_sync_to_async
-	def get_conversations(self, user_id):
+	def _get_conversations_from_db(self, user_id):
 		from chat.models import Message
 		from django.db.models import Q
+		# Find all users this person has exchanged DMs with,
+		# either as sender or recipient
 		messages = Message.objects.filter(
 			Q(sender_id=user_id) | Q(recipient_id=user_id)
 		).values('sender_id', 'sender__username', 'recipient_id', 'recipient__username').distinct()

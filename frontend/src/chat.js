@@ -113,7 +113,7 @@ export function initChat() {
 				}));
 				break;
 
-			/// Another user started typing — show indicator (TODO in UI)
+			// Another user started typing — show indicator (TODO in UI)
 			case "typing":
 				console.log(`${data.name || data.user} is typing...`);
 				// TODO: dispatch "typingStarted" event and show indicator in UI
@@ -234,6 +234,14 @@ export function fetchDMHistory(targetId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
 		type: "fetch_history",
+		target: targetId
+	}));
+}
+
+export function markRead(targetId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "mark_read",
 		target: targetId
 	}));
 }

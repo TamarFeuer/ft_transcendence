@@ -2,7 +2,7 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory } from './chat.js';
+import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead } from './chat.js';
 
 export function initChatUI() {
 
@@ -43,6 +43,7 @@ export function initChatUI() {
 		} else {
 			const name = onlineUsers[channelId];
 			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
+			markRead(channelId);
 		}
 
 		// If this is a DM with no history loaded yet, fetch it now
@@ -244,8 +245,17 @@ export function initChatUI() {
 	// Restore DM tabs from previous conversations on page load
 	window.addEventListener("conversationsReceived", (e) => {
 		const { conversations } = e.detail;
-		Object.entries(conversations).forEach(([userId, userName]) => {
-			openDMChannel(userId, userName, false, false);
+		Object.entries(conversations).forEach(([userId, data]) => {
+			openDMChannel(userId, data.name, false, false);
+			if (data.unread > 0) {
+				const tab = document.querySelector(`[data-channel="${userId}"]`);
+				if (tab) {
+					const badge = document.createElement("span");
+					badge.className = "unread-badge";
+					badge.textContent = data.unread;
+					tab.appendChild(badge);
+				}
+			}
 		});
 	});
 	
