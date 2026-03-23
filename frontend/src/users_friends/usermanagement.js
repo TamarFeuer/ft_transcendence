@@ -1,7 +1,7 @@
-import { t, updatePageTranslations } from './i18n/index.js';
-import { TranslationKey } from './i18n/keys.js';
-import { closeChat } from './chat.js';
-import { showMessage } from "./routes.js"
+import { t, updatePageTranslations } from '../i18n/index.js';
+import { TranslationKey } from '../i18n/keys.js';
+import { closeChat } from '../chat/chat.js';
+import { showMessage } from "../utils/utils.js"
 
 // --- Token refresh helper ---
 let refreshPromise = null;
