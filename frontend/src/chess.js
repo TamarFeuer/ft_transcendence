@@ -12,7 +12,6 @@ function handleSquareClick(game, square, boardEl){
 		const piece = game.get(square.dataset.notation);
 		console.log('piece is', piece);
 		if (piece){
-			//TODO highlight possible moves
 
 			if (piece.color === game.turn()){
 				selectedSquare = square.dataset.notation;
@@ -25,6 +24,12 @@ function handleSquareClick(game, square, boardEl){
 		if (piece && piece.color === game.turn()) {
 			// switch selection to the new piece
 			selectedSquare = square.dataset.notation;
+			renderBoard(game, boardEl, selectedSquare);
+		}
+		else{
+			// console.log("square we wanna go to ", square.dataset.notation);
+			//move the piece to desired square
+			game.move(square.dataset.notation);
 			renderBoard(game, boardEl, selectedSquare);
 		}
 	}
@@ -41,9 +46,8 @@ export function initChessGame(){
 	// console.log('it goes before click');
 	boardEl.addEventListener('click', (e) => {
 		const square = e.target.closest('[data-notation]');
-		// console.log('square is ', square);
+
 		if (square){
-			// console.log('goes in here');
 			handleSquareClick(game, square, boardEl);
 		}
 	})
@@ -69,7 +73,6 @@ function drawDot(square){
 }
 
 function renderBoard(game, boardEl, selectedSquare){
-	// console.log(game.board());
 	let possibleMoves = [];
 
 	boardEl.innerHTML = '';
