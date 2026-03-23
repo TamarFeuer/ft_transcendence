@@ -1,8 +1,8 @@
-import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
+import { fetchWithRefreshAuth } from '../../users_friends/usermanagement.js';
 import * as tournamentAPI from './tournament_api.js';
-import { showMessage } from "../utils/utils.js"
-import { checkAuthRequired } from '../users_friends/usermanagement.js';
-import { stopTournamentAutoRefresh } from '../tournament/tournament_lobby_utils.js';
+import { showMessage } from "../../utils/utils.js"
+import { checkAuthRequired } from '../../users_friends/usermanagement.js';
+import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
 import { joinOnlineGame } from '../game/game.js';
 
 export async function loadTournamentGames() {

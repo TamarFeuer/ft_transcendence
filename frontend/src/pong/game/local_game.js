@@ -1,6 +1,6 @@
-import "../styles.css";
-import { showMessage } from "../utils/utils.js"
-import { handleRoute, navigate } from "../routes/route_helpers.js";
+import "../../styles.css";
+import { showMessage } from "../../utils/utils.js"
+import { handleRoute, navigate } from "../../routes/route_helpers.js";
 
 export function initOfflineGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {

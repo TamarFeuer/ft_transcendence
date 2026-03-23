@@ -1,4 +1,4 @@
-import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
+import { fetchWithRefreshAuth } from '../../users_friends/usermanagement.js';
 
 // Tournament API functions
 

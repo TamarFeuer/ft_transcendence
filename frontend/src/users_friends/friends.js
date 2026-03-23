@@ -1,5 +1,5 @@
-import { onlineUsers } from "../chat/chat";
-import { fetchWithRefreshAuth } from "./usermanagement";
+import { onlineUsers } from "../chat/chat.js";
+import { fetchWithRefreshAuth } from "./usermanagement.js";
 
 let latestPendingList = null;
 let latestFriendsList = null;

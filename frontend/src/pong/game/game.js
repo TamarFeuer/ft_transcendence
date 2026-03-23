@@ -10,10 +10,10 @@ import {
 } from "@babylonjs/core";
 
 import { updateTournamentGameResult } from "../tournament/tournament_api.js";
-import "../styles.css";
+import "../../styles.css";
 import { Engine, Scene } from "@babylonjs/core";
-import { showMessage } from "../utils/utils.js"
-import { handleRoute, navigate } from "../routes/route_helpers.js";
+import { showMessage } from "../../utils/utils.js"
+import { handleRoute, navigate } from "../../routes/route_helpers.js";
 
 
 // --- Game Variables ---

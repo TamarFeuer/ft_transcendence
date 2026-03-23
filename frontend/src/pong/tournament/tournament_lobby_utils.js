@@ -1,8 +1,8 @@
-import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
+import { fetchWithRefreshAuth } from '../../users_friends/usermanagement.js';
 import * as tournamentAPI from './tournament_api.js';
-import { showMessage } from "../utils/utils.js"
-import { getCurrentUser } from '../users_friends/usermanagement.js';
-import { navigate } from '../routes/route_helpers.js';
+import { showMessage } from "../../utils/utils.js"
+import { getCurrentUser } from '../../users_friends/usermanagement.js';
+import { navigate } from '../../routes/route_helpers.js';
 
 let tournamentAutoRefreshInterval = null;
 
