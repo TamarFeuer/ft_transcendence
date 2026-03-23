@@ -13,6 +13,7 @@ from django.conf import settings
 import jwt
 from datetime import datetime, timedelta
 import uuid
+import re
 
 UserModel = get_user_model()
 
@@ -100,6 +101,8 @@ def register(request):
         password = data.get('password')
         if not username or not password:
             return JsonResponse({'error': 'username and password required'}, status=400)
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return JsonResponse({'error': 'Username can only contain letters, digits and _'}, status=400)
         if UserModel.objects.filter(username=username).exists():
             return JsonResponse({'error': 'username taken'}, status=400)
         user = UserModel.objects.create_user(username=username, password=password)

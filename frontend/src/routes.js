@@ -7,6 +7,7 @@ import { checkAuthRequired } from './usermanagement.js';
 import { updatePageTranslations } from './i18n';
 import { initLoginPage } from './loginPage.js';
 import { registerPage } from './register.js';
+import { verifiedUserId } from './chat.js';
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -28,16 +29,18 @@ async function loadTemplate(name) {
 }
 
 export function setupRoutes() {
-  routes['/'] = async () => {
-      await loadTemplate('login');
-      initLoginPage();
-  };
-  routes['/home'] = async () =>{
-        await loadTemplate('home');
-      document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
-      document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
-      document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
-  }
+	routes['/'] = async () =>{
+		if(await redirectIfNotLoggedIn())
+			return;
+		await loadTemplate('home');
+		document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
+		document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
+		document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
+	}
+	routes['/login'] = async () => {
+		await loadTemplate('login');
+		initLoginPage();
+	};
 
   routes['/register'] = async () =>{
     await loadTemplate('register');
@@ -150,4 +153,13 @@ export function setupRoutes() {
 				}, {once: true});
 		}
 	}
+}
+
+export async function redirectIfNotLoggedIn() {
+    const noAuth = await checkAuthRequired();
+    if (noAuth) {
+        navigate('/login');
+        return true;
+    }
+    return false;
 }

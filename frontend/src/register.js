@@ -14,19 +14,28 @@ export function registerPage(){
 
         if(!username || !password)
             return;
-        
+
+        const validUser = /^[a-zA-Z0-9_]+$/;
+        if(!validUser.test(username)){
+            alert("invalid username!");
+            return;
+        }
 
         const result = await registerUser(username, password);
 
+        if (result.error) {
+             alert(result.error);
+            return;
+        }
         if(result.username)
-            navigate("/home");
+            navigate("/");
     })
 
     const backLoginBtn = document.getElementById("register-back-login");
     if(!backLoginBtn)
         return;
     backLoginBtn.addEventListener("click", () => {
-        navigate("/");
+        navigate("/login");
     })
 
 }
