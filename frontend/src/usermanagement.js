@@ -1,6 +1,7 @@
 import { t, updatePageTranslations } from './i18n/index.js';
 import { TranslationKey } from './i18n/keys.js';
 import { closeChat } from './chat.js';
+import { showMessage } from "./routes.js"
 
 
 // --- Token refresh helper ---
@@ -23,6 +24,7 @@ async function refreshAccessToken() {
                 const data = await res.json();
                 if (data.username) {
                     localStorage.setItem('username', data.username);
+                    localStorage.setItem('user_id', data.id);
                 }
                 return true;
             }
@@ -39,9 +41,10 @@ async function refreshAccessToken() {
 }
 
 // --- API helper with automatic token refresh ---
+// If a request returns 401 due to token expiration, try to refresh the token and retry once.
+// returns 200 or 401 response if refresh fails.
 export async function fetchWithRefreshAuth(url, options = {}) {
     options.credentials = 'include'; // Always include cookies
-    
     let res = await fetch(url, options);
     
     // If unauthorized and error is token_expired, try to refresh
@@ -78,6 +81,7 @@ export async function registerUser(username, password) {
     const data = await res.json();
     if (res.ok && data.username) {
         localStorage.setItem('username', data.username);
+        localStorage.setItem('user_id', data.id);
     }
     return data;
 }
@@ -92,6 +96,7 @@ export async function loginUser(username, password) {
     const data = await res.json();
     if (res.ok && data.username) {
         localStorage.setItem('username', data.username);
+        localStorage.setItem('user_id', data.id);
     }
     return data;
 }
@@ -112,6 +117,7 @@ export async function getCurrentUser() {
             const data = await res.json();
             if (data.authenticated && data.username) {
                 localStorage.setItem('username', data.username);
+                localStorage.setItem('user_id', data.id);
                 return data;
             }
         }
@@ -202,10 +208,12 @@ export function createUserManager() {
                 const p = panel.querySelector('#um_login_pass').value;
                 const res = await loginUser(u, p);
                 if (res && res.success) {
-                    alert('Login successful');
-                    window.location.reload();
+                    showMessage('Login successful');
+                    location.reload();
+                    renderPanel();
+                    // window.location.reload();
                 } else {
-                    alert(res.error || 'Login failed');
+                    showMessage(res.error || 'Login failed');
                 }
             });
 
@@ -214,10 +222,10 @@ export function createUserManager() {
                 const p = panel.querySelector('#um_reg_pass').value;
                 const res = await registerUser(u, p);
                 if (res && res.success) {
-                    alert('Registration successful');
+                    showMessage('Registration successful');
                     window.location.reload();
                 } else {
-                    alert(res.error || 'Registration failed');
+                    showMessage(res.error || 'Registration failed');
                 }
             });
         });
@@ -233,6 +241,7 @@ export function createUserManager() {
     renderPanel();
 }
 
+// if the user is not authenticated, return true, else false
 export async function checkAuthRequired() {
     const res = await fetchWithRefreshAuth('/api/auth/me', { method: 'GET', credentials: 'include' });
     if (res.ok) {

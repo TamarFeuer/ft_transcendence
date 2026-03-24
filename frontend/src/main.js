@@ -7,13 +7,16 @@ import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
 import { renderFriendsPanel } from "./friends.js";
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 import { initChatUI } from './chat-ui.js';
+import { updateTournamentGameResult } from "./tournament.js";
+import { showMessage } from "./routes.js"
 
 // --- Game Variables ---
 let ws = null;
 let currentGameId = null;
+let isGameActive = false;
 
 export const routes = {};
-import { setupRoutes } from "./routes.js";
+import { setupRoutes, handleTournamentRoute } from "./routes.js";
 
 export function navigate(path) {
 	window.history.pushState({}, path, window.location.origin + path);
@@ -21,6 +24,12 @@ export function navigate(path) {
 }
 
 function handleRoute(path) {
+	// Check for tournament/:id route
+	if (path.match(/^\/tournament\/\d+$/)) {
+		handleTournamentRoute(path);
+		return;
+	}
+	
 	const handler = routes[path];
 	if (handler) {
 		handler();
@@ -32,11 +41,48 @@ function handleRoute(path) {
 	}
 }
 
+// Close WebSocket before navigation
+function closeGameConnection() {
+	if (ws) {
+		console.log('Closing WebSocket connection');
+		isGameActive = false;
+		ws.close();
+		ws = null;
+	}
+}
+
 window.addEventListener('popstate', () => {
+	console.log('User navigated: back or forward');
+	console.log('Current pathname:', window.location.pathname);
+	// Close game connection before handling new route
+	if (isGameActive) {
+		closeGameConnection();
+		sessionStorage.removeItem('activeGameId');
+	}
 	handleRoute(window.location.pathname);
 });
 
-export function joinOnlineGame(gameId) {
+// Auto-reconnect to game if page was refreshed
+/*
+window.addEventListener('load', async () => {
+	const activeGameId = sessionStorage.getItem('activeGameId');
+	const isTournament = sessionStorage.getItem('activeTournamentId') ? true : false;
+	if (activeGameId && window.location.pathname.includes('/online')) {
+		console.log('Reconnecting to game:', activeGameId);
+		await new Promise(r => setTimeout(r, 500)); // Wait for page to be ready
+		joinOnlineGame(activeGameId, isTournament);
+	}
+});
+*/
+
+export function joinOnlineGame(gameId, IsTournament) {
+	// Store game context in session storage for refresh recovery
+	sessionStorage.setItem('activeGameId', gameId);
+	if (IsTournament) {
+		sessionStorage.setItem('activeTournamentId', window.currentTournamentId);
+	}
+	const currentUserId = String(window.CURRENT_USER?.user_id ?? '');
+	const currentUsername = window.CURRENT_USER?.username || 'Player';
 	const canvas = document.getElementById("renderCanvas");
 	const engine = new Engine(canvas, true);
 	const scene = new Scene(engine);
@@ -44,6 +90,7 @@ export function joinOnlineGame(gameId) {
 	let keyboardInterval = null;
 	let keyDownHandler = null;
 	let keyUpHandler = null;
+	let gameEnded = false;
 
 	const proto = location.protocol === "https:" ? "wss:" : "ws:";
 	// Cookies are automatically sent with WebSocket connections
@@ -59,11 +106,38 @@ export function joinOnlineGame(gameId) {
 
 	ws.onopen = () => {
 		console.log("WS connected to game:", gameId);
+		isGameActive = true;
+		currentGameId = gameId;
+
+		const appRoot = document.getElementById("app-root");
+	
+
+		appRoot.innerHTML = `
+		<div id="gameContainer">
+			<canvas id="renderCanvas"></canvas>
+			<div class="absolute inset-0 flex justify-between items-start pt-32 px-8 z-20 pointer-events-none">
+				<div class="flex flex-col items-start">
+					<div id="playerNameleft" class="text-white font-bold text-lg tracking-wide">~</div>
+					<div id="scoreP1" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+				</div>
+				<div class="flex flex-col items-end">
+					<div id="playerNameright" class="text-white font-bold text-lg tracking-wide">~</div>
+					<div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+				</div>
+			</div>
+		</div>
+		`;
+
+		// window.gameObjects = initGameScene(scene, canvas, 2);
+
+		// engine.runRenderLoop(() => scene.render());
+
+
 	};
 
 	ws.onerror = (e) => console.error("WS error", e);
 
-	ws.onmessage = (ev) => {
+	ws.onmessage = async (ev) => {
 		try {
 			const data = JSON.parse(ev.data);
 			console.log("WS message", data);
@@ -74,12 +148,18 @@ export function joinOnlineGame(gameId) {
 				appRoot.innerHTML = `
 				<div id="gameContainer">
 					<canvas id="renderCanvas"></canvas>
-					<div id="scoreHud" class="score-hud" style="display: block; position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; z-index: 100;">
-						<div>Player 1: <span id="scoreP1">0</span></div>
-						<div>Player 2: <span id="scoreP2">0</span></div>
+					<div class="absolute inset-0 flex justify-between items-start pt-32 px-8 z-20 pointer-events-none">
+						<div class="flex flex-col items-start">
+							<div id="playerNameleft" class="text-white font-bold text-lg tracking-wide">${data.P1}</div>
+							<div id="scoreP1" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+						</div>
+						<div class="flex flex-col items-end">
+							<div id="playerNameright" class="text-white font-bold text-lg tracking-wide">${data.P2}</div>
+							<div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
+						</div>
 					</div>
 				</div>
-			`;
+				`;
 
 				window.gameObjects = initGameScene(scene, canvas, 2);
 
@@ -128,17 +208,31 @@ export function joinOnlineGame(gameId) {
 
 			if (data.type === "assign") {
 				console.log("Assigned role:", data.role);
+				// Update the player name display for the current user's role
+				const playerNameElem = document.getElementById(`playerName${data.role}`);
+				if (playerNameElem) {
+					playerNameElem.textContent = currentUsername;
+				}
 			}
 
 			if (data.type === "gameOver") {
-				alert(`${data.winner} wins!`);
+				gameEnded = true;
 
+				showMessage(`${data.winner} wins!`)
+				console.log("after yes");
 				// Clean up event listeners and intervals
 				clearInterval(keyboardInterval);
 				window.removeEventListener("pointermove", pointerHandler);
 				window.removeEventListener("keydown", keyDownHandler);
 				window.removeEventListener("keyup", keyUpHandler);
+				console.log("data:", data);
+				console.log("gameId:", gameId);
+				console.log("data.winner.id:", data.winner_id);
+				console.log("window.CURRENT_USER?.user_id:", String(window.CURRENT_USER?.user_id));
 
+				const didCurrentUserWin = Boolean(currentUserId) && String(data.winner_id) === currentUserId;
+				if (IsTournament && didCurrentUserWin)
+					await updateTournamentGameResult(gameId, data.winner_id);
 				// Dispose engine and scene
 				scene.dispose();
 				engine.dispose();
@@ -146,7 +240,12 @@ export function joinOnlineGame(gameId) {
 				// Close websocket
 				ws?.close();
 				ws = null;
-				navigate('/');
+				isGameActive = false;
+				// Clear session storage
+				sessionStorage.removeItem('activeGameId');
+				sessionStorage.removeItem('activeTournamentId');
+				// Navigate back to tournament with tournament id
+          		navigate(`/tournament/${window.currentTournamentId}`);
 			}
 
 		} catch (e) {
@@ -156,15 +255,44 @@ export function joinOnlineGame(gameId) {
 
 	ws.onclose = () => {
 		console.log("WS disconnected");
+		isGameActive = false;
+		if (!gameEnded) {
+			clearInterval(keyboardInterval);
+			window.removeEventListener("pointermove", pointerHandler);
+			window.removeEventListener("keydown", keyDownHandler);
+			window.removeEventListener("keyup", keyUpHandler);
+			scene.dispose();
+			engine.dispose();
+			// Clear session storage
+			sessionStorage.removeItem('activeGameId');
+			sessionStorage.removeItem('activeTournamentId');
+
+			if (IsTournament) {
+				navigate(`/tournament/${window.currentTournamentId}`);
+			} else {
+				navigate('/online');
+			}
+		}
 	};
 }
 
 export function initOfflineGame(scene, gameObjects, tournament) {
 	return new Promise((resolve) => {
-		let ballVX = 0.07;
-		let ballVY = 0.07;
+		// Speed configuration: tweak these to make the game slower/faster
+		const SPEED_INITIAL = 0.04;       // starting speed (lower = slower)
+		const SPEED_ACCEL_BASE = 1.000001; // per-frame accel base (1.0 = no growth)
+		const SPEED_MAX = 0.18;           // cap max resultant speed
+
+		let ballVX = SPEED_INITIAL;
+		let ballVY = SPEED_INITIAL;
+		let ballSpin = 0; // Angular velocity (positive = topspin, negative = backspin)
 		let scoreP1int = 0;
 		let scoreP2int = 0;
+		
+		// Track paddle positions for velocity calculation
+		let paddleLeftPrevY = gameObjects.paddleLeft.position.y;
+		let paddleRightPrevY = gameObjects.paddleRight.position.y;
+		let lastFrameTime = Date.now();
 
 		const scoreP1 = document.getElementById("scoreP1");
 		const scoreP2 = document.getElementById("scoreP2");
@@ -172,66 +300,137 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 		scoreP2.textContent = "0";
 
 		const keys = {};
+		let mouseControlledPaddleY = null; // Track mouse position for right paddle
 
 		// Handlers
 		const keyDownHandler = (e) => keys[e.key] = true;
 		const keyUpHandler = (e) => keys[e.key] = false;
+		
+		// Mouse control for right paddle
+		const pointerMoveHandler = (e) => {
+			// Normalize mouse Y position to game coordinates (-4 to 4)
+			const normalized = 1 - (e.clientY / window.innerHeight); // 0 to 1
+			mouseControlledPaddleY = (normalized - 0.5) * 8; // -4 to 4
+		};
 
 		window.addEventListener("keydown", keyDownHandler);
 		window.addEventListener("keyup", keyUpHandler);
+		window.addEventListener("pointermove", pointerMoveHandler);
 
-		// Player 1 controls (W/S)
-		const keyboardIntervalP1 = setInterval(() => {
-			let y = 0;
-			if (keys['w']) y = 0.8;
-			if (keys['s']) y = -0.8;
-			gameObjects.paddleLeft.position.y += y;
-
-			// Keep paddle within bounds
-			if (gameObjects.paddleLeft.position.y > 4.5) {
-				gameObjects.paddleLeft.position.y = 4.5;
+		// Smoother keyboard controls with higher frequency and smaller steps
+		const keyboardInterval = setInterval(() => {
+			// Left paddle - W/S keys
+			if (keys['w'] || keys['s']) {
+				let y = 0;
+				if (keys['w']) y = 0.35; // Reduced from 0.8 for smoother movement
+				if (keys['s']) y = -0.35;
+				gameObjects.paddleLeft.position.y += y;
+				
+				// Keep within bounds
+				gameObjects.paddleLeft.position.y = Math.max(-4.5, Math.min(4.5, gameObjects.paddleLeft.position.y));
 			}
-			if (gameObjects.paddleLeft.position.y < -4.5) {
-				gameObjects.paddleLeft.position.y = -4.5;
+			
+			// Right paddle - Arrow keys OR mouse (mouse takes priority)
+			if (mouseControlledPaddleY !== null) {
+				// Smooth interpolation to mouse position
+				const targetY = Math.max(-4.5, Math.min(4.5, mouseControlledPaddleY));
+				const diff = targetY - gameObjects.paddleRight.position.y;
+				gameObjects.paddleRight.position.y += diff * 0.15; // Smooth follow
+			} else if (keys['ArrowUp'] || keys['ArrowDown']) {
+				let y = 0;
+				if (keys['ArrowUp']) y = 0.35; // Reduced from 0.8 for smoother movement
+				if (keys['ArrowDown']) y = -0.35;
+				gameObjects.paddleRight.position.y += y;
+				
+				// Keep within bounds
+				gameObjects.paddleRight.position.y = Math.max(-4.5, Math.min(4.5, gameObjects.paddleRight.position.y));
 			}
-		}, 1000 / 15);
-
-		// Player 2 controls (Arrow keys)
-		const keyboardIntervalP2 = setInterval(() => {
-			let y = 0;
-			if (keys['ArrowUp']) y = 0.8;
-			if (keys['ArrowDown']) y = -0.8;
-			gameObjects.paddleRight.position.y += y;
-
-			// Keep paddle within bounds
-			if (gameObjects.paddleRight.position.y > 4.5) {
-				gameObjects.paddleRight.position.y = 4.5;
-			}
-			if (gameObjects.paddleRight.position.y < -4.5) {
-				gameObjects.paddleRight.position.y = -4.5;
-			}
-		}, 1000 / 15);
+		}, 1000 / 60); // Increased from 15 to 60 fps for smoother movement
 
 		const renderObserver = scene.onBeforeRenderObservable.add(() => {
-			gameObjects.ball.position.x += ballVX;
-			gameObjects.ball.position.y += ballVY;
-			ballVX *= 1.00005;
-			ballVY *= 1.00005;
+			// Calculate delta time for frame-independent physics
+			const currentTime = Date.now();
+			const dt = (currentTime - lastFrameTime) / 16.67; // Normalize to 60fps
+			lastFrameTime = currentTime;
+			
+			// Magnus effect: spin creates perpendicular force
+			// In real ping pong, topspin makes ball curve downward, backspin upward
+			const magnusCoefficient = 0.0008;
+			const extra_factor = 40
+			const spinForce = -ballSpin * magnusCoefficient  * extra_factor * dt;
+			ballVY += spinForce;
+			
+			// Air resistance causes spin to decay
+			const spinDecay = 0.992;
+			ballSpin *= Math.pow(spinDecay, dt);
+			
+			// Visual rotation based on spin (rotate around Z axis)
+			gameObjects.ball.rotation.z += ballSpin * magnusCoefficient * extra_factor * 100 * dt;
+			
+			// Update ball position
+			gameObjects.ball.position.x += ballVX * dt;
+			gameObjects.ball.position.y += ballVY * dt;
+			
+			// Gradual speed increase (uses config)
+			const speedIncrease = Math.pow(SPEED_ACCEL_BASE, dt);
+			ballVX *= speedIncrease;
+			ballVY *= speedIncrease;
 
-			// Ball collision logic
+			// Clamp maximum speed (resultant velocity)
+			const currentSpeed = Math.hypot(ballVX, ballVY);
+			// if (currentSpeed > SPEED_MAX) {
+			// 	const scale = SPEED_MAX / currentSpeed;
+			// 	ballVX *= scale;
+			// 	ballVY *= scale;
+			// }
+
+			// Ball collision with top/bottom walls
 			if (gameObjects.ball.position.y > 5 || gameObjects.ball.position.y < -5) {
 				ballVY = -ballVY;
+				// Wall bounce reduces spin by 30%
+				ballSpin *= 0.7;
 			}
 
+			// Calculate paddle velocities (in units per frame)
+			const paddleLeftVel = (gameObjects.paddleLeft.position.y - paddleLeftPrevY) / dt;
+			const paddleRightVel = (gameObjects.paddleRight.position.y - paddleRightPrevY) / dt;
+			paddleLeftPrevY = gameObjects.paddleLeft.position.y;
+			paddleRightPrevY = gameObjects.paddleRight.position.y;
+			
+			// Left paddle collision
 			if (gameObjects.ball.position.x < gameObjects.paddleLeft.position.x + 0.25 &&
 				gameObjects.ball.position.x > gameObjects.paddleLeft.position.x &&
 				Math.abs(gameObjects.ball.position.y - gameObjects.paddleLeft.position.y) < 0.75) {
+				
+				// Simple bounce (no angle effect)
 				ballVX = -ballVX;
+				
+				// SPIN PHYSICS: Fast perpendicular paddle movement creates spin
+				// Upward paddle movement = topspin (positive)
+				// Downward paddle movement = backspin (negative)
+				const spinTransferCoefficient = 1.5;
+				ballSpin = paddleLeftVel * spinTransferCoefficient;
+				
+				// Paddle movement also slightly affects ball's vertical velocity
+				const velocityTransfer = 0.11;
+				ballVY += paddleLeftVel * velocityTransfer;
 			}
+			
+			// Right paddle collision
 			if (gameObjects.ball.position.x > gameObjects.paddleRight.position.x - 0.25 &&
 				gameObjects.ball.position.x < gameObjects.paddleRight.position.x &&
 				Math.abs(gameObjects.ball.position.y - gameObjects.paddleRight.position.y) < 0.75) {
+				
+				// Simple bounce (no angle effect)
 				ballVX = -ballVX;
+				
+				// SPIN PHYSICS: Transfer spin from paddle velocity
+				const spinTransferCoefficient = 1.5;
+				ballSpin = paddleRightVel * spinTransferCoefficient;
+				
+				// Paddle movement affects ball's vertical velocity
+				const velocityTransfer = 0.11;
+				ballVY += paddleRightVel * velocityTransfer;
 			}
 
 			if (gameObjects.ball.position.x < -6) {
@@ -239,11 +438,17 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 				scoreP2.textContent = scoreP2int.toString();
 				gameObjects.ball.position.x = 0;
 				gameObjects.ball.position.y = 0;
+				ballSpin = 0; // Reset spin
+				ballVX = SPEED_INITIAL;
+				ballVY = SPEED_INITIAL;
 			} else if (gameObjects.ball.position.x > 6) {
 				scoreP1int++;
 				scoreP1.textContent = scoreP1int.toString();
 				gameObjects.ball.position.x = 0;
 				gameObjects.ball.position.y = 0;
+				ballSpin = 0; // Reset spin
+				ballVX = -SPEED_INITIAL;
+				ballVY = SPEED_INITIAL;
 			}
 
 			// Check winner
@@ -253,10 +458,11 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 				clearInterval(keyboardIntervalP2);
 				window.removeEventListener("keydown", keyDownHandler);
 				window.removeEventListener("keyup", keyUpHandler);
+				window.removeEventListener("pointermove", pointerMoveHandler);
 				scene.onBeforeRenderObservable.remove(renderObserver);
 
 				if (!tournament) {
-					alert(scoreP1int >= 10 ? "Player 1 wins!" : "Player 2 wins!");
+					showMessage(scoreP1int >= 10 ? "Player 1 wins!" : "Player 2 wins!");
 					navigate('/');
 				}
 
@@ -398,7 +604,7 @@ export function initAIGame(scene, gameObjects, tournament) {
 				scene.onBeforeRenderObservable.remove(renderObserver);
 
 				if (!tournament) {
-					alert(scoreP1int >= 10 ? "AI wins!" : "You win!");
+					showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
 					navigate('/');
 				}
 
@@ -425,7 +631,7 @@ export async function startTournament(playerCount) {
 	const scores = new Array(playerCount).fill(0);
 
 	for (const [i, j] of schedule) {
-		alert(`Match: ${players[i]} vs ${players[j]}`);
+		showMessage(`Match: ${players[i]} vs ${players[j]}`);
 
 		const appRoot = document.getElementById("app-root");
 		appRoot.innerHTML = `
@@ -462,21 +668,23 @@ export async function startTournament(playerCount) {
 		if (scores[i] > scores[winner]) winner = i;
 	}
 
-	alert(`Tournament Winner: ${players[winner]} with ${scores[winner]} wins!`);
+	showMessage(`Tournament Winner: ${players[winner]} with ${scores[winner]} wins!`);
 	navigate('/');
 }
 
 setupRoutes();
 
 window.addEventListener("DOMContentLoaded", async () => {
-
-	initChat();
+	
+	const currentUser = await fetchCurrentUser(); // wait for token refresh, ignore the result
+	if (currentUser.authenticated) {
+		initChat();
+		initChatUI();
+	}
 
 	// Create user manager UI
 	createUserManager();
-
 	// Initial route handling
 	handleRoute(window.location.pathname);
-
-	initChatUI();
+	
 });

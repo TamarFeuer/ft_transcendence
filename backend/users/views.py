@@ -2,8 +2,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import GameSession
 import logging
+
 logger = logging.getLogger(__name__)
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import User
@@ -12,7 +12,6 @@ from django.conf import settings
 import jwt
 from datetime import datetime, timedelta
 import uuid
-import re
 
 UserModel = get_user_model()
 
@@ -49,51 +48,6 @@ def health(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def create_game(request):
-    game = GameSession.create_game()
-    game.isTournamentGame = False
-    # Use logging so output is captured by gunicorn/daphne/docker logs
-    logger.info(f"Created game with ID: {game.id}")
-    return JsonResponse({
-        'gameId': game.id,
-        'status': 'waiting',
-        'message': 'Game created. Waiting for players to join.'
-    })
-
-@require_http_methods(["GET"])
-def get_game(request, game_id):
-    game = GameSession.get_game(game_id)
-    
-    if not game:
-        return JsonResponse({'error': 'Game not found'}, status=404)
-    
-    return JsonResponse({
-        'gameId': game.id,
-        'status': game.status,
-        'players': {
-            'left': 'connected' if game.players['left'] else 'empty',
-            'right': 'connected' if game.players['right'] else 'empty'
-        },
-        'score': game.state['score']
-    })
-
-@require_http_methods(["GET"])
-def list_games(request):
-    games = GameSession.list_games()
-    return JsonResponse({
-        'games': [
-            {
-                'id': g.id,
-                'status': g.status,
-                'playerCount': len(g.clients),
-                'isTournamentGame': g.isTournamentGame
-            }
-            for g in games
-        ]
-    })
-
-@csrf_exempt
-@require_http_methods(["POST"])
 def register(request):
     try:
         data = json.loads(request.body.decode())
@@ -101,8 +55,6 @@ def register(request):
         password = data.get('password')
         if not username or not password:
             return JsonResponse({'error': 'username and password required'}, status=400)
-        if not re.match(r'^[a-zA-Z0-9_]+$', username):
-            return JsonResponse({'error': 'Username can only contain letters, digits and _'}, status=400)
         if UserModel.objects.filter(username=username).exists():
             return JsonResponse({'error': 'username taken'}, status=400)
         user = UserModel.objects.create_user(username=username, password=password)
@@ -110,7 +62,8 @@ def register(request):
         
         response = JsonResponse({
             'success': True,
-            'username': user.username
+            'username': user.username,
+            'user_id': user.id
         })
         
         # Set HTTP-only cookies
@@ -136,7 +89,6 @@ def register(request):
         logger.exception('Error in register')
         return JsonResponse({'error': 'internal error'}, status=500)
 
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def login_view(request):
@@ -151,7 +103,8 @@ def login_view(request):
         
         response = JsonResponse({
             'success': True,
-            'username': user.username
+            'username': user.username,
+            'user_id': user.id
         })
         
         # Set HTTP-only cookies
@@ -204,7 +157,8 @@ def refresh_token_view(request):
             
             response = JsonResponse({
                 'success': True,
-                'username': user.username
+                'username': user.username,
+                'user_id': user.id
             })
             
             # Set new cookies
@@ -249,15 +203,23 @@ def logout_view(request):
 
 @require_http_methods(["GET"])
 def current_user_view(request):
+    # Check cookies from headers
+    headers = dict(request.headers)
+    cookies = request.COOKIES
+    
+    print("Headers:", headers)
+    print("Cookies:", cookies)
+    print("Authorization:", headers.get('Authorization'))
+
     """Get current user from access token cookie."""
     access_token = request.COOKIES.get('access_token')
-    logger.warning(f"current_user_view: access_token: {access_token}")
+    logger.debug(f"current_user_view: access_token: {access_token}")
     if not access_token:
         return JsonResponse({'authenticated': False}, status=401)
     
     try:
         payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
-        logger.warning(f"current_user_view: decoded payload: {payload}")
+        logger.debug(f"current_user_view: decoded payload: {payload}")
         if payload.get('type') != 'access':
             return JsonResponse({'authenticated': False}, status=401)
         
