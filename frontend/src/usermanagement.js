@@ -1,6 +1,7 @@
 import { t, updatePageTranslations } from './i18n/index.js';
 import { TranslationKey } from './i18n/keys.js';
-import { closeChat, initChat } from './chat.js';
+import { closeChat } from './chat.js';
+
 
 // --- Token refresh helper ---
 let refreshPromise = null;
@@ -161,7 +162,7 @@ export function createUserManager() {
                 logoutBtn.textContent = 'Logout';
                 logoutBtn.addEventListener('click', async () => {
                     await logoutUser();
-                    renderPanel();
+                    window.location.href = '/login';
                 });
                 panel.appendChild(info);
                 panel.appendChild(logoutBtn);
@@ -229,9 +230,6 @@ export function createUserManager() {
     container.appendChild(toggleBtn);
     container.appendChild(panel);
     document.body.appendChild(container);
-    window.addEventListener('userLoggedIn', () => {
-        renderPanel() ; 
-    });
     renderPanel();
 }
 

@@ -1,6 +1,5 @@
 import { loginUser } from "./usermanagement";
 import { navigate } from "./main.js"
-import { initChat } from "./chat.js";
 
 export function initLoginPage(){
     const form = document.getElementById("login-form");
@@ -15,12 +14,8 @@ export function initLoginPage(){
             return;
         
         const result = await loginUser(username, password);
-        if(result.username){
-            navigate("/");
-            initChat();
-            window.dispatchEvent(new Event("userLoggedIn"));
-        }
-        //if not logged in correct show message accordingly.
+        if(result.username)
+            window.location.href = "/";
     })
     const createAccountBtn = document.getElementById("login-create-account");
     

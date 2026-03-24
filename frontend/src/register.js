@@ -24,11 +24,11 @@ export function registerPage(){
         const result = await registerUser(username, password);
 
         if (result.error) {
-             alert(result.error);
+            alert(result.error);
             return;
         }
         if(result.username)
-            navigate("/");
+            window.location.href = "/";
     })
 
     const backLoginBtn = document.getElementById("register-back-login");
