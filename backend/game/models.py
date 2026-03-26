@@ -18,7 +18,6 @@ class GameSession:
             'score': {'p1': 0, 'p2': 0},
             'winningScore': 5
         }
-        self.isTournamentGame = False
         self.players = {'left': None, 'right': None}
         self.clients = set()
         self.status = 'waiting'  # waiting, active, finished
@@ -56,29 +55,27 @@ class GameSession:
             if game_id in cls._games:
                 del cls._games[game_id]
     
-    def add_player(self, name, id, role=None):
+    def add_player(self, channel_name, role=None):
         """Add a player or spectator to the game"""
         if not self.players['left']:
-            self.players['left'] = name
-            self.players['left_id'] = id
-            self.clients.add(name)
+            self.players['left'] = channel_name
+            self.clients.add(channel_name)
             return 'left'
         elif not self.players['right']:
-            self.players['right'] = name
-            self.players['right_id'] = id
-            self.clients.add(name)
+            self.players['right'] = channel_name
+            self.clients.add(channel_name)
             return 'right'
         else:
-            self.clients.add(name)
+            self.clients.add(channel_name)
             return 'spectator'
     
-    def remove_player(self, name):
+    def remove_player(self, channel_name):
         """Remove a player from the game"""
-        self.clients.discard(name)
+        self.clients.discard(channel_name)
         
-        if self.players['left'] == name:
+        if self.players['left'] == channel_name:
             self.players['left'] = None
-        if self.players['right'] == name:
+        if self.players['right'] == channel_name:
             self.players['right'] = None
         
         # If game was active and a player left, end the game
@@ -137,7 +134,6 @@ class GameSession:
         
         # Scoring
         winner = None
-        # winner_id = None
         if state['ball']['x'] < -6:
             state['score']['p2'] += 1
             self.reset_ball()
@@ -147,23 +143,17 @@ class GameSession:
         
         # Check win condition
         if state['score']['p1'] >= state['winningScore']:
-            # players = self.game.get_players()
-            # winner = players['left']
-            winner = 'left'
-            # winner_id = self.players['left_id']
+            winner = 'Player 1'
             self.status = 'finished'
         elif state['score']['p2'] >= state['winningScore']:
-            # players = self.game.get_players()
-            winner = 'right'
-            # winner = players['right']
-            # winner_id = self.players['right_id']
+            winner = 'Player 2'
             self.status = 'finished'
         
         return {
             'ball': {'x': state['ball']['x'], 'y': state['ball']['y']},
             'paddles': state['paddles'],
             'score': state['score'],
-            'winner': winner,
+            'winner': winner
         }
     
     def reset_ball(self):

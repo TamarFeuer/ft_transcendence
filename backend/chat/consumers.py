@@ -1,12 +1,12 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
-from users.token_auth import get_user_from_token
+import jwt
+from django.conf import settings
+from jwt import InvalidTokenError
+from django.utils import timezone
+from game.token_auth import get_user_from_token
 from channels.db import database_sync_to_async
-import redis.asyncio as aioredis
-
-# create a Redis client object that knows how to connect to your Redis server
-redis_client = aioredis.from_url("redis://redis:6379", decode_responses=True)
 
 logger = logging.getLogger(__name__)
 
@@ -137,10 +137,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 					recipient_id=target,
 					content=message
 				)
-				# Increment unread counter for recipient
-				await redis_client.incr(f"unread:{target}:from:{self.user_id}")
-				# New message arriving — reopen conversation for recipient
-				await redis_client.srem(f"closed:{target}", self.user_id)
 			else:
 				payload["private"] = False
 				await self.channel_layer.group_send(self.group_name, payload)
@@ -155,28 +151,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"target": other_id,
 				"messages": messages
 			}))
-		
-		elif msg_type == "get_conversations":
-			conversations = await self.get_conversations(self.user_id)
-			await self.send(text_data=json.dumps({
-				"type": "conversations",
-				"conversations": conversations
-			}))
-
-		elif msg_type == "mark_read":
-			other_id = data.get("target")
-			if not other_id:
-				return
-			# Delete the unread counter for this conversation
-			await redis_client.delete(f"unread:{self.user_id}:from:{other_id}")
-
-		elif msg_type == "close_conversation":
-			other_id = data.get("target")
-			if not other_id:
-				return
-			# Mark this conversation as closed by the user
-			await redis_client.sadd(f"closed:{self.user_id}", other_id)
-
+  
 		elif msg_type in ["typing", "stop_typing"]:
 			await self.channel_layer.group_send(
 				self.group_name,
@@ -220,8 +195,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		}))
 
 	async def broadcast_online_users(self):
-		logger.warning(f"broadcast_online_users called by {self.username}, ONLINE_USERS: {ONLINE_USERS}")
-		# Send the current online users list to everyone in the global group.
+	 	# Send the current online users list to everyone in the global group.
 		# "online.users" -> calls online_users() on each consumer in the group
 		await self.channel_layer.group_send(
 			self.group_name,
@@ -249,47 +223,3 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			}
 			for msg in reversed(list(messages))
 		]
-
-	async def get_conversations(self, user_id):
-		# First fetch all conversations from the database
-		conversations = await self._get_conversations_from_db(user_id)
-
-		# Get conversations the user explicitly closed
-		closed = await redis_client.smembers(f"closed:{user_id}")
-
-		result = {}
-
-		# Then enrich each conversation with the unread count from Redis.
-		# Redis key: "unread:{user_id}:from:{other_id}" — incremented on each
-		# incoming DM, deleted when the user opens the tab (mark_read)
-		for other_id in conversations:
-			count = await redis_client.get(f"unread:{user_id}:from:{other_id}")
-			unread = int(count) if count else 0
-			
-			# Restore tab if not closed OR has unread messages waiting
-			if other_id not in closed or unread > 0:
-				result[other_id] = {
-					"name": conversations[other_id],
-					"unread": unread
-				}
-		
-		return result
-
-	@database_sync_to_async
-	def _get_conversations_from_db(self, user_id):
-		from chat.models import Message
-		from django.db.models import Q
-		# Find all users this person has exchanged DMs with,
-		# either as sender or recipient
-		messages = Message.objects.filter(
-			Q(sender_id=user_id) | Q(recipient_id=user_id)
-		).values('sender_id', 'sender__username', 'recipient_id', 'recipient__username').distinct()
-		
-		conversations = {}
-		for msg in messages:
-			if str(msg['sender_id']) != user_id:
-				conversations[str(msg['sender_id'])] = msg['sender__username']
-			if str(msg['recipient_id']) != user_id:
-				conversations[str(msg['recipient_id'])] = msg['recipient__username']
-		
-		return conversations

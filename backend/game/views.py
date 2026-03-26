@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import GameSession
 import logging
+
 logger = logging.getLogger(__name__)
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import User
@@ -51,9 +52,8 @@ def health(request):
 @require_http_methods(["POST"])
 def create_game(request):
     game = GameSession.create_game()
-    game.isTournamentGame = False
     # Use logging so output is captured by gunicorn/daphne/docker logs
-    logger.info(f"Created game with ID: {game.id}")
+    logger.warning(f"Created game with ID: {game.id}")
     return JsonResponse({
         'gameId': game.id,
         'status': 'waiting',
@@ -85,12 +85,12 @@ def list_games(request):
             {
                 'id': g.id,
                 'status': g.status,
-                'playerCount': len(g.clients),
-                'isTournamentGame': g.isTournamentGame
+                'playerCount': len(g.clients)
             }
             for g in games
         ]
     })
+
 
 @csrf_exempt
 @require_http_methods(["POST"])

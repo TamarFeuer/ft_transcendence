@@ -2,7 +2,7 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation } from './chat.js';
+import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory } from './chat.js';
 
 export function initChatUI() {
 
@@ -37,22 +37,15 @@ export function initChatUI() {
 		if (activeTab) activeTab.classList.add("active");
 
 		// Update channel title
-		const channelTitle = document.getElementById("channelTitle");
 		if (channelId === "global") {
 			channelTitle.textContent = "# Global Chat";
 		} else {
 			const name = onlineUsers[channelId];
-			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
-			markRead(channelId);
-		}
-
-		// If this is a DM with no history loaded yet, fetch it now
-		if (channelId !== "global" && (!messageHistory[channelId] || messageHistory[channelId].length === 0)) {
-			fetchDMHistory(channelId);
+			channelTitle.textContent =  name ? `@ ${name}` : "@ Direct Message";
 		}
 
 		renderMessages(channelId);
-		document.getElementById("chatInput").focus();
+		chatInput.focus();
 	}
 
 	// Opens a DM channel tab.
@@ -103,8 +96,8 @@ export function initChatUI() {
 		// If we were viewing this channel, fall back to global
 		if (activeChannel === userId) switchChannel("global");
 
-		closeConversation(userId);
-		// Keep message history in memory in case conversation reopens
+		// Message history is kept in case the user reopens the DM
+		// To clear it instead: delete messageHistory[userId];
 	}
 
 	// ── Message management ────────────────────────────────────────────────────
@@ -240,23 +233,6 @@ export function initChatUI() {
 			message: msg.message
 		})), ...messageHistory[channelId]];
 		if (channelId === activeChannel) renderMessages(channelId);
-	});
-	
-	// Restore DM tabs from previous conversations on page load
-	window.addEventListener("conversationsReceived", (e) => {
-		const { conversations } = e.detail;
-		Object.entries(conversations).forEach(([userId, data]) => {
-			openDMChannel(userId, data.name, false, false);
-			if (data.unread > 0) {
-				const tab = document.querySelector(`[data-channel="${userId}"]`);
-				if (tab) {
-					const badge = document.createElement("span");
-					badge.className = "unread-badge";
-					badge.textContent = data.unread;
-					tab.appendChild(badge);
-				}
-			}
-		});
 	});
 	
 	// ── Chat open/close ───────────────────────────────────────────────────────

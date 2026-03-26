@@ -1,69 +1,10 @@
 import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
 from .models import GameSession
-from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Helper functions for database operations (synchronous)
-def update_game_to_ready(game_id):
-    """Update tournament game status to ready"""
-    from tournament.models import TournamentGame
-    try:
-        tournament_game = TournamentGame.objects.get(game_id=game_id)
-        tournament_game.status = 'ready'
-        tournament_game.save()
-        logger.info(f"Tournament game {game_id} status updated to ready")
-        return True
-    except TournamentGame.DoesNotExist:
-        logger.debug(f"No tournament game found for game_id {game_id}")
-        return False
-
-def update_game_to_ongoing(game_id):
-    """Update tournament game status to ongoing"""
-    from tournament.models import TournamentGame
-    try:
-        tournament_game = TournamentGame.objects.get(game_id=game_id)
-        tournament_game.status = 'ongoing'
-        tournament_game.started_at = timezone.now()
-        tournament_game.save()
-        logger.info(f"Tournament game {game_id} status updated to ongoing")
-        return True
-    except TournamentGame.DoesNotExist:
-        logger.debug(f"No tournament game found for game_id {game_id}")
-        return False
-
-def reset_game_to_ready(game_id):
-    """Reset tournament game status to ready after all players disconnect"""
-    from tournament.models import TournamentGame
-    try:
-        tournament_game = TournamentGame.objects.get(game_id=game_id)
-        tournament_game.status = 'ready'
-        tournament_game.save()
-        logger.info(f"Tournament game {game_id} reset to ready after all players disconnected")
-        return True
-    except TournamentGame.DoesNotExist:
-        logger.debug(f"No tournament game found for game_id {game_id}")
-        return False
-
-def update_game_completed(game_id, winner_id, winner_name):
-    """Update tournament game with winner and completion status"""
-    from tournament.models import TournamentGame
-    try:
-        tournament_game = TournamentGame.objects.get(game_id=game_id)
-        tournament_game.status = 'completed'
-        tournament_game.completed_at = timezone.now()
-        if winner_id:
-            tournament_game.winner_id = winner_id
-        tournament_game.save()
-        logger.info(f"Tournament game {game_id} completed. Winner: {winner_name}")
-        return True
-    except TournamentGame.DoesNotExist:
-        logger.debug(f"No tournament game found for game_id {game_id}")
-        return False
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -77,33 +18,21 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.close(code=4004)
             return
 
-        # Check cookies from headers
-        headers = dict(self.scope.get('headers', []))
-        cookies = self.scope.get('cookies', {})
-        
-        logger.debug(f"Cookies: {cookies}")
-        logger.debug(f"Headers: {headers}")
-        logger.debug(f"Authorization: {headers.get(b'authorization')}")
-
         # Check for duplicate connections
-        logger.debug(f"Scope: {self.scope}")
-        logger.debug(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
-        logger.debug(f"Current players: {self.game.get_players()}")
 
+        logger.warning(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
+        logger.warning(f"Current players: {self.game.get_players()}")
+
+        # Check for duplicate connections - reject if user is ALREADY in the game
         players = self.game.get_players()
         if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
             logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
-            self.game.status = 'ready'
-            # Update tournament game status in database
-            await sync_to_async(update_game_to_ready)(self.game_id)
             await self.close(code=4005)
             return
-
-        logger.debug(f"user obj={self.scope.get('user')}, id={getattr(self.scope.get('user'), 'id', None)}, type={type(self.scope.get('user'))}")
+        
         # Add player to game
-        # self.role = self.game.add_player(self.scope['user'], self.scope['id'])
-        self.role = self.game.add_player(self.scope['user'], getattr(self.scope.get('user'), 'id', None))
-        logger.debug(f"Assigned role: {self.role} to: {self.scope['user']}")
+        self.role = self.game.add_player(self.scope['user'])
+        logger.warning(f"Assigned role: {self.role} to: {self.scope['user']}")
         # Join game group
         await self.channel_layer.group_add(
             self.game_group_name,
@@ -112,102 +41,43 @@ class GameConsumer(AsyncWebsocketConsumer):
         
         # Accept WebSocket connection with subprotocol if provided
         headers = dict(self.scope.get('headers', []))
-        
         subprotocol = headers.get(b'sec-websocket-protocol')
         if subprotocol:
             # Echo back the first subprotocol (JWT token)
             protocol_str = subprotocol.decode().split(',')[0].strip()
-            logger.debug(f"protocolstr = {protocol_str}")
             await self.accept(subprotocol=protocol_str)
         else:
             await self.accept()
     
-        logger.debug(f"Send assign: {self.role} to: {self.scope['user']}")
+        logger.warning(f"Send assign: {self.role} to: {self.scope['user']}")
         # Send role assignment
-        user_id = None
-        try:
-            user_id = self.scope['user'].id
-        except Exception:
-            user_id = None
-
         await self.send(text_data=json.dumps({
             'type': 'assign',
-            'role': self.role,
-            'user_id': user_id
+            'role': self.role
         }))
-        logger.debug(f"Start game?: {self.game.can_start()}")
+        logger.warning(f"Start game?: {self.game.can_start()}")
 
         # Start game if both players connected
         if self.game.can_start():
             self.game.start_game()
-            # Update tournament game status to ongoing
-            await sync_to_async(update_game_to_ongoing)(self.game_id)
-            # Refresh players after start
-            players = self.game.get_players()
-            p1 = players.get('left')
-            p2 = players.get('right')
             await self.channel_layer.group_send(
                 self.game_group_name,
-                {
-                    'type': 'game_start',
-                    'P1': getattr(p1, 'username', 'Player 1'),
-                    'P2': getattr(p2, 'username', 'Player 2'),
-                    'p1_id': getattr(p1, 'id', None),
-                    'p2_id': getattr(p2, 'id', None)
-                }
+                {'type': 'game_start'}
             )
             # Start game loop
             asyncio.create_task(self.game_loop())
 
     async def disconnect(self, close_code):
-        logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
+        logger.warning(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         if hasattr(self, 'game') and self.game:
-            players_before = self.game.get_players()
-            departing_user = self.scope.get('user')
-            departing_role = None
-            if players_before.get('left') == departing_user:
-                departing_role = 'left'
-            elif players_before.get('right') == departing_user:
-                departing_role = 'right'
-
-            status_before = self.game.status
-            self.game.remove_player(self.scope['user'])
-
-            # If a participant disconnects during an active game, finish the game
-            # and award win to the remaining player to avoid freeze on opponent side.
-            if departing_role in ('left', 'right') and status_before == 'active':
-                players_after = self.game.get_players()
-                winner_user = players_after.get('right') if departing_role == 'left' else players_after.get('left')
-                winner_id = getattr(winner_user, 'id', None)
-                winner_name = getattr(winner_user, 'username', 'Player disconnected')
-
-                self.game.status = 'completed'
-                await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
-
+            # self.game.remove_player(self.scope['user'])
+            
+            if self.game.status == 'finished':
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
                         'type': 'game_over',
-                        'winner': winner_name,
-                        'winner_id': winner_id
-                    }
-                )
-            
-            # If all players are gone, reset game to waiting state
-            players = self.game.get_players()
-            if players['left'] is None and players['right'] is None and self.game.status != "completed":
-                logger.info(f"All players disconnected from game {self.game_id}, resetting to waiting state")
-                self.game.status = 'waiting'
-                # Update tournament game status in database
-                await sync_to_async(reset_game_to_ready)(self.game_id)
-            
-            if self.game.status == 'completed' and status_before != 'active':
-                await self.channel_layer.group_send(
-                    self.game_group_name,
-                    {
-                        'type': 'game_over',
-                        'winner': 'Player disconnected',
-                        'winner_id': None
+                        'winner': 'Player disconnected'
                     }
                 )
         
@@ -230,7 +100,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """Main game loop running at 60 FPS"""
         while self.game and self.game.status == 'active':
             result = self.game.tick()
-            logger.debug(f"Game tick result: {result}")
+            
             if result:
                 await self.channel_layer.group_send(
                     self.game_group_name,
@@ -239,31 +109,13 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'state': result
                     }
                 )
-                players = self.game.get_players()
-                winner_id = None
-                winner_name = None
-
-                if result.get('winner') == 'left':
-                    winner_user = players['left']
-                    winner_id = getattr(winner_user, 'id', None)
-                    winner_name = getattr(winner_user, 'username', 'Player 1')
-                elif result.get('winner') == 'right':
-                    winner_user = players['right']
-                    winner_id = getattr(winner_user, 'id', None)
-                    winner_name = getattr(winner_user, 'username', 'Player 2')
                 
                 if result.get('winner'):
-                    # Update tournament game with winner and completion status
-                    logger.info("FINISH")
-                    self.game.status = "completed"
-                    await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
-                    
                     await self.channel_layer.group_send(
                         self.game_group_name,
                         {
                             'type': 'game_over',
-                            'winner': winner_name,
-                            'winner_id': winner_id
+                            'winner': result['winner']
                         }
                     )
                     break
@@ -273,11 +125,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def game_start(self, event):
         """Handle game start broadcast"""
         await self.send(text_data=json.dumps({
-            'type': 'gameStart',
-            'P1': event.get('P1'),
-            'P2': event.get('P2'),
-            'p1_id': event.get('p1_id'),
-            'p2_id': event.get('p2_id')
+            'type': 'gameStart'
         }))
     
     async def game_state(self, event):
@@ -289,9 +137,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     async def game_over(self, event):
         """Handle game over broadcast"""
-        logger.info(f"Game over event received: {event}")
         await self.send(text_data=json.dumps({
             'type': 'gameOver',
-            'winner': event['winner'],
-            'winner_id': event['winner_id']
+            'winner': event['winner']
         }))

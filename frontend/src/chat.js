@@ -25,7 +25,7 @@ export function initChat() {
 	chatSocket.onopen = () => {
 		console.log("Chat WebSocket connected");
 	}
-	
+		
 	chatSocket.onclose = () => {
 		console.log("Chat WebSocket disconnected");
 		// TODO: implement reconnect with exponential backoff if needed
@@ -49,8 +49,6 @@ export function initChat() {
 					window.dispatchEvent(new CustomEvent("userIdentified", {
 						detail: { userId: verifiedUserId }
 					}));
-					// Fetch previous DM conversations to restore tabs
-					chatSocket.send(JSON.stringify({ type: "get_conversations" }));
 					break;
 
 			// Incoming chat message — either global or private DM
@@ -105,15 +103,8 @@ export function initChat() {
 					}
 				}));
 				break;
-				
-			case "conversations":
-				console.log("conversations received:", data.conversations);
-				window.dispatchEvent(new CustomEvent("conversationsReceived", {
-					detail: { conversations: data.conversations }
-				}));
-				break;
 
-			// Another user started typing — show indicator (TODO in UI)
+			/// Another user started typing — show indicator (TODO in UI)
 			case "typing":
 				console.log(`${data.name || data.user} is typing...`);
 				// TODO: dispatch "typingStarted" event and show indicator in UI
@@ -234,22 +225,6 @@ export function fetchDMHistory(targetId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
 		type: "fetch_history",
-		target: targetId
-	}));
-}
-
-export function markRead(targetId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "mark_read",
-		target: targetId
-	}));
-}
-
-export function closeConversation(targetId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "close_conversation",
 		target: targetId
 	}));
 }

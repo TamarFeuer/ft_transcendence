@@ -1,5 +1,4 @@
 import os
-import logging
 from pathlib import Path
 from dotenv import load_dotenv
 # from corsheaders.defaults import default_headers
@@ -11,36 +10,15 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-# Make cookies accessible to JavaScript
-SESSION_COOKIE_HTTPONLY = False
-CSRF_COOKIE_HTTPONLY = False
-
-# Allow cookies across ports on localhost
-# SESSION_COOKIE_SAMESITE = 'Lax'
-# CSRF_COOKIE_SAMESITE = 'Lax'
-
-# For cross-port localhost cookie sharing
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = False  # Allow HTTP (localhost)
-
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = False
-
-# For cross-port on localhost
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://localhost:3000']
-
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'rest_framework',
     'channels',
     'game',
     'chat',
-    'tournament',
-    'users',
     'friends',
     # 'corsheaders',
 ]
@@ -93,58 +71,7 @@ DATABASES = {
 
 STATIC_URL = 'static/'
 
-# Colored logging configuration
-class ColoredFormatter(logging.Formatter):
-    """Custom formatter with ANSI color codes"""
-    COLORS = {
-        'DEBUG': '\033[36m',      # Cyan
-        'INFO': '\033[32m',       # Green
-        'WARNING': '\033[33m',    # Yellow
-        'ERROR': '\033[31m',      # Red
-        'CRITICAL': '\033[35m',   # Magenta
-    }
-    RESET = '\033[0m'
-    
-    def format(self, record):
-        log_color = self.COLORS.get(record.levelname, self.RESET)
-        record.levelname = f"{log_color}{record.levelname}{self.RESET}"
-        return super().format(record)
 
-# Configure logging with colors
-logging.basicConfig(
-    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.DEBUG
-)
-
-# Apply colored formatter to all handlers
-for handler in logging.root.handlers:
-    handler.setFormatter(ColoredFormatter(
-        fmt='%(asctime)s %(levelname)s %(name)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    ))
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'colored': {
-            '()': ColoredFormatter,
-            'format': '%(asctime)s %(levelname)s %(name)s: %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S'
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'colored',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'DEBUG',
-    },
-}
 
 # # if using cookies for auth
 # CORS_ALLOW_CREDENTIALS = True
