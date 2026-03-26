@@ -48,6 +48,8 @@ export function setupRoutes() {
   }
 
 	routes['/pong'] = async () => {
+		if(await redirectIfNotLoggedIn())
+			return;
 		await loadTemplate('pong');
 		document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
 		document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
@@ -56,6 +58,8 @@ export function setupRoutes() {
 	};
 
 	routes['/local'] = async () => {
+		if(await redirectIfNotLoggedIn())
+			return;
 		await loadTemplate('local');
 		const canvas = document.getElementById("renderCanvas");
 		const engine = new Engine(canvas, true);
@@ -67,6 +71,8 @@ export function setupRoutes() {
 	};
 
 	routes['/ai'] = async () => {
+		if(await redirectIfNotLoggedIn())
+			return;
 		await loadTemplate('ai');
 		const canvas = document.getElementById("renderCanvas");
 		const engine = new Engine(canvas, true);
@@ -78,11 +84,8 @@ export function setupRoutes() {
 	};
 
 	routes['/tournament'] = async () => {
-		if (await checkAuthRequired() == true)
-		{
-			alert('You need to be logged in to access online games.');
+		if(await redirectIfNotLoggedIn())
 			return;
-		}
 		await loadTemplate('tournament');
 		document.getElementById('backBtn')?.addEventListener('click', () => navigate('/'));
 		document.getElementById('startTournamentBtn')?.addEventListener('click', () => {
@@ -94,11 +97,8 @@ export function setupRoutes() {
 	};
 
 	routes['/online'] = async () => {
-		if (await checkAuthRequired() == true)
-		{
-			alert('You need to be logged in to access online games.');
+		if(await redirectIfNotLoggedIn())
 			return;
-		}
 
 		await loadTemplate('online');
 
@@ -140,6 +140,8 @@ export function setupRoutes() {
 	};
 	
 	routes['/profile'] = async() => {
+		if(await redirectIfNotLoggedIn())
+			return;
 		await loadTemplate('profile');
 		console.log('PROFILE ROUTE RUNNING, verifiedUserId:', verifiedUserId);
 	
