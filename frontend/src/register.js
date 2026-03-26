@@ -1,5 +1,6 @@
 import { registerUser } from "./usermanagement"
 import { navigate } from "./main"
+import { showError } from "./utils";
 
 export function registerPage(){
     const form = document.getElementById("register-form");
@@ -17,26 +18,26 @@ export function registerPage(){
 
         const validUser = /^[a-zA-Z0-9_]+$/;
         if(!validUser.test(username)){
-            alert("invalid username!");
+            showError("Username may only contain letters, numbers, and underscores.");
             return;
         }
 
         if(username.length < 3 || username.length > 20)
         {
-            alert("Username must be between 3 and 20 characters.");
+            showError("Username must be between 3 and 20 characters.");
             return;
         }
 
         if(password.length < 3 || password.length > 72)
         {
-            alert("Password must be between 3 and 72 characters.");
+            showError("Password must be between 3 and 72 characters.");
             return;
         }
 
         const result = await registerUser(username, password);
 
         if (result.error) {
-            alert(result.error);
+            showError(result.error);
             return;
         }
         if(result.username)

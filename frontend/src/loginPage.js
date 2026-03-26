@@ -1,5 +1,6 @@
 import { loginUser } from "./usermanagement";
-import { navigate } from "./main.js"
+import { navigate } from "./main.js" 
+import { showError } from "./utils.js";
 
 export function initLoginPage(){
     const form = document.getElementById("login-form");
@@ -16,6 +17,8 @@ export function initLoginPage(){
         const result = await loginUser(username, password);
         if(result.username)
             window.location.href = "/";
+        else
+            showError("Invalid username or password, please try again.");
     })
     const createAccountBtn = document.getElementById("login-create-account");
     
