@@ -334,7 +334,10 @@ class StartTournamentGameView(APIView):
         game.game_id = game_session.id
         # game.status = 'ongoing'
         game.status = '1/2 players ready'
-        game.started_at = timezone.now()
+        if game.started_at == None:
+            game.started_at = timezone.now()
+        game_session.created_at = game.started_at
+        logger.debug(f"game_session.created_at={game_session.created_at}")
         game.save()
         
         return Response({

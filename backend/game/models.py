@@ -1,5 +1,6 @@
 import uuid
 import time
+from datetime import datetime
 from threading import Lock
 from django.db import models
 from django.conf import settings
@@ -10,7 +11,7 @@ class GameSession:
     _games = {}
     _lock = Lock()
     
-    JOIN_TIMEOUT = 60  # Maximum time in seconds to wait for both players to join
+    JOIN_TIMEOUT = 10  # Maximum time in seconds to wait for both players to join
     
     def __init__(self, game_id=None):
         self.id = game_id or str(uuid.uuid4())
@@ -101,9 +102,14 @@ class GameSession:
     
     def get_remaining_time(self):
         """Get remaining time in seconds before timeout"""
+        # logger.debug(f"self.created_att={self.created_at}")
+
         if self.status != 'waiting':
             return 0
-        elapsed = time.time() - self.created_at
+
+        # Support both numeric timestamps and datetime values.
+        created_at_ts = self.created_at.timestamp() if isinstance(self.created_at, datetime) else float(self.created_at)
+        elapsed = time.time() - created_at_ts
         remaining = self.JOIN_TIMEOUT - elapsed
         return max(0, int(remaining))
     

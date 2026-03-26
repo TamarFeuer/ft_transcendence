@@ -273,10 +273,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         console.log("data.winner.id:", data.winner_id);
         console.log("window.CURRENT_USER?.user_id:", String(window.CURRENT_USER?.user_id));
 
-        const didCurrentUserWin = Boolean(currentUserId) && String(data.winner_id) === currentUserId;
-        if (IsTournament && didCurrentUserWin)
-          await updateTournamentGameResult(gameId, data.winner_id);
-        // Dispose engine and scene
         if (window.gameObjects) {
           scene.dispose();
           engine.dispose();

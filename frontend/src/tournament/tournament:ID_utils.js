@@ -150,7 +150,7 @@ async function loadAllGamesStatus() {
             gameDiv.innerHTML = `
             <div class="text-white">
                 <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-green-400 text-sm">🏆 Winner: ${game.winner_username}</div>
+                <div class="text-green-400 text-sm">🏆 Winner: ${game.winner_username ? game.winner_username : "no winner"}</div>
                 <div class="text-gray-400 text-sm">Round ${game.round}</div>
             </div>
             `;
