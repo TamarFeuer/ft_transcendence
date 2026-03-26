@@ -105,6 +105,11 @@ def register(request):
             return JsonResponse({'error': 'Username can only contain letters, digits and _'}, status=400)
         if UserModel.objects.filter(username=username).exists():
             return JsonResponse({'error': 'username taken'}, status=400)
+        if len(username) < 3 or len(username) > 20:
+            return JsonResponse({'error': 'Username must be between 3 and 20 characters.'})
+        if len(password) < 3 or len(password) > 72:
+            return JsonResponse({'error': 'Password must be between 3 and 72 characters.'})
+        
         user = UserModel.objects.create_user(username=username, password=password)
         access_token, refresh_token = generate_tokens(user)
         
