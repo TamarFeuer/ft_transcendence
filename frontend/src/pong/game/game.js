@@ -126,26 +126,8 @@ export function joinOnlineGame(gameId, IsTournament) {
           <div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
         </div>
       </div>
-      <div id="waitingModal" class="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 pointer-events-auto">
-        <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
-          <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
-          <p class="text-gray-300 mb-6">Game will start soon</p>
-          <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
-            Leave Game
-          </button>
-        </div>
-      </div>
     </div>
     `;
-
-    // Add leave button handler
-    const leaveBtn = document.getElementById("leaveWaitingBtn");
-    if (leaveBtn) {
-      leaveBtn.addEventListener("click", () => {
-        closeGameConnection();
-        navigate(IsTournament ? `/tournament/${window.currentTournamentId}` : '/online');
-      });
-    }
 
     // window.gameObjects = initGameScene(scene, canvas, 2);
 
@@ -161,12 +143,6 @@ export function joinOnlineGame(gameId, IsTournament) {
       console.log("WS message", data);
 
       if (data.type === "gameStart") {
-        // Remove waiting modal if it exists
-        const waitingModal = document.getElementById("waitingModal");
-        if (waitingModal) {
-          waitingModal.remove();
-        }
-
         const appRoot = document.getElementById("app-root");
 
         appRoot.innerHTML = `
