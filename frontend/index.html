@@ -5,29 +5,24 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-	<link rel="stylesheet" href="styles.css"> 
 	<title>Pong</title>
 </head>
 
 <body>
 
-	<!-- Fullscreen game container -->
-	<div class="container">
-		<!-- Babylon canvas -->
-		<canvas id="renderCanvas" class="absolute inset-0 w-full h-full"></canvas>
+	<canvas id="renderCanvas" class="absolute inset-0 w-full h-full"></canvas>
 
-		<!-- Game root for dynamic content -->
-		<div id="app-root"></div>
+	<!-- Game root for dynamic content -->
+	<div id="app-root"></div>
 
-		<!-- Language selector -->
-		<div id="languageSelectorBtn" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
-			<label data-i18n="LABEL_LANGUAGE">Language:</label>
-			<select id="languageSelect">
-				<option value="en">English</option>
-				<option value="nl">Nederlands</option>
-				<option value="tr">Türkçe</option>
-			</select>
-		</div>    
+	<!-- Language selector -->
+	<div id="languageSelectorBtn" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
+		<label data-i18n="LABEL_LANGUAGE">Language:</label>
+		<select id="languageSelect">
+			<option value="en">English</option>
+			<option value="nl">Nederlands</option>
+			<option value="tr">Türkçe</option>
+		</select>
 
 		<!-- Launcher button -->
 		<button id="openChatBtn" style="display: none;" class="fixed bottom-16 right-16 px-6 py-6 
