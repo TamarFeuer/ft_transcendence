@@ -6,4 +6,3 @@ export function showError(message){
         errorPopup.classList.add("hidden")
     }, 4000);
 }
-//hey
