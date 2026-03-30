@@ -8,6 +8,17 @@ import * as tournamentAPI from './tournament.js';
 import { updatePageTranslations } from './i18n';
 import { initChessGame } from './chess.js';
 import { verifiedUserId } from './chat.js';
+import { initLoginPage } from './loginPage.js';
+import { registerPage } from './register.js';
+
+export async function redirectIfNotLoggedIn() {
+  const noAuth = await checkAuthRequired();
+  if (noAuth) {
+    navigate('/login');
+    return true;
+  }
+  return false;
+}
 
 let tournamentAutoRefreshInterval = null;
 
@@ -74,16 +85,29 @@ async function loadTemplate(name) {
 }
 
 export function setupRoutes() {
-  routes['/'] = async () => {
+    routes['/'] = async () =>{
     stopTournamentAutoRefresh();
-    await loadTemplate('home');
-    document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
-    document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
-    document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
-    
-  };
+		if(await redirectIfNotLoggedIn())
+			return;
+		await loadTemplate('home');
+		document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
+		document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
+		document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
+	}
 
+  routes['/login'] = async () => {
+		await loadTemplate('login');
+    document.getElementById('renderCanvas').style.display = 'none'; //
+		initLoginPage();
+	};
+  routes['/register'] = async () =>{
+    await loadTemplate('register');
+    document.getElementById('renderCanvas').style.display = 'none'; //
+    registerPage();
+  }
   routes['/chess'] = async () => {
+    if(await redirectIfNotLoggedIn())
+			return;
     await loadTemplate('chess');
     document.getElementById('renderCanvas').style.display = 'none';
     initChessGame();
@@ -92,17 +116,19 @@ export function setupRoutes() {
 
   routes['/pong'] = async () => {
     stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+			return;
     await loadTemplate('pong');
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
     document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
     document.getElementById('onlineBtn')?.addEventListener('click', () => navigate('/online'));
     document.getElementById('tournamentBtn')?.addEventListener('click', () => navigate('/tournament'));
-
-
   };
 
   routes['/local'] = async () => {
     stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+			return;
     await loadTemplate('local');
     const canvas = document.getElementById("renderCanvas");
     const engine = new Engine(canvas, true);
@@ -115,6 +141,8 @@ export function setupRoutes() {
 
   routes['/ai'] = async () => {
     stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+			return;
     await loadTemplate('ai');
     const canvas = document.getElementById("renderCanvas");
     const engine = new Engine(canvas, true);
@@ -127,6 +155,8 @@ export function setupRoutes() {
 
   routes['/tournament'] = async () => {
     stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+			return;
     if (await checkAuthRequired() == true) {
       showMessage('You need to be logged in to access tournaments.', 'error');
       navigate('/');
@@ -435,12 +465,8 @@ export function setupRoutes() {
 
   routes['/online'] = async () => {
     stopTournamentAutoRefresh();
-    if (await checkAuthRequired() == true)
-      {
-      showMessage('You need to be logged in to access online games.', 'error');
-      return;
-    }
-
+    if(await redirectIfNotLoggedIn())
+			return;
     // If we landed here with a gameId query param (e.g. from a tournament start), join the game right away
     const params = new URLSearchParams(window.location.search);
     const gameId = params.get('gameId');
@@ -501,6 +527,8 @@ export function setupRoutes() {
 
   routes['/profile'] = async () => {
     stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+			return;
     await loadTemplate('profile');
 
     if (verifiedUserId) {
@@ -514,6 +542,8 @@ export function setupRoutes() {
 
   routes['/tournament/:tournamentId'] = async (tournamentId) => {
     stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+			return;
     if (await checkAuthRequired() == true) {
       showMessage('You need to be logged in to access tournaments.', 'error');
       navigate('/tournament');
