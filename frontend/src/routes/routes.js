@@ -25,6 +25,16 @@ import { initChessGame } from '../chess/chess.js';
 //   document.body.innerHTML = html;
 // }
 
+export async function redirectIfNotLoggedIn() {
+  const noAuth = await checkAuthRequired();
+  if (noAuth) {
+    navigate('/login');
+    return true;
+  }
+  return false;
+}
+
+
 async function loadTemplate(name) {
 	const url = `/routes/${name}.html`;
 	const res = await fetch(url);

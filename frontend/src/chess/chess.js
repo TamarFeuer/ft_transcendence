@@ -9,14 +9,30 @@ const pieces = {
 
 function checkGameEnd(game){
 	if (game.isCheckmate()) {
-		// game over — the player who just moved won
+
 		const winner = game.turn() === 'w' ? 'Black' : 'White'; // turn has already switched
 		alert(`${winner} wins by checkmate!`);
-		// optionally navigate away or reset
 	}
 	if (game.isDraw()) {
 		alert('Draw!');
 	}
+}
+
+function handlePromotion(game, boardEl, fromSquare, toSquare){
+	const picker = document.getElementById('promotion-picker');
+	picker.classList.remove('hidden');
+
+	picker.addEventListener('click', (e) => {
+		const piece = e.target.dataset.piece;
+		if (!piece)
+			return;
+
+		game.move({from: fromSquare, to: toSquare, promotion: piece});
+		picker.classList.add('hidden');
+		selectedSquare = null;
+		checkGameEnd(game);
+		renderBoard(game, boardEl, selectedSquare);
+	}, {once: true});
 }
 
 function handleSquareClick(game, square, boardEl){
@@ -39,7 +55,15 @@ function handleSquareClick(game, square, boardEl){
 			renderBoard(game, boardEl, selectedSquare);
 		}
 		else{
-			// console.log("square we wanna go to ", square.dataset.notation);
+			//check if move results to a promotion
+			const move = game.moves({square: selectedSquare, verbose: true}).find(m => m.to === square.dataset.notation);
+
+			//if move is promotion show promotion table
+			if (move && move.flags.includes('p')){
+				handlePromotion(game, boardEl, selectedSquare, square.dataset.notation);
+				return;
+			}
+
 			//move the piece to desired square
 			const resultedMove = game.move({from: selectedSquare, to: square.dataset.notation});
 			if (!resultedMove){

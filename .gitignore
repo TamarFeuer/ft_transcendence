@@ -28,3 +28,6 @@ __pycache__/
 
 # Venv
 venv/
+
+.claude
+CLAUDE.md
