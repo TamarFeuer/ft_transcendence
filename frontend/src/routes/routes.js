@@ -1,21 +1,22 @@
 import { routes } from '../main.js';
-import { initAIGame } from '../ai/ai.js';
+import { initAIGame } from '../pong/ai/ai.js';
 import { handleRoute, navigate } from "./route_helpers.js";
-import { joinOnlineGame } from '../game/game.js';
-import { initOfflineGame } from '../game/local_game.js';
-import { startLocalTournament } from '../tournament/local_tournament.js';
+import { joinOnlineGame } from '../pong/game/game.js';
+import { initOfflineGame } from '../pong/game/local_game.js';
+import { startLocalTournament } from '../pong/tournament/local_tournament.js';
 import { renderFriendsPanel } from '../users_friends/friends.js';
 import { Engine, Scene } from "@babylonjs/core";
-import { initGameScene } from "../game/game.js";
+import { initGameScene } from "../pong/game/game.js";
 import { checkAuthRequired } from '../users_friends/usermanagement.js';
-import * as tournamentAPI from '../tournament/tournament_api.js';
 import { updatePageTranslations } from '../i18n/index.js';
 import { verifiedUserId } from '../chat/chat.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
   loadUpcomingTournaments
- } from '../tournament/tournament_lobby_utils.js';
-import { loadTournamentGames } from '../tournament/tournament:ID_utils.js';
-import { showMessage } from "../utils/utils.js"
+ } from '../pong/tournament/tournament_lobby_utils.js';
+import { loadTournamentGames } from '../pong/tournament/tournament:ID_utils.js';
+import { showMessage } from "../utils/utils.js";
+import { initChessGame } from '../chess/chess.js';
+
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -23,6 +24,16 @@ import { showMessage } from "../utils/utils.js"
 //   const html = await res.text();
 //   document.body.innerHTML = html;
 // }
+
+export async function redirectIfNotLoggedIn() {
+  const noAuth = await checkAuthRequired();
+  if (noAuth) {
+    navigate('/login');
+    return true;
+  }
+  return false;
+}
+
 
 async function loadTemplate(name) {
 	const url = `/routes/${name}.html`;
@@ -46,6 +57,11 @@ export function setupRoutes() {
     
   };
 
+  routes['/chess'] = async () => {
+    await loadTemplate('chess');
+    document.getElementById('renderCanvas').style.display = 'none';
+    initChessGame();
+  }
 
   routes['/pong'] = async () => {
     stopTournamentAutoRefresh();

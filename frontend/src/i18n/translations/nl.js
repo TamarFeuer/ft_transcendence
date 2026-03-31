@@ -1,5 +1,5 @@
 
-import { TranslationKey } from '../keys';
+import { TranslationKey } from '../keys.js';
 
 export const nl = {
   [TranslationKey.PAGE_TITLE]: 'Pong',

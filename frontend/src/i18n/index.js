@@ -1,7 +1,7 @@
-import { TranslationKey } from './keys';
-import { en } from './translations/en';
-import { nl } from './translations/nl';
-import { tr } from './translations/tr';
+import { TranslationKey } from './keys.js';
+import { en } from './translations/en.js';
+import { nl } from './translations/nl.js';
+import { tr } from './translations/tr.js';
 
 // Re-export TranslationKey for convenience
 export { TranslationKey } from './keys';
