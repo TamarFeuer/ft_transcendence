@@ -1,0 +1,107 @@
+import json
+import logging
+from channels.generic.websocket import AsyncWebsocketConsumer
+from .models import ChessSession
+
+logger = logging.getLogger(__name__)
+
+class ChessConsumer(AsyncWebsocketConsumer):
+	async def connect(self):
+		self.game_id = self.scope['url_route']['kwargs']['game_id']
+		self.game_group_name = f'chess_{self.game_id}'
+		self.color = None
+
+		# Check whether the game exists
+		self.game = ChessSession.get_game(self.game_id)
+		if not self.game:
+			await self.close(code=4004)
+			return
+		
+		# Check whether the game can fit more player/s
+		self.color = self.game.add_player(self.scope['user'])
+		if not self.color:
+			await self.close(code=4003)
+			return
+		
+		# Join the channel group
+		await self.channel_layer.group_add(self.game_group_name, self.channel_name)
+
+		# Accept connection, copied from Pong
+		headers     = dict(self.scope.get('headers', []))
+		subprotocol = headers.get(b'sec-websocket-protocol')
+		if subprotocol:
+			protocol_str = subprotocol.decode().split(',')[0].strip()
+			await self.accept(subprotocol=protocol_str)
+		else:
+			await self.accept()
+		
+		# Tell client what color they are
+		await self.send(text_data=json.dumps({
+			'type': 'assign',
+			'color': self.color
+		}))
+
+		# When both players are connected, start the game
+		if self.game.can_start():
+			self.game.start()
+			await self.channel_layer.group_send(self.game_group_name, {
+				'type': 'game_start',
+				'fen': self.game.board.fen(),
+				'white': getattr(self.game.players['white'], 'username', 'Player 1'),
+				'black': getattr(self.game.players['black'], 'username', 'Player 2'),
+			})
+	
+
+	async def disconnect(self, _close_code):
+		if self.color and hasattr(self, 'game') and self.game:
+			if self.game.status == 'active':
+				# opponent wins
+				winner = 'black' if self.color == 'white' else 'white'
+				self.game.status = 'finished'
+				await self.channel_layer.group_send(self.game_group_name, {
+					'type': 'game_over',
+					'winner': winner,
+					'result': 'abandonment'
+				})
+
+			# TODO: before deleting the game, save it into the DB !!
+			ChessSession.delete_game(self.game_id)
+
+		if hasattr(self, 'game_group_name'):
+			await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
+
+
+	async def receive(self, text_data):
+		data = json.loads(text_data)
+		if data.get('type') != 'move' or not self.game or self.game.status != 'active':
+			return
+		
+		current_turn = 'white' if self.game.board.turn else 'black'
+		if self.color != current_turn:
+			return 
+		
+		uci = data.get('from', '') + data.get('to', '') + data.get('promotion', '')
+		ok, fen, over = self.game.apply_move(uci)
+
+		# in case the move is illegal
+		if not ok:
+			await self.send(text_data=json.dumps({'type': 'illegal_move'}))
+			return
+		
+		# in case it is legal
+		await self.channel_layer.group_send(self.game_group_name, {
+			'type': 'game_state',
+			'fen': fen,
+			'turn': 'white' if self.game.board.turn else 'black'
+		})
+
+		# in case game is over
+		if over:
+			# TODO save result ot the DB
+			ChessSession.delete_game(self.game_id)
+			
+			await self.channel_layer.group_send(self.game_group_name, {
+				'type': 'game_over',
+				'winner': over['winner'],
+				'result': over['result']
+			})
