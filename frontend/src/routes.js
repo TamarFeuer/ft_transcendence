@@ -93,6 +93,7 @@ export function setupRoutes() {
 		document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
 		document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
 		document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
+    document.getElementById('profileBtn')?.addEventListener('click', () => navigate('/profile'));
 	}
 
   routes['/login'] = async () => {
