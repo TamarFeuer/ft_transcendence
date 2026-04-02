@@ -12,15 +12,12 @@ function clearOnNextClick(message){
 }
 
 export function sendFriendRequest(friendInput, status) {
-    const friendUsername = friendInput.value;
-    if (!friendUsername) return;
-  
     status.textContent = '';
   
     fetchWithRefreshAuth('/api/friends/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to_username: friendUsername })
+      body: JSON.stringify({ to_username: friendInput })
     })
       .then(response => response.json())
       .then(data => {

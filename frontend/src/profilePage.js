@@ -1,5 +1,6 @@
 import { navigate } from "./main";
 import { getCurrentUser, logoutUser } from "./usermanagement";
+import { sendFriendRequest } from "./friends";
 
 
 export async function initProfilePage(){
@@ -14,5 +15,21 @@ export async function initProfilePage(){
         await logoutUser();
         navigate("/login");
     })
-}
 
+    const addFriendBtn = document.getElementById("friend-add-btn");
+
+    addFriendBtn.addEventListener("click", () => {
+
+        const friendInput = document.getElementById("friend-input");
+        if (!friendInput)
+        {
+            console.log("friendInput not loaded");
+            return;
+        }
+        const friendInputStr = friendInput.value;
+        const status = document.getElementById("friend-status");
+    
+        sendFriendRequest(friendInputStr, status);
+    })
+
+}
