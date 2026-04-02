@@ -1,5 +1,4 @@
 import { routes, navigate, joinOnlineGame, startTournament, initOfflineGame, initAIGame } from './main.js';
-import { renderFriendsPanel } from './friends.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
 import bgImage from '../assets/background.jpg';
@@ -10,6 +9,7 @@ import { initChessGame } from './chess.js';
 import { verifiedUserId } from './chat.js';
 import { initLoginPage } from './loginPage.js';
 import { registerPage } from './register.js';
+import { initProfilePage } from './profilePage.js';
 
 export async function redirectIfNotLoggedIn() {
   const noAuth = await checkAuthRequired();
@@ -530,14 +530,14 @@ export function setupRoutes() {
     if(await redirectIfNotLoggedIn())
 			return;
     await loadTemplate('profile');
-
-    if (verifiedUserId) {
-      renderFriendsPanel('friends-management-container');
-    } else {
-      window.addEventListener('userIdentified', () => {
-        renderFriendsPanel('friends-management-container');
-      }, { once: true });
-    }
+    await initProfilePage();
+    // if (verifiedUserId) {
+    //   renderFriendsPanel('friends-management-container');
+    // } else {
+    //   window.addEventListener('userIdentified', () => {
+    //     renderFriendsPanel('friends-management-container');
+    //   }, { once: true });
+    // }
   };
 
   routes['/tournament/:tournamentId'] = async (tournamentId) => {
