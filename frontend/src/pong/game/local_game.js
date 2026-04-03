@@ -1,6 +1,8 @@
 import "../../styles.css";
 import { showMessage } from "../../utils/utils.js"
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
+import { currentEngine, disposeCurrentEngine, resizeListener } from "../../routes/routes.js";
+
 
 export function initOfflineGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {
@@ -194,6 +196,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             window.removeEventListener("pagehide", browserExitHandler);
             window.removeEventListener("popstate", browserExitHandler);
             scene.onBeforeRenderObservable.remove(renderObserver);
+            disposeCurrentEngine();
         };
 
         const endGame = (showWinnerMessage = false) => {

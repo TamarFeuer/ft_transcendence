@@ -21,10 +21,10 @@ import { registerPage } from "../users_friends/register.js"
 
 
 // Global engine management to prevent multiple render loops
-let currentEngine = null;
-let resizeListener = null;
+export let currentEngine = null;
+export let resizeListener = null;
 
-function disposeCurrentEngine() {
+export function disposeCurrentEngine() {
   if (currentEngine) {
     currentEngine.stopRenderLoop();
     if (resizeListener) {
@@ -102,7 +102,7 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    disposeCurrentEngine();
+    // disposeCurrentEngine();
     await loadTemplate('pong');
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
     document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
@@ -114,7 +114,7 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    disposeCurrentEngine();
+    // disposeCurrentEngine();
     await loadTemplate('local');
     const canvas = document.getElementById("renderCanvas");
     currentEngine = new Engine(canvas, true);
@@ -130,7 +130,7 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    disposeCurrentEngine();
+    // disposeCurrentEngine();
     await loadTemplate('ai');
     const canvas = document.getElementById("renderCanvas");
     currentEngine = new Engine(canvas, true);
@@ -193,7 +193,7 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    disposeCurrentEngine();
+    // disposeCurrentEngine();
     if (await checkAuthRequired() == true)
       {
       showMessage('You need to be logged in to access online games.', 'error');

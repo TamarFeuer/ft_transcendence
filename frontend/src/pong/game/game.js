@@ -15,7 +15,6 @@ import { Engine, Scene } from "@babylonjs/core";
 import { showMessage } from "../../utils/utils.js"
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
 
-
 // --- Game Variables ---
 let ws = null;
 let currentGameId = null;
