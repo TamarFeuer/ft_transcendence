@@ -81,7 +81,8 @@ export function initChatUI() {
 			<span class="close-tab" data-close="${userId}">  X</span>
 		`;
 
-		channelTabs.appendChild(tab);
+		const globalTab = channelTabs.querySelector('[data-channel="global"]');
+		channelTabs.insertBefore(tab, globalTab.nextSibling);
 		if(fetchHistory) fetchDMHistory(userId);
 
 		tab.addEventListener("click", (e) => {
