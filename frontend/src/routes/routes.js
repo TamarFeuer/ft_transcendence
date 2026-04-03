@@ -17,6 +17,22 @@ import { loadTournamentGames } from '../pong/tournament/tournament:ID_utils.js';
 import { showMessage } from "../utils/utils.js";
 import { initChessGame } from '../chess/chess.js';
 
+// Global engine management to prevent multiple render loops
+let currentEngine = null;
+let resizeListener = null;
+
+function disposeCurrentEngine() {
+  if (currentEngine) {
+    currentEngine.stopRenderLoop();
+    if (resizeListener) {
+      window.removeEventListener("resize", resizeListener);
+      resizeListener = null;
+    }
+    currentEngine.dispose();
+    currentEngine = null;
+  }
+}
+
 
 // async function loadTemplate(name) {
 //   const url = `/routes/${name}.html`;
@@ -65,6 +81,7 @@ export function setupRoutes() {
 
   routes['/pong'] = async () => {
     stopTournamentAutoRefresh();
+    disposeCurrentEngine();
     await loadTemplate('pong');
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
     document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
@@ -76,26 +93,30 @@ export function setupRoutes() {
 
   routes['/local'] = async () => {
     stopTournamentAutoRefresh();
+    disposeCurrentEngine();
     await loadTemplate('local');
     const canvas = document.getElementById("renderCanvas");
-    const engine = new Engine(canvas, true);
-    const scene = new Scene(engine);
+    currentEngine = new Engine(canvas, true);
+    const scene = new Scene(currentEngine);
     const gameObjects = initGameScene(scene, canvas, 2);
     initOfflineGame(scene, gameObjects, false);
-    engine.runRenderLoop(() => scene.render());
-    window.addEventListener("resize", () => engine.resize());
+    currentEngine.runRenderLoop(() => scene.render());
+    resizeListener = () => currentEngine.resize();
+    window.addEventListener("resize", resizeListener);
   };
 
   routes['/ai'] = async () => {
     stopTournamentAutoRefresh();
+    disposeCurrentEngine();
     await loadTemplate('ai');
     const canvas = document.getElementById("renderCanvas");
-    const engine = new Engine(canvas, true);
-    const scene = new Scene(engine);
+    currentEngine = new Engine(canvas, true);
+    const scene = new Scene(currentEngine);
     const gameObjects = initGameScene(scene, canvas, 2);
     initAIGame(scene, gameObjects, false);
-    engine.runRenderLoop(() => scene.render());
-    window.addEventListener("resize", () => engine.resize());
+    currentEngine.runRenderLoop(() => scene.render());
+    resizeListener = () => currentEngine.resize();
+    window.addEventListener("resize", resizeListener);
   };
 
   routes['/tournament'] = async () => {
@@ -150,6 +171,7 @@ export function setupRoutes() {
 
   routes['/online'] = async () => {
     stopTournamentAutoRefresh();
+    disposeCurrentEngine();
     if (await checkAuthRequired() == true)
       {
       showMessage('You need to be logged in to access online games.', 'error');

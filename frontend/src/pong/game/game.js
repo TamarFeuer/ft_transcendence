@@ -126,7 +126,6 @@ export function joinOnlineGame(gameId, IsTournament) {
           <div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
         </div>
       </div>
-<<<<<<< HEAD:frontend/src/game/game.js
       <div id="waitingModal" class="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 pointer-events-auto">
         <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
           <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
@@ -138,8 +137,6 @@ export function joinOnlineGame(gameId, IsTournament) {
           </button>
         </div>
       </div>
-=======
->>>>>>> rik/restructure_big_files:frontend/src/pong/game/game.js
     </div>
     `;
 
@@ -274,7 +271,7 @@ export function joinOnlineGame(gameId, IsTournament) {
         sessionStorage.removeItem('activeGameId');
         sessionStorage.removeItem('activeTournamentId');
         // Navigate back to tournament with tournament id
-              navigate(`/tournament/${window.currentTournamentId}`);
+        // navigate(`/tournament/${window.currentTournamentId}`);
       }
 
     } catch (e) {
@@ -296,11 +293,12 @@ export function joinOnlineGame(gameId, IsTournament) {
       sessionStorage.removeItem('activeGameId');
       sessionStorage.removeItem('activeTournamentId');
 
-      if (IsTournament) {
-        navigate(`/tournament/${window.currentTournamentId}`);
-      } else {
-        navigate('/online');
-      }
+    }
+    if (IsTournament) {
+      navigate(`/tournament/${window.currentTournamentId}`);
+    } else {
+      console.log("DIBADIBADIBADOEDOE\n");
+      navigate('/online');
     }
   };
 }

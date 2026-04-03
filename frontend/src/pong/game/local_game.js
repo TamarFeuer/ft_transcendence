@@ -42,7 +42,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         window.addEventListener("keydown", keyDownHandler);
         window.addEventListener("keyup", keyUpHandler);
         window.addEventListener("pointermove", pointerMoveHandler);
-
+                
         // Smoother keyboard controls with higher frequency and smaller steps
         const keyboardInterval = setInterval(() => {
             // Left paddle - W/S keys
@@ -179,21 +179,45 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
             // Check winner
             if (scoreP1int >= 10 || scoreP2int >= 10) {
-                // Cleanup
-                clearInterval(keyboardIntervalP1);
-                clearInterval(keyboardIntervalP2);
-                window.removeEventListener("keydown", keyDownHandler);
-                window.removeEventListener("keyup", keyUpHandler);
-                window.removeEventListener("pointermove", pointerMoveHandler);
-                scene.onBeforeRenderObservable.remove(renderObserver);
-
-                if (!tournament) {
-                    showMessage(scoreP1int >= 10 ? "Player 1 wins!" : "Player 2 wins!");
-                    navigate('/');
-                }
-
-                resolve();
+                endGame(true);
             }
         });
+
+        let hasEnded = false;
+
+        const cleanup = () => {
+            clearInterval(keyboardInterval);
+            window.removeEventListener("keydown", keyDownHandler);
+            window.removeEventListener("keyup", keyUpHandler);
+            window.removeEventListener("pointermove", pointerMoveHandler);
+            window.removeEventListener("beforeunload", browserExitHandler);
+            window.removeEventListener("pagehide", browserExitHandler);
+            window.removeEventListener("popstate", browserExitHandler);
+            scene.onBeforeRenderObservable.remove(renderObserver);
+        };
+
+        const endGame = (showWinnerMessage = false) => {
+            if (hasEnded) return;
+            hasEnded = true;
+            cleanup();
+
+            if (showWinnerMessage && !tournament) {
+                showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
+            }
+            navigate('/pong')
+
+            resolve();
+        };
+
+        const browserExitHandler = () => {
+            endGame(false);
+        };
+
+        // Ensure the match ends cleanly when user refreshes or navigates back.
+        window.addEventListener("beforeunload", browserExitHandler);
+        window.addEventListener("pagehide", browserExitHandler);
+        window.addEventListener("popstate", browserExitHandler);
+
+
     });
 }
