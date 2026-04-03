@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Users</title>
+</head>
+<body>
+  <h1>User List</h1>
+  <ul id="userList"></ul>
+
+  <script>
+    fetch('http://localhost:3000/users')
+	  .then(response => response.json())
+	  .then(users => {
+		const userList = document.getElementById('userList');
+		users.forEach(user => {
+		  const listItem = document.createElement('li');
+		  listItem.textContent = `${user.name} (${user.email})`;
+		  userList.appendChild(listItem);
+		});
+	  })
+	  .catch(error => console.error('Error fetching users:', error));
+  </script>
+</body>
+</html>
