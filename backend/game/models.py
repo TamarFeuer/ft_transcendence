@@ -1,6 +1,8 @@
 import uuid
 import time
 from threading import Lock
+from django.db import models
+from django.conf import settings
 
 class GameSession:
     """In-memory game session management"""
@@ -16,6 +18,7 @@ class GameSession:
             'score': {'p1': 0, 'p2': 0},
             'winningScore': 5
         }
+        self.isTournamentGame = False
         self.players = {'left': None, 'right': None}
         self.clients = set()
         self.status = 'waiting'  # waiting, active, finished
@@ -53,27 +56,29 @@ class GameSession:
             if game_id in cls._games:
                 del cls._games[game_id]
     
-    def add_player(self, channel_name, role=None):
+    def add_player(self, name, id, role=None):
         """Add a player or spectator to the game"""
         if not self.players['left']:
-            self.players['left'] = channel_name
-            self.clients.add(channel_name)
+            self.players['left'] = name
+            self.players['left_id'] = id
+            self.clients.add(name)
             return 'left'
         elif not self.players['right']:
-            self.players['right'] = channel_name
-            self.clients.add(channel_name)
+            self.players['right'] = name
+            self.players['right_id'] = id
+            self.clients.add(name)
             return 'right'
         else:
-            self.clients.add(channel_name)
+            self.clients.add(name)
             return 'spectator'
     
-    def remove_player(self, channel_name):
+    def remove_player(self, name):
         """Remove a player from the game"""
-        self.clients.discard(channel_name)
+        self.clients.discard(name)
         
-        if self.players['left'] == channel_name:
+        if self.players['left'] == name:
             self.players['left'] = None
-        if self.players['right'] == channel_name:
+        if self.players['right'] == name:
             self.players['right'] = None
         
         # If game was active and a player left, end the game
@@ -132,6 +137,7 @@ class GameSession:
         
         # Scoring
         winner = None
+        # winner_id = None
         if state['ball']['x'] < -6:
             state['score']['p2'] += 1
             self.reset_ball()
@@ -141,17 +147,23 @@ class GameSession:
         
         # Check win condition
         if state['score']['p1'] >= state['winningScore']:
-            winner = 'Player 1'
+            # players = self.game.get_players()
+            # winner = players['left']
+            winner = 'left'
+            # winner_id = self.players['left_id']
             self.status = 'finished'
         elif state['score']['p2'] >= state['winningScore']:
-            winner = 'Player 2'
+            # players = self.game.get_players()
+            winner = 'right'
+            # winner = players['right']
+            # winner_id = self.players['right_id']
             self.status = 'finished'
         
         return {
             'ball': {'x': state['ball']['x'], 'y': state['ball']['y']},
             'paddles': state['paddles'],
             'score': state['score'],
-            'winner': winner
+            'winner': winner,
         }
     
     def reset_ball(self):
@@ -172,3 +184,105 @@ class GameSession:
     def cleanup(self):
         """Clean up the game session"""
         GameSession.delete_game(self.id)
+        
+class Player(models.Model):
+    # If user is deleted, all child records (matches, achievements) will be deleted as well.
+    # Related name 'profile' allows us to access Player from User via user.profile
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    
+    total_games = models.IntegerField(default=0)
+    total_wins = models.IntegerField(default=0)
+    total_losses = models.IntegerField(default=0)
+    
+    elo_rating = models.IntegerField(default=1000)
+    
+    total_win_points = models.IntegerField(default=0)
+    total_loss_points = models.IntegerField(default=0)
+    
+    current_win_streak = models.IntegerField(default=0)
+    current_loss_streak = models.IntegerField(default=0)
+    best_win_streak = models.IntegerField(default=0)
+    
+    def __str__(self):
+        return f"{self.user.username} (ELO: {self.elo_rating})"
+    
+    # property lets us to access win_percentage as player.win_percentage instead of player.win_percentage()
+    @property
+    def win_percentage(self):
+        if self.total_games == 0:
+            return 0
+        return self.total_wins * 100 / self.total_games
+    
+    @property
+    def point_percentage(self):
+        if self.total_win_points + self.total_loss_points == 0:
+            return 0
+        return self.total_win_points * 100 / (self.total_win_points + self.total_loss_points)
+
+    class Meta:
+        ordering = ['-elo_rating', '-total_wins']  # highest ELO first, then most wins (- for descending order)
+        db_table = 'stats_players' # custom name for the database table (instead of default 'appname_modelname')
+        
+# for leaderboard:
+# Live leaderboard — always up to date
+# PlayerProfile.objects.all()  # already ordered by -elo_rating, -wins
+
+# Top 10
+# PlayerProfile.objects.all()[:10]
+class Match(models.Model):
+    player1 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='matches_as_player1')
+    player2 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='matches_as_player2')
+    
+    player1_score = models.IntegerField()
+    player2_score = models.IntegerField()
+    
+    # If player is deleted, match record stays, but player becomes NULL.
+    winner = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True, related_name='matches_won')
+    loser = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True, related_name='matches_lost')
+    
+    # auto_now_add=True automatically sets the field to the current date/time when the object is first created, and never updates it after that.
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Match: {self.player1.user.username} vs {self.player2.user.username} - Winner: {self.winner.user.username if self.winner else 'TBD'}"
+    
+    class Meta:
+        db_table = 'stats_matches'
+class Achievement(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    
+    REQUIREMENT_TYPES = [
+        ('total_wins', 'Total Wins'),
+        ('total_games', 'Total Games'),
+        ('win_streak', 'Win Streak'),
+        ('elo_rating', 'ELO Rating'),
+    ]
+    requirement_type = models.CharField(max_length=20, choices=REQUIREMENT_TYPES)
+    requirement_value = models.IntegerField()
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['requirement_value', 'requirement_type', 'name']  # order by requirement value, then type, then name
+        db_table = 'stats_achievements'
+        
+# The rule of thumb:
+
+# If a player can have one achievement → put it in the player table.
+# If a player can have many achievements → use a separate table.
+
+# Since a player can unlock multiple achievements, the separate PlayerAchievement table is the correct design.
+class PlayerAchievement(models.Model):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='achievements')
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name='players')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.player.user.username} earned {self.achievement.name}"
+    
+    class Meta:
+        unique_together = ('player', 'achievement')  # prevent duplicate achievements for the same player
+        ordering = ['-timestamp']  # most recent achievements first
+        db_table = 'stats_player_achievements'
