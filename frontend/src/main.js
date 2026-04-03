@@ -1,10 +1,8 @@
 import "./styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "./game.js";
-import { createUserManager } from './usermanagement.js';
 import { initChat } from './chat.js';
 import { getCurrentUser as fetchCurrentUser } from './usermanagement.js';
-import { renderFriendsPanel } from "./friends.js";
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
 import { initChatUI } from './chat-ui.js';
 import { updateTournamentGameResult } from "./tournament.js";
@@ -682,8 +680,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 		initChatUI();
 	}
 
-	// Create user manager UI
-	createUserManager();
 	// Initial route handling
 	handleRoute(window.location.pathname);
 	
