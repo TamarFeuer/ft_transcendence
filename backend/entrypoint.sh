@@ -25,7 +25,6 @@ python manage.py makemigrations tournament
 echo "Running migrations...."
 python manage.py migrate --noinput
 python manage.py flush --noinput
-python manage.py loaddata fixtures/users.json fixtures/players.json fixtures/matches.json
-
+python manage.py loaddata fixtures/users.json
 echo "Migrations complete. Executing command: $@"
 exec "$@"
