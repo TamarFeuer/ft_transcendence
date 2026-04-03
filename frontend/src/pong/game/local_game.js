@@ -203,8 +203,8 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             
             if (showWinnerMessage && !tournament) {
                 showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
+                navigate('/pong')
             }
-            navigate('/pong')
 
             resolve();
         };
