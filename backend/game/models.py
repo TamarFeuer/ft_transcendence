@@ -298,6 +298,9 @@ class Player(models.Model):
         self.current_win_streak = 0
         
         self.save()
+        
+    def get_leaderboard(self):
+        return Player.objects.all()[:10]
 
     class Meta:
         ordering = ['-elo_rating', '-total_wins']  # highest ELO first, then most wins (- for descending order)
