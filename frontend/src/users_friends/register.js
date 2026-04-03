@@ -1,6 +1,6 @@
 import { registerUser } from "./usermanagement"
-import { navigate } from "./main"
-import { showError } from "./utils";
+import { navigate } from "../routes/route_helpers"
+import { showError } from "../utils/utils";
 
 export function registerPage(){
     const form = document.getElementById("register-form");

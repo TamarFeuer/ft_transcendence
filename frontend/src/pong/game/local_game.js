@@ -200,7 +200,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             if (hasEnded) return;
             hasEnded = true;
             cleanup();
-
+            
             if (showWinnerMessage && !tournament) {
                 showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
             }

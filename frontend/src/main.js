@@ -1,17 +1,14 @@
 import "./styles.css";
-import { Engine, Scene } from "@babylonjs/core";
-import { initGameScene } from "./pong/game/game.js";
-import { createUserManager } from './users_friends/usermanagement.js';
 import { initChat } from './chat/chat.js';
 import { getCurrentUser as fetchCurrentUser } from './users_friends/usermanagement.js';
-import { renderFriendsPanel } from "./users_friends/friends.js";
-import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n/index.js";
 import { initChatUI } from './chat/chat-ui.js';
-import { showMessage } from "./utils/utils.js"
-import { initOfflineGame } from './pong/game/local_game.js';
 import { closeGameConnection } from './pong/game/game.js';
 import { handleRoute } from './routes/route_helpers.js';
 import { isGameActive } from './pong/game/game.js'
+
+// --- Game Variables ---
+let ws = null;
+let currentGameId = null;
 
 export const routes = {};
 import { setupRoutes } from "./routes/routes.js";
@@ -50,8 +47,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 		initChatUI();
 	}
 
-	// Create user manager UI
-	createUserManager();
 	// Initial route handling
 	handleRoute(window.location.pathname);
 	

@@ -1,6 +1,6 @@
 import { loginUser } from "./usermanagement";
-import { navigate } from "./main.js" 
-import { showError } from "./utils.js";
+import { navigate } from "../routes/route_helpers.js"
+import { showError } from "../utils/utils.js";
 
 export function initLoginPage(){
     const form = document.getElementById("login-form");

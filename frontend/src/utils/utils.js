@@ -30,3 +30,12 @@ export function showMessage(message, type = 'info', duration = 2500) {
     }
   }, duration);
 }
+
+export function showError(message){
+    const errorPopup = document.getElementById("error-message");
+    errorPopup.textContent = message;
+    errorPopup.classList.remove("hidden");
+    setTimeout(() =>{
+        errorPopup.classList.add("hidden")
+    }, 4000);
+}
