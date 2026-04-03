@@ -160,5 +160,192 @@
     "avatar": "",
     "bio": "Servers maintainer in AlasCode"
   }
+},
+{
+  "model": "game.player",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "total_games": 3,
+    "total_wins": 2,
+    "total_losses": 1,
+    "elo_rating": 1003,
+    "total_win_points": 10,
+    "total_loss_points": 4,
+    "current_win_streak": 0,
+    "current_loss_streak": 1,
+    "best_win_streak": 2
+  }
+},
+{
+  "model": "game.player",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "total_games": 3,
+    "total_wins": 1,
+    "total_losses": 2,
+    "elo_rating": 995,
+    "total_win_points": 5,
+    "total_loss_points": 4,
+    "current_win_streak": 1,
+    "current_loss_streak": 0,
+    "best_win_streak": 1
+  }
+},
+{
+  "model": "game.player",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "total_games": 6,
+    "total_wins": 4,
+    "total_losses": 2,
+    "elo_rating": 1025,
+    "total_win_points": 21,
+    "total_loss_points": 5,
+    "current_win_streak": 1,
+    "current_loss_streak": 0,
+    "best_win_streak": 3
+  }
+},
+{
+  "model": "game.player",
+  "pk": 4,
+  "fields": {
+    "user": 4,
+    "total_games": 2,
+    "total_wins": 1,
+    "total_losses": 1,
+    "elo_rating": 1002,
+    "total_win_points": 5,
+    "total_loss_points": 2,
+    "current_win_streak": 0,
+    "current_loss_streak": 1,
+    "best_win_streak": 1
+  }
+},
+{
+  "model": "game.player",
+  "pk": 5,
+  "fields": {
+    "user": 5,
+    "total_games": 1,
+    "total_wins": 0,
+    "total_losses": 1,
+    "elo_rating": 988,
+    "total_win_points": 0,
+    "total_loss_points": 3,
+    "current_win_streak": 0,
+    "current_loss_streak": 1,
+    "best_win_streak": 0
+  }
+},
+{
+  "model": "game.player",
+  "pk": 6,
+  "fields": {
+    "user": 6,
+    "total_games": 4,
+    "total_wins": 2,
+    "total_losses": 2,
+    "elo_rating": 1008,
+    "total_win_points": 11,
+    "total_loss_points": 6,
+    "current_win_streak": 1,
+    "current_loss_streak": 0,
+    "best_win_streak": 2
+  }
+},
+{
+  "model": "game.match",
+  "pk": 1,
+  "fields": {
+    "player1": 2,
+    "player2": 3,
+    "player1_score": 5,
+    "player2_score": 3,
+    "winner": 2,
+    "loser": 3,
+    "timestamp": "2026-03-17T21:40:59.992Z"
+  }
+},
+{
+  "model": "game.match",
+  "pk": 2,
+  "fields": {
+    "player1": 2,
+    "player2": 3,
+    "player1_score": 5,
+    "player2_score": 1,
+    "winner": 2,
+    "loser": 3,
+    "timestamp": "2026-03-17T21:46:27.683Z"
+  }
+},
+{
+  "model": "game.match",
+  "pk": 3,
+  "fields": {
+    "player1": 3,
+    "player2": 2,
+    "player1_score": 5,
+    "player2_score": 4,
+    "winner": 3,
+    "loser": 2,
+    "timestamp": "2026-03-21T16:49:11.277Z"
+  }
+},
+{
+  "model": "game.match",
+  "pk": 4,
+  "fields": {
+    "player1": 6,
+    "player2": 1,
+    "player1_score": 5,
+    "player2_score": 2,
+    "winner": 6,
+    "loser": 1,
+    "timestamp": "2026-03-22T10:15:34.123Z"
+  }
+},
+{
+  "model": "game.match",
+  "pk": 5,
+  "fields": {
+    "player1": 5,
+    "player2": 4,
+    "player1_score": 2,
+    "player2_score": 5,
+    "winner": 4,
+    "loser": 5,
+    "timestamp": "2026-03-22T14:32:12.456Z"
+  }
+},
+{
+  "model": "game.match",
+  "pk": 6,
+  "fields": {
+    "player1": 6,
+    "player2": 4,
+    "player1_score": 5,
+    "player2_score": 3,
+    "winner": 6,
+    "loser": 4,
+    "timestamp": "2026-03-23T09:20:45.789Z"
+  }
+},
+{
+  "model": "game.match",
+  "pk": 7,
+  "fields": {
+    "player1": 1,
+    "player2": 6,
+    "player1_score": 5,
+    "player2_score": 1,
+    "winner": 1,
+    "loser": 6,
+    "timestamp": "2026-03-23T15:50:22.654Z"
+  }
 }
 ]
