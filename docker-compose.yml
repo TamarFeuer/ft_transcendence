@@ -47,11 +47,9 @@ services:
       - POSTGRES_USER=transcendence_user
       - POSTGRES_PASSWORD=transcendence_pass
     volumes:
-      - ./db/postgres:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     networks:
       - pongnet
-    ports:
-      - "5432:5432"
 
   redis:
     container_name: pong_redis
@@ -76,3 +74,6 @@ services:
 networks:
   pongnet:
     driver: bridge
+
+volumes:
+  db_data:
