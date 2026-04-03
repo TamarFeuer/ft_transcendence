@@ -4,6 +4,7 @@ services:
     build: ./backend
     container_name: pong_backend
     volumes:
+      # DEV ONLY: remove this mount in production - code should be baked into the image via COPY . . in Dockerfile
       - ./backend:/app
     environment:
       - DJANGO_SETTINGS_MODULE=django_server.settings

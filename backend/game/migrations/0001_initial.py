@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
                     "user",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="profile",
+                        related_name="player",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
