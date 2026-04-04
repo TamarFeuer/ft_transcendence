@@ -24,6 +24,30 @@ import { registerPage } from "../users_friends/register.js"
 export let currentEngine = null;
 export let resizeListener = null;
 
+async function loadLeaderboard() {
+  const tbody = document.getElementById('leaderboardTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500">Loading...</td></tr>';
+  try {
+    const response = await fetch('/api/leaderboard');
+    if (!response.ok) throw new Error('Network response was not ok');
+    const data = await response.json();
+    const leaderboard = data.leaderboard;
+    if (!Array.isArray(leaderboard) || leaderboard.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500">No results</td></tr>';
+      return;
+    }
+    tbody.innerHTML = '';
+    leaderboard.forEach((entry, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="py-1 px-2 border-b">${idx + 1}</td><td class="py-1 px-2 border-b">${entry.username ?? '-'}</td><td class="py-1 px-2 border-b">${entry.elo_rating ?? '-'}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="3" class="py-2 px-2 text-center text-red-500">Error loading leaderboard</td></tr>';
+  }
+}
+
 export function disposeCurrentEngine() {
   if (currentEngine) {
     currentEngine.stopRenderLoop();
@@ -76,6 +100,7 @@ export function setupRoutes() {
     document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
     document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
     document.getElementById('profileBtn')?.addEventListener('click', () => navigate('/profile'));
+    loadLeaderboard();
   };
   routes['/login'] = async () => {
     stopTournamentAutoRefresh();

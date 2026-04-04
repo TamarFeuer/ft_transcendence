@@ -52,13 +52,14 @@ def list_games(request):
         ]
     })
 
+# a plain HTTP GET endpoint to return the current leaderboard
 @require_http_methods(["GET"])
 def get_leaderboard(request):
     leaderboard = Player.get_leaderboard()
     return JsonResponse({
         'leaderboard': [
             {
-                'username': player.username,
+                'username': player.user.username,
                 'elo_rating': player.elo_rating,
                 'total_wins': player.total_wins,
                 'current_win_streak': player.current_win_streak

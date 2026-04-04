@@ -51,7 +51,9 @@ services:
       - db_data:/var/lib/postgresql/data
     networks:
       - pongnet
-
+    ports:
+      - "5432:5432"
+      
   redis:
     container_name: pong_redis
     image: redis:7-alpine
