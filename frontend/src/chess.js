@@ -114,7 +114,7 @@ function drawDot(square){
 	square.appendChild(dotWrap);
 }
 
-function renderBoard(game, boardEl, selectedSquare){
+export function renderBoard(game, boardEl, selectedSquare){
 	let possibleMoves = [];
 
 	boardEl.innerHTML = '';

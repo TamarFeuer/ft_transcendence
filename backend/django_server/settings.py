@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'tournament',
     'users',
     'friends',
+    'chess',
     # 'corsheaders',
 ]
 

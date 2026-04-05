@@ -13,12 +13,13 @@ from channels.auth import AuthMiddlewareStack
 from game.routing import websocket_urlpatterns as game_ws
 from chat.routing import websocket_urlpatterns as chat_ws
 from users.token_auth import TokenAuthMiddleware
+from chess.routing import websocket_urlpatterns as chess_ws
 
 application = ProtocolTypeRouter({
 	"http": django_asgi_app,
 	"websocket": AuthMiddlewareStack(
 		TokenAuthMiddleware(
-			URLRouter(game_ws + chat_ws)
+			URLRouter(game_ws + chat_ws + chess_ws)
 		)
 	),
 })

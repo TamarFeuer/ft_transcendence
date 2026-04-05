@@ -5,4 +5,5 @@ urlpatterns = [
     path('api/', include('users.urls')),
     path('api/tournament/', include('tournament.urls')),
     path('api/', include('friends.urls')),
+    path('api/', include('chess.urls')),
 ]
