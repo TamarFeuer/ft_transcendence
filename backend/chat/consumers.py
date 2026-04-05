@@ -3,10 +3,6 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
 from users.token_auth import get_user_from_token
 from channels.db import database_sync_to_async
-import redis.asyncio as aioredis
-
-# create a Redis client object that knows how to connect to your Redis server
-redis_client = aioredis.from_url("redis://redis:6379", decode_responses=True)
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +10,15 @@ logger = logging.getLogger(__name__)
 # consumer instances. They survive as long as Daphne is running but are wiped
 # on restart. When PostgreSQL is added, messages should move to the database,
 # but ONLINE_USERS can stay in memory since online status is naturally ephemeral.
-ONLINE_USERS = {}  # user_id -> username
-CONNECTED_USERS = {}  # user_id -> set of channel_names
+ONLINE_USERS = {}       # user_id -> username
+CONNECTED_USERS = {}    # user_id -> set of channel_names
+UNREAD_COUNTS = {}      # user_id -> {other_id -> count}
+CLOSED_CONVERSATIONS = {}  # user_id -> set of other_ids
 
 # self is an instance of ChatConsumer, and ChatConsumer inherits from AsyncWebsocketConsumer​, 
 # so it has all the attributes that AsyncWebsocketConsumer provides by default:
 # self.channel_name - unique name Django Channels assigns to this specific connection,
-# self.channel_layer - the Redis channel layer, 
+# self.channel_layer - the in-memory channel layer,
 # self.scope - info about the connection (cookies, headers, url route etc.)
 # And then we add our own attributes on top in connect():
 # self.user_id - the authenticated user's ID,
@@ -52,7 +50,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		self.user_id = str(user.id)
 		self.username = user.username
 
-		# Join the global group via the channel layer (Redis).
+		# Join the global group via the channel layer.
 		await self.channel_layer.group_add(self.group_name, self.channel_name)
 		await self.accept()
 
@@ -138,9 +136,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 					content=message
 				)
 				# Increment unread counter for recipient
-				await redis_client.incr(f"unread:{target}:from:{self.user_id}")
+				UNREAD_COUNTS.setdefault(target, {})
+				UNREAD_COUNTS[target][self.user_id] = UNREAD_COUNTS[target].get(self.user_id, 0) + 1
 				# New message arriving — reopen conversation for recipient
-				await redis_client.srem(f"closed:{target}", self.user_id)
+				if target in CLOSED_CONVERSATIONS:
+					CLOSED_CONVERSATIONS[target].discard(self.user_id)
 			else:
 				payload["private"] = False
 				await self.channel_layer.group_send(self.group_name, payload)
@@ -168,14 +168,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			if not other_id:
 				return
 			# Delete the unread counter for this conversation
-			await redis_client.delete(f"unread:{self.user_id}:from:{other_id}")
+			if self.user_id in UNREAD_COUNTS:
+				UNREAD_COUNTS[self.user_id].pop(other_id, None)
 
 		elif msg_type == "close_conversation":
 			other_id = data.get("target")
 			if not other_id:
 				return
 			# Mark this conversation as closed by the user
-			await redis_client.sadd(f"closed:{self.user_id}", other_id)
+			CLOSED_CONVERSATIONS.setdefault(self.user_id, set()).add(other_id)
 
 		elif msg_type in ["typing", "stop_typing"]:
 			await self.channel_layer.group_send(
@@ -255,24 +256,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		conversations = await self._get_conversations_from_db(user_id)
 
 		# Get conversations the user explicitly closed
-		closed = await redis_client.smembers(f"closed:{user_id}")
+		closed = CLOSED_CONVERSATIONS.get(user_id, set())
+		user_unreads = UNREAD_COUNTS.get(user_id, {})
 
 		result = {}
 
-		# Then enrich each conversation with the unread count from Redis.
-		# Redis key: "unread:{user_id}:from:{other_id}" — incremented on each
-		# incoming DM, deleted when the user opens the tab (mark_read)
 		for other_id in conversations:
-			count = await redis_client.get(f"unread:{user_id}:from:{other_id}")
-			unread = int(count) if count else 0
-			
+			unread = user_unreads.get(other_id, 0)
+
 			# Restore tab if not closed OR has unread messages waiting
 			if other_id not in closed or unread > 0:
 				result[other_id] = {
 					"name": conversations[other_id],
 					"unread": unread
 				}
-		
+
 		return result
 
 	@database_sync_to_async
