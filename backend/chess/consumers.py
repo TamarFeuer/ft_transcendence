@@ -105,3 +105,25 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'winner': over['winner'],
 				'result': over['result']
 			})
+	
+	async def game_start(self, event):
+		await self.send(text_data=json.dumps({
+			'type': 'gameStart',
+			'fen': event['fen'],
+			'white': event['white'],
+			'black': event['black'],
+		}))
+	
+	async def game_state(self, event):
+		await self.send(text_data=json.dumps({
+			 'type': 'gameState',
+		'fen':  event['fen'],
+		'turn': event['turn'],
+		}))
+	
+	async def game_over(self, event):
+		await self.send(text_data=json.dumps({
+		'type':   'gameOver',
+		'winner': event['winner'],
+		'result': event['result'],
+		}))
