@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import GameSession
+from .models import GameSession, Player
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,5 +49,21 @@ def list_games(request):
                 'isTournamentGame': g.isTournamentGame
             }
             for g in games
+        ]
+    })
+
+# a plain HTTP GET endpoint to return the current leaderboard
+@require_http_methods(["GET"])
+def get_leaderboard(request):
+    leaderboard = Player.get_leaderboard()
+    return JsonResponse({
+        'leaderboard': [
+            {
+                'username': player.user.username,
+                'elo_rating': player.elo_rating,
+                'total_wins': player.total_wins,
+                'current_win_streak': player.current_win_streak
+            }
+            for player in leaderboard
         ]
     })

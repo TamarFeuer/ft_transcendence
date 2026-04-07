@@ -26,5 +26,23 @@
       Profile
     </button>
 
+    <!-- Leaderboard Table (Dynamic) -->
+    <div id="leaderboardTableContainer" class="absolute top-20 left-4 z-10 bg-white bg-opacity-90 rounded-lg shadow-lg p-4 w-80 border border-zinc-300">
+      <h2 class="text-xl font-bold mb-2 text-zinc-800">Leaderboard</h2>
+      <table class="min-w-full text-sm text-left">
+        <thead>
+          <tr>
+            <th class="py-1 px-2 border-b">Rank</th>
+            <th class="py-1 px-2 border-b">Player</th>
+            <th class="py-1 px-2 border-b">Score</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardTableBody">
+          <tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
   </div>
 </div>

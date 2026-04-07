@@ -298,6 +298,13 @@ class Player(models.Model):
         self.current_win_streak = 0
         
         self.save()
+        
+    # The method receives the class (cls) as its first argument, not an instance (self). 
+    # This allows us to call it on the class itself (Player.get_leaderboard()) rather than on an instance of the class.
+    # With select_related: All user data is fetched together with the players in one query.
+    @classmethod
+    def get_leaderboard(cls):
+        return cls.objects.select_related('user').all()[:10]
 
     class Meta:
         ordering = ['-elo_rating', '-total_wins']  # highest ELO first, then most wins (- for descending order)
