@@ -134,12 +134,14 @@ export function renderBoard(game, boardEl, selectedSquare, flipped = false){
 	rows.forEach((row, rowIndex) => {
 		row.forEach((cell, cellIndex) => {
 			const square = document.createElement('div');
-			//which square needs to be light
-			const isLight = (rowIndex + cellIndex) % 2 === 0
+			//which square needs to be light — use board square identity, not visual indices
+			const fileIndex = flipped ? (7 - cellIndex) : cellIndex;
+			const rankIndex = flipped ? (7 - rowIndex) : rowIndex;
+			const isLight = (rankIndex + fileIndex) % 2 === 0;
 			square.className = `relative w-full h-full flex items-center justify-center text-4xl ${isLight ? 'bg-amber-100' : 'bg-amber-800'}`;
 
-			//name the square
-			square.dataset.notation = getNotation(rowIndex, cellIndex);
+			// Algebraic square (always matches chess.js / FEN); flipped only changes draw order
+			square.dataset.notation = getNotation(rankIndex, fileIndex);
 
 			//if cell has a piece then render the piece
 			if (cell){
