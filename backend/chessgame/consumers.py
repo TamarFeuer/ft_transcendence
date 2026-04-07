@@ -11,22 +11,22 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		self.game_group_name = f'chess_{self.game_id}'
 		self.color = None
 
-		# Check whether the game exists
+		#see if this table id is still open
 		self.game = ChessSession.get_game(self.game_id)
 		if not self.game:
 			await self.close(code=4004)
 			return
 		
-		# Check whether the game can fit more player/s
+		#try to seat this connection as white or black
 		self.color = self.game.add_player(self.scope['user'])
 		if not self.color:
 			await self.close(code=4003)
 			return
 		
-		# Join the channel group
+		#subscribe to broadcasts for this table
 		await self.channel_layer.group_add(self.game_group_name, self.channel_name)
 
-		# Accept connection, copied from Pong
+		#same subprotocol accept as pong
 		headers     = dict(self.scope.get('headers', []))
 		subprotocol = headers.get(b'sec-websocket-protocol')
 		if subprotocol:
@@ -35,13 +35,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		else:
 			await self.accept()
 		
-		# Tell client what color they are
 		await self.send(text_data=json.dumps({
 			'type': 'assign',
 			'color': self.color
 		}))
 
-		# When both players are connected, start the game
 		if self.game.can_start():
 			self.game.start()
 			await self.channel_layer.group_send(self.game_group_name, {
@@ -55,7 +53,6 @@ class ChessConsumer(AsyncWebsocketConsumer):
 	async def disconnect(self, _close_code):
 		if self.color and hasattr(self, 'game') and self.game:
 			if self.game.status == 'active':
-				# opponent wins
 				winner = 'black' if self.color == 'white' else 'white'
 				self.game.status = 'finished'
 				await self.channel_layer.group_send(self.game_group_name, {
@@ -64,7 +61,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					'result': 'abandonment'
 				})
 
-			# TODO: before deleting the game, save it into the DB !!
+			#TODO save match to db before dropping the session from memory
 			ChessSession.delete_game(self.game_id)
 
 		if hasattr(self, 'game_group_name'):
@@ -83,21 +80,18 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		uci = data.get('from', '') + data.get('to', '') + data.get('promotion', '')
 		ok, fen, over = self.game.apply_move(uci)
 
-		# in case the move is illegal
 		if not ok:
 			await self.send(text_data=json.dumps({'type': 'illegal_move'}))
 			return
 		
-		# in case it is legal
 		await self.channel_layer.group_send(self.game_group_name, {
 			'type': 'game_state',
 			'fen': fen,
 			'turn': 'white' if self.game.board.turn else 'black'
 		})
 
-		# in case game is over
 		if over:
-			# TODO save result ot the DB
+			#TODO persist result then forget the in memory table
 			ChessSession.delete_game(self.game_id)
 			
 			await self.channel_layer.group_send(self.game_group_name, {

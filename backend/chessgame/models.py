@@ -28,8 +28,7 @@ class ChessSession:
 			return 'black'
 		return None
 
-	# Returns in order Sucess of move, the updated board
-	# and either None if game is not finished, else a dictionary with game metadata
+	#returns whether the uci worked, the fen string, and None or a small dict when the game ends
 	def apply_move(self, uci_move: str):
 		try:
 			move = chess.Move.from_uci(uci_move)
@@ -41,7 +40,7 @@ class ChessSession:
 		
 		self.board.push(move)
 
-		# if game is finished we find the winner
+		#game might have just ended
 		outcome = self.board.outcome()
 		if outcome:
 			self.status = 'finished'

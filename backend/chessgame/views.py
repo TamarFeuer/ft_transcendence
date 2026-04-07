@@ -12,7 +12,7 @@ User = get_user_model()
 
 
 def get_user_from_access_cookie(request):
-	"""Same auth as tournament / current_user: JWT in access_token cookie (no Django session)."""
+	#jwt from access_token cookie like tournament helpers, not django session login
 	access_token = request.COOKIES.get('access_token')
 	if not access_token:
 		return None
@@ -35,7 +35,7 @@ def join_chess(request):
 	if not user:
 		return JsonResponse({'error': 'Authentication required'}, status=401)
 
-	# search for a game that needs a second player
+	#if someone is already waiting and it is not us, join that table
 	for game in ChessSession._games.values():
 		if game.status == 'waiting' and game.players['black'] is None:
 			white = game.players['white']
