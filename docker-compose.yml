@@ -17,7 +17,6 @@ services:
     restart: unless-stopped
     depends_on:
       - db
-      - redis
     networks:
       - pongnet
     expose:
@@ -51,13 +50,7 @@ services:
       - db_data:/var/lib/postgresql/data
     networks:
       - pongnet
-      
-  redis:
-    container_name: pong_redis
-    image: redis:7-alpine
-    restart: unless-stopped
-    networks:
-      - pongnet
+
 
   nginx:
     image: nginx:stable-alpine
