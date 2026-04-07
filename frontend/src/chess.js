@@ -114,7 +114,8 @@ function drawDot(square){
 	square.appendChild(dotWrap);
 }
 
-export function renderBoard(game, boardEl, selectedSquare){
+export function renderBoard(game, boardEl, selectedSquare, flipped = false){
+
 	let possibleMoves = [];
 
 	boardEl.innerHTML = '';
@@ -122,9 +123,15 @@ export function renderBoard(game, boardEl, selectedSquare){
 		possibleMoves = game.moves({
 			square: selectedSquare,
 			verbose: true}).map(m => m.to); //return an array of only the "to" squares the piece can move
-		}		
+		}
+	//in case player is black, flip the board for them
+	let rows = game.board();
+	if (flipped){
+		rows = rows.reverse();
+		rows = rows.map(row => row.reverse());
+	}	
 	//go through each row to render the pieces and the board
-	game.board().forEach((row, rowIndex) => {
+	rows.forEach((row, rowIndex) => {
 		row.forEach((cell, cellIndex) => {
 			const square = document.createElement('div');
 			//which square needs to be light
@@ -148,7 +155,6 @@ export function renderBoard(game, boardEl, selectedSquare){
 
 			//highlight possible moves if user clicks their own piece
 			if (possibleMoves.includes(square.dataset.notation)){
-				//TODO draw the dot
 				drawDot(square);
 
 			}
