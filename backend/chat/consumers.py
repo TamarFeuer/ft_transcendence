@@ -262,7 +262,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		else:
 			# First message between these two users — create a new conversation
 			# and add both as participants.
-			conversation = Conversation.objects.create(created_by=self.user)
+			conversation = Conversation.objects.create()
 			ConversationParticipant.objects.create(conversation=conversation, user=self.user)
 			ConversationParticipant.objects.create(conversation=conversation, user_id=recipient_id)
 

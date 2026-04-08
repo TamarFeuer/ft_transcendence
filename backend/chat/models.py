@@ -6,9 +6,6 @@ class Conversation(models.Model):
 	# The relationship between users lives here, not on individual messages.
 	# This way "are these two people in a conversation?" is a single lookup.
 
-	# The user who started the conversation. SET_NULL means the conversation
-	# survives even if this user deletes their account.
-	created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_conversations')
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	# Updated every time a new message is sent, so conversations can be
