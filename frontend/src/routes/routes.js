@@ -97,7 +97,7 @@ export function setupRoutes() {
 			return;
     await loadTemplate('home');
     document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
-    document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
+    document.getElementById('chessBtn')?.addEventListener('click', () => navigate('/chess-hub'));
     document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
     document.getElementById('profileBtn')?.addEventListener('click', () => navigate('/profile'));
     loadLeaderboard();
@@ -114,6 +114,27 @@ export function setupRoutes() {
     document.getElementById('renderCanvas').style.display = 'none'; //
     registerPage();
   }
+  routes['/chess-hub'] = async () => {
+    stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+      return;
+    await loadTemplate('chess-hub');
+    document.getElementById('renderCanvas').style.display = 'none';
+    document.getElementById('chessPracticeBtn')?.addEventListener('click', () => navigate('/chess'));
+    document.getElementById('chessOnlineBtn')?.addEventListener('click', () => navigate('/chess-online'));
+    document.getElementById('chessBackBtn')?.addEventListener('click', () => navigate('/'));
+  }
+
+  routes['/chess-online'] = async () => {
+    stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+      return;
+    await loadTemplate('chess-online');
+    document.getElementById('renderCanvas').style.display = 'none';
+    const { initOnlineChessGame } = await import('../chess/chess-online.js');
+    initOnlineChessGame();
+  }
+
   routes['/chess'] = async () => {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())

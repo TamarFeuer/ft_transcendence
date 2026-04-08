@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js'
-import { renderBoard } from '../chess.js'
+import { renderBoard } from './chess.js'
 import { showChessResultModal } from './chess-modal.js'
 
 function formatGameOverSubtitle(result) {
