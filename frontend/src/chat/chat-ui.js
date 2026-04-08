@@ -2,7 +2,7 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation } from './chat.js';
+import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation } from './chat.js';
 
 export function initChatUI() {
 
@@ -44,6 +44,7 @@ export function initChatUI() {
 			const name = onlineUsers[channelId];
 			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
 			markRead(channelId);
+			openConversation(channelId);
 		}
 
 		// If this is a DM with no history loaded yet, fetch it now
