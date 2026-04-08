@@ -1,4 +1,4 @@
-//end of game overlay, chess.com style panel, close is only the x top left
+//end of game overlay, chess.com style panel, closed only with the x button
 function escapeHtml(text) {
 	const div = document.createElement('div');
 	div.textContent = text;
@@ -11,9 +11,9 @@ export function showChessResultModal({ outcome = 'draw', title, subtitle = '' })
 	if (existing) existing.remove();
 
 	const border = {
-		win: 'border-emerald-500',
-		loss: 'border-red-500',
-		draw: 'border-slate-400',
+		win:     'border-emerald-500',
+		loss:    'border-red-500',
+		draw:    'border-slate-400',
 		neutral: 'border-amber-500/90',
 	}[outcome] || 'border-slate-400';
 

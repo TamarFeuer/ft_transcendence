@@ -2,19 +2,37 @@ import { Chess } from 'chess.js'
 import { renderBoard } from './chess.js'
 import { showChessResultModal } from './chess-modal.js'
 
-function formatGameOverSubtitle(result) {
+function subtitleFromResult(result) {
 	if (!result) return '';
 	const r = String(result).toLowerCase();
-	if (r === 'abandonment') return 'Your opponent left the game.';
-	if (r === '1-0') return 'White wins';
-	if (r === '0-1') return 'Black wins';
+	if (r === 'abandonment')        return 'Your opponent left the game.';
+	if (r === '1-0')                return 'White wins';
+	if (r === '0-1')                return 'Black wins';
 	if (r === '1/2-1/2' || r === '1/2') return 'Game drawn';
-	if (r.includes('checkmate')) return 'Checkmate';
-	if (r.includes('stalemate')) return 'Stalemate';
+	if (r.includes('checkmate'))    return 'Checkmate';
+	if (r.includes('stalemate'))    return 'Stalemate';
 	if (r.includes('insufficient')) return 'Insufficient material';
-	if (r.includes('repetition')) return 'Threefold repetition';
-	if (r.includes('fifty')) return 'Fifty-move rule';
+	if (r.includes('repetition'))   return 'Threefold repetition';
+	if (r.includes('fifty'))        return 'Fifty-move rule';
 	return String(result);
+}
+
+function updateStatus(statusEl, myTurn) {
+	if (!statusEl) return;
+	statusEl.textContent = myTurn ? 'Your turn' : "Opponent's turn";
+}
+
+function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
+	const picker = document.getElementById('promotion-picker');
+	picker.classList.remove('hidden');
+
+	picker.addEventListener('click', (e) => {
+		const piece = e.target.dataset.piece;
+		if (!piece) return;
+		picker.classList.add('hidden');
+		ws.send(JSON.stringify({ type: 'move', from: fromSquare, to: toSquare, promotion: piece }));
+		onSent();
+	}, { once: true });
 }
 
 export async function initOnlineChessGame() {
@@ -29,9 +47,8 @@ export async function initOnlineChessGame() {
 	let selected  = null;
 	let myTurn    = false;
 	let gameActive = false;
-	let whiteName = 'White';
-	let blackName = 'Black';
 
+	//get a game id from the server before opening the websocket
 	let gameId;
 	try {
 		const res = await fetch('/api/chess/join/', {
@@ -71,12 +88,10 @@ export async function initOnlineChessGame() {
 
 		else if (data.type === 'gameStart') {
 			gameActive = true;
-			whiteName  = data.white;
-			blackName  = data.black;
 			if (waitingEl) waitingEl.classList.add('hidden');
 			game.load(data.fen);
 			myTurn = (myColor === 'white');
-			setStatus(statusEl, myTurn, whiteName, blackName);
+			updateStatus(statusEl, myTurn);
 			renderBoard(game, boardEl, null, myColor === 'black');
 		}
 
@@ -84,7 +99,7 @@ export async function initOnlineChessGame() {
 			selected = null;
 			game.load(data.fen);
 			myTurn = (myColor === data.turn);
-			setStatus(statusEl, myTurn, whiteName, blackName);
+			updateStatus(statusEl, myTurn);
 			renderBoard(game, boardEl, null, myColor === 'black');
 		}
 
@@ -93,28 +108,14 @@ export async function initOnlineChessGame() {
 			myTurn     = false;
 			selected   = null;
 			renderBoard(game, boardEl, null, myColor === 'black');
-			const winner = data.winner;
-			const resultRaw = data.result;
-			const sub = formatGameOverSubtitle(resultRaw);
 
-			if (winner === null) {
-				showChessResultModal({
-					outcome: 'draw',
-					title: 'Draw',
-					subtitle: sub || 'The game is a draw.',
-				});
-			} else if (myColor && winner === myColor) {
-				showChessResultModal({
-					outcome: 'win',
-					title: 'Victory',
-					subtitle: sub || 'You won the game.',
-				});
+			const sub = subtitleFromResult(data.result);
+			if (data.winner === null) {
+				showChessResultModal({ outcome: 'draw', title: 'Draw', subtitle: sub || 'The game is a draw.' });
+			} else if (myColor && data.winner === myColor) {
+				showChessResultModal({ outcome: 'win', title: 'Victory', subtitle: sub || 'You won the game.' });
 			} else {
-				showChessResultModal({
-					outcome: 'loss',
-					title: 'Defeat',
-					subtitle: sub || 'You lost the game.',
-				});
+				showChessResultModal({ outcome: 'loss', title: 'Defeat', subtitle: sub || 'You lost the game.' });
 			}
 		}
 	};
@@ -134,6 +135,7 @@ export async function initOnlineChessGame() {
 		const piece    = game.get(notation);
 
 		if (!selected) {
+			//only select your own pieces
 			if (piece && piece.color === myColor[0]) {
 				selected = notation;
 				renderBoard(game, boardEl, selected, myColor === 'black');
@@ -157,6 +159,7 @@ export async function initOnlineChessGame() {
 			return;
 		}
 
+		//if move is promotion show promotion picker
 		if (move.flags.includes('p')) {
 			handleOnlinePromotion(selected, notation, ws, () => {
 				selected = null;
@@ -170,26 +173,4 @@ export async function initOnlineChessGame() {
 			renderBoard(game, boardEl, null, myColor === 'black');
 		}
 	});
-}
-
-function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
-	const picker = document.getElementById('promotion-picker');
-	picker.classList.remove('hidden');
-
-	picker.addEventListener('click', (e) => {
-		const piece = e.target.dataset.piece;
-		if (!piece) return;
-		picker.classList.add('hidden');
-		ws.send(JSON.stringify({ type: 'move', from: fromSquare, to: toSquare, promotion: piece }));
-		onSent();
-	}, { once: true });
-}
-
-function setStatus(statusEl, myTurn, whiteName, blackName) {
-	if (!statusEl) return;
-	if (myTurn) {
-		statusEl.textContent = 'Your turn';
-	} else {
-		statusEl.textContent = "Opponent's turn";
-	}
 }
