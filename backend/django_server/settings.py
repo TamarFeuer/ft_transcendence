@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'users',
     'friends',
     'chessgame',
+    'profiles'
     # 'corsheaders',
 ]
 
@@ -60,15 +61,10 @@ ROOT_URLCONF = 'django_server.urls'
 WSGI_APPLICATION = 'django_server.wsgi.application'
 ASGI_APPLICATION = 'django_server.asgi.application'
 
-# REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
-
 # Channels configuration
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("redis", 6379)],  # "redis" is the docker service name
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
 

@@ -7,7 +7,7 @@ import { checkAuthRequired, getCurrentUser } from './usermanagement.js';
 import * as tournamentAPI from './tournament.js';
 import { updatePageTranslations } from './i18n';
 import { initChessGame } from './chess.js';
-import { initOnlineChessGame } from './chess-online.js';
+import { initOnlineChessGame } from './chess/chess-online.js';
 import { verifiedUserId } from './chat.js';
 import { initLoginPage } from './loginPage.js';
 import { registerPage } from './register.js';

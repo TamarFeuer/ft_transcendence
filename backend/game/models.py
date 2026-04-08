@@ -1,14 +1,19 @@
 import uuid
 import time
+from datetime import datetime
 from threading import Lock
 from django.db import models
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class GameSession:
     """In-memory game session management"""
     
     _games = {}
     _lock = Lock()
+    
+    JOIN_TIMEOUT = 10  # Maximum time in seconds to wait for both players to join
     
     def __init__(self, game_id=None):
         self.id = game_id or str(uuid.uuid4())
@@ -20,9 +25,12 @@ class GameSession:
         }
         self.isTournamentGame = False
         self.players = {'left': None, 'right': None}
+        self.players_ids = {'left': None, 'right': None}
         self.clients = set()
         self.status = 'waiting'  # waiting, active, finished
         self.last_tick = time.time()
+        self.created_at = time.time()  # Track when game was created
+        self.timeout_handled = False  # Flag to prevent timeout from being handled twice
         
     def get_players(self):
         """Return current players"""
@@ -60,12 +68,12 @@ class GameSession:
         """Add a player or spectator to the game"""
         if not self.players['left']:
             self.players['left'] = name
-            self.players['left_id'] = id
+            self.players_ids['left'] = id
             self.clients.add(name)
             return 'left'
         elif not self.players['right']:
             self.players['right'] = name
-            self.players['right_id'] = id
+            self.players_ids['right'] = id
             self.clients.add(name)
             return 'right'
         else:
@@ -93,6 +101,48 @@ class GameSession:
         """Check if the game can start"""
         return (self.players['left'] and self.players['right'] and 
                 self.status == 'waiting')
+    
+    def get_remaining_time(self):
+        """Get remaining time in seconds before timeout"""
+        # logger.debug(f"self.created_att={self.created_at}")
+
+        if self.status != 'waiting':
+            return 0
+
+        # Support both numeric timestamps and datetime values.
+        created_at_ts = self.created_at.timestamp() if isinstance(self.created_at, datetime) else float(self.created_at)
+        elapsed = time.time() - created_at_ts
+        remaining = self.JOIN_TIMEOUT - elapsed
+        return max(0, int(remaining))
+    
+    def is_timeout_expired(self):
+        """Check if the join timeout has expired"""
+        return self.get_remaining_time() <= 0 and self.status == 'waiting'
+    
+    def get_timeout_result(self):
+        """Get the game result based on who has joined
+        Returns tuple: (winner_role, winner_name, winner_id, is_tie)
+        - If no players: (None, "No players joined", None, True)
+        - If one player: (role, player_name, player_id, False)
+        - Should not be called if both players have joined
+        """
+        left_player = self.players['left']
+        right_player = self.players['right']
+        
+        if not left_player and not right_player:
+            # Both players failed to join - tie
+            return (None, "No players joined", None, True)
+        elif left_player and not right_player:
+            # Only left player joined - they win
+            return ('left', getattr(left_player, 'username', 'Player 1'), 
+                   self.players_ids['left'], False)
+        elif not left_player and right_player:
+            # Only right player joined - they win
+            return ('right', getattr(right_player, 'username', 'Player 2'), 
+                   self.players_ids['right'], False)
+        else:
+            # Both players joined
+            return (None, None, None, False)
     
     def start_game(self):
         """Start the game"""
@@ -187,8 +237,7 @@ class GameSession:
         
 class Player(models.Model):
     # If user is deleted, all child records (matches, achievements) will be deleted as well.
-    # Related name 'profile' allows us to access Player from User via user.profile
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='player')
     
     total_games = models.IntegerField(default=0)
     total_wins = models.IntegerField(default=0)
@@ -218,6 +267,44 @@ class Player(models.Model):
         if self.total_win_points + self.total_loss_points == 0:
             return 0
         return self.total_win_points * 100 / (self.total_win_points + self.total_loss_points)
+    
+    def player_wins(self, win_point, opponent_elo):
+        self.total_games += 1
+        self.total_wins += 1
+        
+        k = 10 #k factor can be changed
+        self.elo_rating += 10 * (1 - 1 / (1 + 10 ** ((opponent_elo - self.elo_rating) / 400)))
+        
+        self.total_win_points += win_point
+        
+        self.current_win_streak += 1
+        self.current_loss_streak = 0
+        
+        if self.current_win_streak > self.best_win_streak:
+            self.best_win_streak = self.current_win_streak
+        
+        self.save()
+    
+    def player_loses(self, loss_point, opponent_elo):
+        self.total_games += 1
+        self.total_losses += 1
+        
+        k = 10
+        self.elo_rating += k * (0 - 1 / (1 + 10 ** ((opponent_elo - self.elo_rating) / 400)))
+        
+        self.total_loss_points += loss_point
+        
+        self.current_loss_streak += 1
+        self.current_win_streak = 0
+        
+        self.save()
+        
+    # The method receives the class (cls) as its first argument, not an instance (self). 
+    # This allows us to call it on the class itself (Player.get_leaderboard()) rather than on an instance of the class.
+    # With select_related: All user data is fetched together with the players in one query.
+    @classmethod
+    def get_leaderboard(cls):
+        return cls.objects.select_related('user').all()[:10]
 
     class Meta:
         ordering = ['-elo_rating', '-total_wins']  # highest ELO first, then most wins (- for descending order)
@@ -286,3 +373,9 @@ class PlayerAchievement(models.Model):
         unique_together = ('player', 'achievement')  # prevent duplicate achievements for the same player
         ordering = ['-timestamp']  # most recent achievements first
         db_table = 'stats_player_achievements'
+
+# added a post_save signal to auto-create a Player row whenever a new user is created
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_player_profile(sender, instance, created, **kwargs):
+    if created:
+        Player.objects.create(user=instance)

@@ -4,7 +4,11 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import GameSession
 from django.utils import timezone
+from channels.db import database_sync_to_async
+from .models import GameSession, Player
+from .services import match_ends
 import logging
+# from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -52,14 +56,102 @@ def reset_game_to_ready(game_id):
 def update_game_completed(game_id, winner_id, winner_name):
     """Update tournament game with winner and completion status"""
     from tournament.models import TournamentGame
+    from tournament.models import TournamentParticipant
+    from django.contrib.auth.models import User
+
     try:
-        tournament_game = TournamentGame.objects.get(game_id=game_id)
-        tournament_game.status = 'completed'
-        tournament_game.completed_at = timezone.now()
-        if winner_id:
-            tournament_game.winner_id = winner_id
-        tournament_game.save()
+        # Look up by game_id (GameSession UUID), not id (TournamentGame integer id)
+        game = TournamentGame.objects.get(game_id=game_id)
+        tournament = game.tournament
+        
+        # Verify winner is one of the players
+        if winner_id not in [game.player1.id, game.player2.id]:
+            logger.debug(f"winner_id not in [game.player1.id, game.player2.id]")
+            return False
+        
+        # Update game result
+        game.winner = User.objects.get(id=winner_id)
+        game.winner_id = winner_id
+
+        game.status = 'completed'
+        game.completed_at = timezone.now()
+        game.save()
+        
+        # Update tournament participant score
+        participant = TournamentParticipant.objects.get(tournament=tournament, user=game.winner)
+        participant.score += 10  # Award points for winning
+        participant.save()
+        logger.debug(f"Updated participant {participant.user.username} score to {participant.score}")
+
+        # Check if all games in this round are completed
+        current_round = game.round
+        round_games = TournamentGame.objects.filter(tournament=tournament, round=current_round)
+        completed_games = round_games.filter(status='completed').count()
+        next_round_response = None
+
+        if completed_games == round_games.count():
+            # Determine next round number
+            next_round = current_round + 1
+
+            # If next-round games are already scheduled (e.g., round-robin), don't auto-generate
+            if TournamentGame.objects.filter(tournament=tournament, round=next_round).exists():
+                logger.debug(f"Next round {next_round} already scheduled; skipping auto-generation.")
+                next_round_response = next_round
+
+        # If all tournament games are completed (round-robin case), mark tournament completed
+        if not TournamentGame.objects.filter(tournament=tournament).exclude(status='completed').exists():
+            tournament.status = 'completed'
+            tournament.end_time = timezone.now()
+            tournament.save()
+            logger.debug(f"Tournament {tournament.id} completed; all scheduled games finished.")
+
         logger.info(f"Tournament game {game_id} completed. Winner: {winner_name}")
+        return True
+    except TournamentGame.DoesNotExist:
+        logger.debug(f"No tournament game found for game_id {game_id}")
+        return False
+
+def update_game_completed_tie(game_id):
+    """Update tournament game as a tie with no winner"""
+    from tournament.models import TournamentGame
+    from tournament.models import TournamentParticipant
+    from django.contrib.auth.models import User
+
+    try:
+                # Look up by game_id (GameSession UUID), not id (TournamentGame integer id)
+        game = TournamentGame.objects.get(game_id=game_id)
+        tournament = game.tournament
+        
+        # Update game result
+        game.winner_id = None  # No winner in a tie
+        game.winner = None
+        game.status = 'completed'
+        game.completed_at = timezone.now()
+        game.save()
+        
+        # Check if all games in this round are completed
+        current_round = game.round
+        round_games = TournamentGame.objects.filter(tournament=tournament, round=current_round)
+        completed_games = round_games.filter(status='completed').count()
+        next_round_response = None
+
+        if completed_games == round_games.count():
+            # Determine next round number
+            next_round = current_round + 1
+
+            # If next-round games are already scheduled (e.g., round-robin), don't auto-generate
+            if TournamentGame.objects.filter(tournament=tournament, round=next_round).exists():
+                logger.debug(f"Next round {next_round} already scheduled; skipping auto-generation.")
+                next_round_response = next_round
+
+        # If all tournament games are completed (round-robin case), mark tournament completed
+        if not TournamentGame.objects.filter(tournament=tournament).exclude(status='completed').exists():
+            tournament.status = 'completed'
+            tournament.end_time = timezone.now()
+            tournament.save()
+            logger.debug(f"Tournament {tournament.id} completed; all scheduled games finished.")
+
+        logger.info(f"Tournament game {game_id} completed as a tie (no players joined)")
         return True
     except TournamentGame.DoesNotExist:
         logger.debug(f"No tournament game found for game_id {game_id}")
@@ -158,6 +250,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
             # Start game loop
             asyncio.create_task(self.game_loop())
+        else:
+            # Start timeout checker if this is a tournament game in waiting state
+            asyncio.create_task(self.check_join_timeout())
 
     async def disconnect(self, close_code):
         logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
@@ -266,6 +361,12 @@ class GameConsumer(AsyncWebsocketConsumer):
                             'winner_id': winner_id
                         }
                     )
+                    # Run DB work in sync thread; pass users and resolve profiles in service.
+                    await database_sync_to_async(match_ends)(
+                        self.game,
+                        self.game.players['left'],
+                        self.game.players['right'],
+                    )
                     break
             
             await asyncio.sleep(1/60)  # 60 FPS
@@ -295,3 +396,69 @@ class GameConsumer(AsyncWebsocketConsumer):
             'winner': event['winner'],
             'winner_id': event['winner_id']
         }))
+    
+    async def check_join_timeout(self):
+        """Check for join timeout and handle results if expired"""
+        while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
+            # Send remaining time update every second
+            remaining_time = self.game.get_remaining_time()
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    'type': 'time_update',
+                    'remaining_time': remaining_time
+                }
+            )
+            logger.debug(f"check_join_timeout")
+
+            # Check if timeout has expired
+            if self.game.is_timeout_expired() and not self.game.timeout_handled:
+                self.game.timeout_handled = True
+                winner_role, winner_name, winner_id, is_tie = self.game.get_timeout_result()
+                
+                self.game.status = 'completed'
+                logger.debug(f"self.game.is_timeout_expired() and not self.game.timeout_handled: {is_tie}")
+
+                if is_tie:
+                    # No players joined - it's a tie
+                    await sync_to_async(update_game_completed_tie)(self.game_id)
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {
+                            'type': 'game_over',
+                            'winner': 'Tie - No players joined',
+                            'winner_id': None
+                        }
+                    )
+                else:
+                    # One player joined - they win by default
+                    await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {
+                            'type': 'game_over',
+                            'winner': winner_name,
+                            'winner_id': winner_id
+                        }
+                    )
+                # Close all client connections
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        'type': 'close_connection'
+                    }
+                )
+                break
+            
+            await asyncio.sleep(1)  # Check every second
+    
+    async def time_update(self, event):
+        """Send remaining time to client"""
+        await self.send(text_data=json.dumps({
+            'type': 'timeUpdate',
+            'remaining_time': event['remaining_time']
+        }))
+    
+    async def close_connection(self, event):
+        """Close the websocket connection"""
+        await self.close(code=1008)
