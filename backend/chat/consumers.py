@@ -273,10 +273,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			content=content
 		)
 
-		# Keep last_message_at current so conversations can be sorted by activity.
-		conversation.last_message_at = msg.created_at
-		conversation.save(update_fields=['last_message_at'])
-
 		# Only increment unread if the recipient doesn't currently have this conversation open.
 		# ACTIVE_CONVERSATION[recipient_id] == self.user_id means they are looking at our DM right now.
 		# F('unread_count') + 1 is a database-level increment — avoids race conditions

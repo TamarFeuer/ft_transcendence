@@ -18,8 +18,6 @@ class Migration(migrations.Migration):
             name='Conversation',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('last_message_at', models.DateTimeField(blank=True, null=True)),
             ],
             options={
                 'db_table': 'chat_conversation',

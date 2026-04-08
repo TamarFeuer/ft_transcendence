@@ -6,12 +6,6 @@ class Conversation(models.Model):
 	# The relationship between users lives here, not on individual messages.
 	# This way "are these two people in a conversation?" is a single lookup.
 
-	created_at = models.DateTimeField(auto_now_add=True)
-
-	# Updated every time a new message is sent, so conversations can be
-	# sorted by most recent activity without aggregating all messages.
-	last_message_at = models.DateTimeField(null=True, blank=True)
-
 	def __str__(self):
 		# Build a readable label showing who is in this conversation.
 		# Used in Django admin and when printing a Conversation object.
