@@ -210,7 +210,7 @@ export function initChatUI() {
 				unblockBtn.addEventListener("click", (e) => {
 					e.stopPropagation();
 					fetch('/api/friends/unblock', {
-						method: 'POST',
+						method: 'DELETE',
 						credentials: 'include',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ user_id: id })

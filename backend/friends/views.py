@@ -182,7 +182,7 @@ def block_user(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_http_methods(["DELETE"])
 def unblock_user(request):
 	try:
 		user, error = get_authenticated_user(request)
