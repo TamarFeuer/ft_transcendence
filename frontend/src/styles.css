@@ -188,7 +188,7 @@
 
 #channelTitle {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(236, 72, 153, 0.3);
+  /* border-bottom moved to Tailwind class in index.html */
   font-size: 1rem;
   font-weight: 700;
   color: #fce7f3;

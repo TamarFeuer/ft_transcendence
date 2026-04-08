@@ -253,3 +253,11 @@ export function closeConversation(targetId) {
 		target: targetId
 	}));
 }
+
+export function openConversation(targetId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "open_conversation",
+		target: targetId
+	}));
+}
