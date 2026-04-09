@@ -83,6 +83,8 @@ async function loadTemplate(name) {
 	const res = await fetch(url);
 	const html = await res.text();
 
+  // disposeCurrentEngine();
+
 	const appRoot = document.getElementById("app-root");
 	appRoot.innerHTML = html;
 	
