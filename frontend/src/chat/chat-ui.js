@@ -2,7 +2,7 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation } from './chat.js';
+import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked } from './chat.js';
 
 export function initChatUI() {
 
@@ -41,7 +41,7 @@ export function initChatUI() {
 		if (channelId === "global") {
 			channelTitle.textContent = "# Global Chat";
 		} else {
-			const name = onlineUsers[channelId];
+			const name = onlineUsers[channelId]?.name;
 			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
 			markRead(channelId);
 			openConversation(channelId);
@@ -184,9 +184,11 @@ export function initChatUI() {
 			return;
 		}
 
-		Object.entries(onlineUsers).forEach(([id, name]) => {
+		Object.entries(onlineUsers).forEach(([id, data]) => {
 			// Skip yourself — every user past this point is someone else
 			if (id === verifiedUserId) return;
+
+			const { name, blocked_by_me } = data;
 
 			const div = document.createElement("div");
 			div.className = "user-item";
@@ -200,11 +202,28 @@ export function initChatUI() {
 			div.appendChild(statusDot);
 			div.appendChild(nameSpan);
 
-			// Click to open DM with this user
-			div.addEventListener("click", (e) => {
-				e.stopPropagation(); // prevent the document click from closing it immediately
-				showChatUserMenu({id, name}, e.clientX, e.clientY);
-			});
+			if (blocked_by_me) {
+				// Show unblock button instead of normal click behavior
+				const unblockBtn = document.createElement("button");
+				unblockBtn.textContent = "Unblock";
+				unblockBtn.className = "ml-auto text-xs text-pink-400 hover:text-pink-200";
+				unblockBtn.addEventListener("click", (e) => {
+					e.stopPropagation();
+					fetch('/api/friends/unblock', {
+						method: 'DELETE',
+						credentials: 'include',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ user_id: id })
+					}).then(() => notifyBlocked());
+				});
+				div.appendChild(unblockBtn);
+			} else {
+				// Click to open context menu
+				div.addEventListener("click", (e) => {
+					e.stopPropagation();
+					showChatUserMenu({ id, name }, e.clientX, e.clientY);
+				});
+			}
 
 			onlineUsersList.appendChild(div);
 		});
@@ -320,8 +339,20 @@ export function initChatUI() {
 		} else if (action === "chat") {
 			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
 		} else if (action === "block") {
-			// TODO: block user
-			console.log("Block user:", chatMenuUser);
+			const targetId = chatMenuUser.id;
+			fetch('/api/friends/block', {
+				method: 'POST',
+				credentials: 'include',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ user_id: targetId })
+			}).then(r => r.json()).then(data => {
+				if (data.success) {
+					closeDMChannel(targetId);
+					notifyBlocked();
+				} else {
+					console.warn("Block failed:", data.error);
+				}
+			});
 		}
 
 		hideChatUserMenu();
