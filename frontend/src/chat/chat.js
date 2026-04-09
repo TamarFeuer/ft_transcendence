@@ -254,6 +254,11 @@ export function closeConversation(targetId) {
 	}));
 }
 
+export function notifyBlocked() {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({ type: "user_blocked" }));
+}
+
 export function openConversation(targetId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
