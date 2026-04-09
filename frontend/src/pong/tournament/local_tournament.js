@@ -1,3 +1,4 @@
+import { createGameCanvas } from "../../routes/routes.js";
 
 import { showMessage } from "../../utils/utils.js"
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
@@ -33,7 +34,7 @@ export async function startLocalTournament(playerCount) {
 			</div>
 		`;
 
-		const canvas = document.getElementById("renderCanvas");
+		const canvas = createGameCanvas();
 		const engine = new Engine(canvas, true);
 		const scene = new Scene(engine);
 		const gameObjects = initGameScene(scene, canvas, 2);

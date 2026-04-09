@@ -25,3 +25,4 @@ export function handleRoute(path) {
         setTimeout(() => updatePageTranslations(), 0);
     }
 }
+
