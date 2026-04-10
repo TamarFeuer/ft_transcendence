@@ -169,10 +169,12 @@
   overflow: hidden;
 }
 
-.user-item span:last-child {
+.user-item .user-name {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
 }
 
 .user-item:hover {

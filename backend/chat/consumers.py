@@ -229,7 +229,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Deliver the updated online users list to this consumer's client.
 		await self.send(text_data=json.dumps({
 			"type": "online_users",
-			"users": event["users"]
+			"users": event["users"],
+			"blocked_me_ids": event.get("blocked_me_ids", [])
 		}))
 
 	async def broadcast_online_users(self):
@@ -250,7 +251,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			for channel_name in channels:
 				await self.channel_layer.send(channel_name, {
 					"type": "online.users",
-					"users": users
+					"users": users,
+					"blocked_me_ids": list(blocked_me)
 				})
 
 	# ─── Database helpers ─────────────────────────────────────────────────────
