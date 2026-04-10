@@ -94,6 +94,15 @@
 		<button data-action="block"
 			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Block User</button>
 	</div>
+	<!-- Game picker submenu — appears when "Invite to Game" is clicked -->
+	<div id="gamePickerMenu" style="display:none;"
+		class="fixed z-[9999] bg-gray-900 border border-pink-600/40 rounded-lg shadow-xl py-1 min-w-[160px]">
+		<div class="px-4 py-2 text-xs text-pink-300 font-bold border-b border-pink-600/20">Choose a game</div>
+		<button data-game="pong"
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Pong</button>
+		<button data-game="chess"
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Chess</button>
+	</div>
 	<script type="module" src="src/main.js"></script>
 
 </body>

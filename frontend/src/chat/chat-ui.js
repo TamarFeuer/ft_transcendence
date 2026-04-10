@@ -2,7 +2,8 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked } from './chat.js';
+import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked, sendGameInvite, sendGameInviteExpired } from './chat.js';
+import { navigate, handleRoute } from '../routes/route_helpers.js';
 
 export function initChatUI() {
 
@@ -142,6 +143,41 @@ export function initChatUI() {
 			msgDiv.className = "chat-message text-base leading-relaxed text-gray-200";
 
 			const isOwnMessage = msg.senderId === verifiedUserId;
+
+			// Game invite message — render with Accept button
+			if (msg.invite) {
+				msgDiv.classList.add("dm-received");
+				msgDiv.innerHTML = `
+					<span class="sender">${msg.senderName}</span> invited you to a game of
+					<strong>${msg.invite.gameType}</strong>!
+				`;
+				if (!isOwnMessage) {
+					const acceptBtn = document.createElement("button");
+					acceptBtn.textContent = "Accept";
+					acceptBtn.className = "ml-2 px-2 py-0.5 text-xs bg-pink-500 hover:bg-pink-400 rounded font-semibold";
+					acceptBtn.dataset.inviteGameId = msg.invite.gameId;
+					acceptBtn.addEventListener("click", async () => {
+						if (msg.invite.gameType === "pong") {
+							// Check if the game still exists — the inviter may have refreshed
+							// and the in-memory GameSession was cleaned up by disconnect().
+							const check = await fetch(`/api/game/${msg.invite.gameId}`);
+							const idx = messageHistory[channelId].indexOf(msg);
+							if (idx !== -1) messageHistory[channelId].splice(idx, 1);
+							renderMessages(channelId);
+							if (!check.ok) return; // game is gone, just remove the invite
+							window.history.pushState({}, '', `/online?gameId=${msg.invite.gameId}`);
+							handleRoute('/online');
+						} else if (msg.invite.gameType === "chess") {
+							// TODO: navigate to /chess-online?gameId=... once Niko adds gameId support
+							console.log("Chess invite accept not yet implemented.");
+						}
+					});
+					msgDiv.appendChild(acceptBtn);
+				}
+				chatMessages.appendChild(msgDiv);
+				return;
+			}
+
 			if (isOwnMessage) {
 				msgDiv.classList.add("self");
 			} else if (channelId !== "global") {
@@ -242,7 +278,6 @@ export function initChatUI() {
 		if (channelId !== "global") {
 			const existingTab = document.querySelector(`[data-channel="${channelId}"]`);
 			if (!existingTab) {
-				// second false means don't fetch history
 				openDMChannel(channelId, message.senderName, false, false);
 			}
 		}
@@ -302,6 +337,7 @@ export function initChatUI() {
 
 	const chatUserMenu = document.getElementById("chatUserMenu");
 	const chatUserMenuName = document.getElementById("chatUserMenuName");
+	const gamePickerMenu = document.getElementById("gamePickerMenu");
 	let chatMenuUser = null; // the user the menu is currently open for
 
 	function showChatUserMenu(user, mouseX, mouseY) {
@@ -333,8 +369,15 @@ export function initChatUI() {
 			// TODO: show user profile
 			console.log("View profile:", chatMenuUser);
 		} else if (action === "invite") {
-			// TODO: send game invite
-			console.log("Invite to game:", chatMenuUser);
+			// Show game picker submenu at the same position as the context menu.
+			// Don't call hideChatUserMenu() here — we need chatMenuUser alive when the picker is clicked.
+			// Stop propagation so the document click handler doesn't immediately hide the picker.
+			e.stopPropagation();
+			const rect = chatUserMenu.getBoundingClientRect();
+			gamePickerMenu.style.left = chatUserMenu.style.left;
+			gamePickerMenu.style.top = `${rect.bottom + 4}px`;
+			gamePickerMenu.style.display = "block";
+			return; // skip hideChatUserMenu() at the bottom
 		} else if (action === "chat") {
 			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
 		} else if (action === "block") {
@@ -361,6 +404,105 @@ export function initChatUI() {
 	document.addEventListener("click", (e) => {
 		if (!chatUserMenu.contains(e.target)) {
 			hideChatUserMenu();
+		}
+		if (!gamePickerMenu.contains(e.target)) {
+			gamePickerMenu.style.display = "none";
+		}
+	});
+
+	// ── Game picker ───────────────────────────────────────────────────────────
+
+	gamePickerMenu.addEventListener("click", async (e) => {
+		e.stopPropagation();
+		const gameType = e.target.dataset.game;
+		if (!gameType || !chatMenuUser) return;
+		gamePickerMenu.style.display = "none";
+
+		const targetId = chatMenuUser.id;
+		hideChatUserMenu();
+
+		if (gameType === "pong") {
+			const res = await fetch('/api/game/create', { method: 'POST', credentials: 'include' });
+			const data = await res.json();
+			sendGameInvite(targetId, "pong", data.gameId);
+			// Push the URL with the gameId query param, then call the /online route handler.
+			// navigate() doesn't handle query params, so we set the URL manually first.
+			window.history.pushState({}, '', `/online?gameId=${data.gameId}`);
+			handleRoute('/online');
+			// If the invitee doesn't accept within 20 seconds, go back and notify the invitee.
+			// window.history.back() triggers the popstate event, which calls closeGameConnection()
+			// in main.js, which closes the pong WebSocket. The backend disconnect() then fires
+			// and deletes the GameSession from memory.
+			const inviteTargetId = targetId;
+			const inviteGameId = data.gameId;
+			setTimeout(() => {
+				// Always notify the invitee that the invite expired — don't check the path here
+				// because Rik's JOIN_TIMEOUT (10s) may have already navigated us away from /online.
+				sendGameInviteExpired(inviteTargetId, inviteGameId);
+				if (window.location.pathname === '/online') {
+					window.history.back();
+				}
+			}, 9000);
+		} else if (gameType === "chess") {
+			// TODO: once Niko's chess PR adds gameId support to initOnlineChessGame(),
+			// call POST /api/chess/join/ here, get the gameId, send the invite,
+			// and navigate to /chess-online?gameId=...
+			console.log("Chess invite not yet implemented — waiting for Niko's update.");
+		}
+	});
+
+	// ── Incoming game invite ──────────────────────────────────────────────────
+
+	window.addEventListener("gameInviteReceived", (e) => {
+		const { senderId, senderName, gameType, gameId } = e.detail;
+
+		// Show the invite as a special message in the DM channel
+		const channelId = senderId;
+		if (!messageHistory[channelId]) messageHistory[channelId] = [];
+
+		// Open the DM tab if it doesn't exist yet
+		const existingTab = document.querySelector(`[data-channel="${channelId}"]`);
+		if (!existingTab) {
+			openDMChannel(channelId, senderName, false, false);
+		}
+
+		// Add a special invite message object to the history
+		messageHistory[channelId].push({
+			senderId,
+			senderName,
+			message: null,
+			invite: { gameType, gameId }
+		});
+
+		if (channelId === activeChannel) {
+			renderMessages(channelId);
+		} else {
+			// Badge the tab
+			const tab = document.querySelector(`[data-channel="${channelId}"]`);
+			if (tab) {
+				let badge = tab.querySelector(".unread-badge");
+				if (!badge) {
+					badge = document.createElement("span");
+					badge.className = "unread-badge";
+					badge.textContent = "1";
+					tab.appendChild(badge);
+				} else {
+					badge.textContent = parseInt(badge.textContent) + 1;
+				}
+			}
+		}
+	});
+
+	window.addEventListener("gameInviteExpired", (e) => {
+		const { gameId } = e.detail;
+		// Remove the invite from messageHistory so renderMessages doesn't recreate the Accept button.
+		for (const channelId in messageHistory) {
+			const idx = messageHistory[channelId].findIndex(m => m.invite?.gameId === gameId);
+			if (idx !== -1) {
+				messageHistory[channelId].splice(idx, 1);
+				renderMessages(channelId);
+				break;
+			}
 		}
 	});
 

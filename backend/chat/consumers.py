@@ -186,6 +186,38 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			# Mark this conversation as closed in the database.
 			await self.close_conversation(self.user_id, other_id)
 
+		elif msg_type == "game_invite":
+			target = data.get("target")
+			game_type = data.get("game_type")
+			game_id = data.get("game_id")
+			if not target or not game_type or not game_id:
+				return
+			# Forward the invite to the recipient only — not saved to the database.
+			payload = {
+				"type": "game.invite",
+				"sender": self.user_id,
+				"name": self.username,
+				"game_type": game_type,
+				"game_id": game_id,
+			}
+			if target in CONNECTED_USERS:
+				for channel_name in CONNECTED_USERS[target]:
+					await self.channel_layer.send(channel_name, payload)
+
+		elif msg_type == "game_invite_expired":
+			target = data.get("target")
+			game_id = data.get("game_id")
+			if not target or not game_id:
+				return
+			# Notify the invitee that the invite has expired so they can remove the Accept button.
+			payload = {
+				"type": "game.invite.expired",
+				"game_id": game_id,
+			}
+			if target in CONNECTED_USERS:
+				for channel_name in CONNECTED_USERS[target]:
+					await self.channel_layer.send(channel_name, payload)
+
 		elif msg_type == "user_blocked":
 			# Re-broadcast online users so blocked users disappear from each other's list immediately.
 			await self.broadcast_online_users()
@@ -230,6 +262,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": "online_users",
 			"users": event["users"]
+		}))
+
+	async def game_invite(self, event):
+		# Deliver a game invite to this consumer's client.
+		await self.send(text_data=json.dumps({
+			"type": "game_invite",
+			"sender": event["sender"],
+			"name": event["name"],
+			"game_type": event["game_type"],
+			"game_id": event["game_id"],
+		}))
+
+	async def game_invite_expired(self, event):
+		# Notify the client that a game invite has expired.
+		await self.send(text_data=json.dumps({
+			"type": "game_invite_expired",
+			"game_id": event["game_id"],
 		}))
 
 	async def broadcast_online_users(self):
