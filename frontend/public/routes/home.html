@@ -1,48 +1,55 @@
-<div id="menuOverlay" class="absolute inset-0 flex flex-col items-center justify-start bg-black/20 z-10 pt-12"
-  style="background-image: url('../assets/background.jpg'); background-size: cover; background-repeat: no-repeat;">
-  <div class="mt-0 flex gap-10 w-full max-w-xl px-4">
-    <button id="tttBtn" class="flex-1 py-10 bg-blue-600 text-slate-200 font-extrabold text-xl rounded-lg font-comic
-      border-2 border-yellow-400 shadow-[0_0_10px_yellow]
-      hover:bg-blue-700 hover:border-pink-400
-      transition-transform transition-colors duration-150
-      active:scale-95 active:shadow-inner">
-      <span data-i18n="BTN_TIC_TAC_TOE">Tic-Tac-Toe</span>
-    </button>
-    <button id="mineBtn" class="flex-1 py-10 bg-blue-600 text-slate-200 font-extrabold text-xl rounded-lg font-comic
-      border-2 border-yellow-400 shadow-[0_0_10px_yellow]
-      hover:bg-blue-700 hover:border-pink-400
-      transition-transform transition-colors duration-150
-      active:scale-95 active:shadow-inner">
-      <span data-i18n="BTN_MINESWEEPER">Minesweeper</span>
-    </button>
-    <button id="pongBtn" class="flex-1 py-10 bg-blue-600 text-slate-200 font-extrabold text-xl rounded-lg font-comic
-      border-2 border-yellow-400 shadow-[0_0_10px_yellow]
-      hover:bg-blue-700 hover:border-pink-400
-      transition-transform transition-colors duration-150
-      active:scale-95 active:shadow-inner">
-      <span data-i18n="BTN_PONG">Pong</span>
-    </button>
-    <button id="profileBtn" class="absolute top-4 right-4 z-20 px-4 py-2 bg-zinc-800 text-white font-semibold rounded-lg hover:bg-zinc-700 transition">
-      Profile
-    </button>
+<div class="min-h-screen bg-zinc-900 flex flex-col">
 
-    <!-- Leaderboard Table (Dynamic) -->
-    <div id="leaderboardTableContainer" class="absolute top-20 left-4 z-10 bg-white bg-opacity-90 rounded-lg shadow-lg p-4 w-80 border border-zinc-300">
-      <h2 class="text-xl font-bold mb-2 text-zinc-800">Leaderboard</h2>
-      <table class="min-w-full text-sm text-left">
-        <thead>
-          <tr>
-            <th class="py-1 px-2 border-b">Rank</th>
-            <th class="py-1 px-2 border-b">Player</th>
-            <th class="py-1 px-2 border-b">Score</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboardTableBody">
-          <tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500">Loading...</td></tr>
-        </tbody>
-      </table>
+    <nav class="w-full h-16 lg:h-20 bg-zinc-800 border-b border-zinc-700 px-6 lg:px-8 xl:px-12 flex items-center justify-end shrink-0 z-10 relative">
+        <button type="button" id="profileNavBtn" class="flex items-center gap-3 lg:gap-4 cursor-pointer group bg-transparent border-none outline-none">
+            <span id="navUsername" class="text-zinc-300 font-semibold text-sm lg:text-base xl:text-lg group-hover:text-white transition"></span>
+            <div id="navAvatar" class="w-8 h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm lg:text-base xl:text-lg group-hover:bg-violet-400 transition"></div>
+        </button>
+    </nav>
+
+    <div class="flex-1 flex flex-col items-center justify-center gap-12 lg:gap-16 xl:gap-20 px-6 lg:px-8 xl:px-12">
+
+        <div class="text-center">
+            <h1 class="text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-violet-200 to-violet-500 bg-clip-text drop-shadow-[0_0_25px_rgba(139,92,246,0.35)]">
+                Transcendence
+            </h1>
+            <div class="mt-4 lg:mt-5 h-px w-32 lg:w-40 xl:w-48 mx-auto bg-gradient-to-r from-transparent via-violet-500/60 to-transparent"></div>
+        </div>
+
+        <div class="flex items-center gap-6 lg:gap-10 xl:gap-14 w-full max-w-3xl lg:max-w-5xl xl:max-w-6xl">
+
+            <div id="aiBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl lg:rounded-3xl p-5 lg:p-7 xl:p-9 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+                <div>
+                    <h2 class="font-bold text-lg lg:text-2xl xl:text-3xl text-white pb-2 lg:pb-3">Play Computer</h2>
+                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed">Train against a bot and improve your skills.</p>
+                </div>
+                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">
+                    Play
+                </button>
+            </div>
+
+            <div id="onlineBtn" class="flex-[1.3] aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl lg:rounded-3xl p-5 lg:p-7 xl:p-9 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+                <div>
+                    <h2 class="font-bold text-xl lg:text-3xl xl:text-4xl text-white pb-2 lg:pb-3">Play Online</h2>
+                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed">Match with real players online.</p>
+                </div>
+                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">
+                    Play
+                </button>
+            </div>
+
+            <div id="localBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl lg:rounded-3xl p-5 lg:p-7 xl:p-9 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+                <div>
+                    <h2 class="font-bold text-lg lg:text-2xl xl:text-3xl text-white pb-2 lg:pb-3">Play Local</h2>
+                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed">Play on the same device as a friend.</p>
+                </div>
+                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">
+                    Play
+                </button>
+            </div>
+
+        </div>
+
     </div>
 
-  </div>
-  </div>
 </div>

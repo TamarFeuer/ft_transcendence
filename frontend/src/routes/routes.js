@@ -18,7 +18,7 @@ import { initChessGame } from '../chess/chess.js';
 import { initProfilePage } from "../users_friends/profilePage.js"
 import { initLoginPage } from "../users_friends/loginPage.js"
 import { registerPage } from "../users_friends/register.js"
-
+import { initHome } from "../home/home.js"
 
 // Global engine management to prevent multiple render loops
 export let currentEngine = null;
@@ -95,13 +95,9 @@ export function setupRoutes() {
   routes['/'] = async () => {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
-			return;
+        return;
     await loadTemplate('home');
-    document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
-    document.getElementById('mineBtn')?.addEventListener('click', () => navigate('/mine'));
-    document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
-    document.getElementById('profileBtn')?.addEventListener('click', () => navigate('/profile'));
-    loadLeaderboard();
+    initHome();
   };
   routes['/login'] = async () => {
     stopTournamentAutoRefresh();
