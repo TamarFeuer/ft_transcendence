@@ -1,48 +1,41 @@
-<div id="menuOverlay" class="absolute inset-0 flex flex-col items-center justify-start bg-black/20 z-10 pt-12"
-  style="background-image: url('../assets/background.jpg'); background-size: cover; background-repeat: no-repeat;">
-  <div class="mt-0 flex gap-10 w-full max-w-xl px-4">
-    <button id="tttBtn" class="flex-1 py-10 bg-blue-600 text-slate-200 font-extrabold text-xl rounded-lg font-comic
-      border-2 border-yellow-400 shadow-[0_0_10px_yellow]
-      hover:bg-blue-700 hover:border-pink-400
-      transition-transform transition-colors duration-150
-      active:scale-95 active:shadow-inner">
-      <span data-i18n="BTN_TIC_TAC_TOE">Tic-Tac-Toe</span>
-    </button>
-    <button id="mineBtn" class="flex-1 py-10 bg-blue-600 text-slate-200 font-extrabold text-xl rounded-lg font-comic
-      border-2 border-yellow-400 shadow-[0_0_10px_yellow]
-      hover:bg-blue-700 hover:border-pink-400
-      transition-transform transition-colors duration-150
-      active:scale-95 active:shadow-inner">
-      <span data-i18n="BTN_MINESWEEPER">Minesweeper</span>
-    </button>
-    <button id="pongBtn" class="flex-1 py-10 bg-blue-600 text-slate-200 font-extrabold text-xl rounded-lg font-comic
-      border-2 border-yellow-400 shadow-[0_0_10px_yellow]
-      hover:bg-blue-700 hover:border-pink-400
-      transition-transform transition-colors duration-150
-      active:scale-95 active:shadow-inner">
-      <span data-i18n="BTN_PONG">Pong</span>
-    </button>
-    <button id="profileBtn" class="absolute top-4 right-4 z-20 px-4 py-2 bg-zinc-800 text-white font-semibold rounded-lg hover:bg-zinc-700 transition">
-      Profile
-    </button>
+<div class="min-h-screen bg-zinc-900 flex flex-col">
 
-    <!-- Leaderboard Table (Dynamic) -->
-    <div id="leaderboardTableContainer" class="absolute top-20 left-4 z-10 bg-white bg-opacity-90 rounded-lg shadow-lg p-4 w-80 border border-zinc-300">
-      <h2 class="text-xl font-bold mb-2 text-zinc-800">Leaderboard</h2>
-      <table class="min-w-full text-sm text-left">
-        <thead>
-          <tr>
-            <th class="py-1 px-2 border-b">Rank</th>
-            <th class="py-1 px-2 border-b">Player</th>
-            <th class="py-1 px-2 border-b">Score</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboardTableBody">
-          <tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500">Loading...</td></tr>
-        </tbody>
-      </table>
+    <nav class="w-full h-16 bg-zinc-800 border-b border-zinc-700 px-8 flex items-center justify-end shrink-0">
+        <div id="profileNavBtn" class="flex items-center gap-3 cursor-pointer group">
+            <span id="navUsername" class="text-zinc-300 font-semibold group-hover:text-white transition"></span>
+            <div id="navAvatar" class="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm group-hover:bg-violet-400 transition"></div>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex flex-col items-center justify-center gap-10">
+        <div class="flex items-center gap-6">
+
+            <div id="aiBtn" class="w-52 h-52 bg-zinc-800 rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer border border-zinc-700 hover:border-violet-500 transition">
+                <span class="text-4xl">🤖</span>
+                <div class="text-center">
+                    <p class="text-white font-bold text-lg">Play Computer</p>
+                    <p class="text-zinc-400 text-sm mt-1">vs AI</p>
+                </div>
+            </div>
+
+            <div id="onlineBtn" class="w-64 h-64 bg-violet-600 rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer border border-violet-400 hover:bg-violet-500 transition shadow-lg shadow-violet-900/40">
+                <span class="text-5xl">🌐</span>
+                <div class="text-center">
+                    <p class="text-white font-bold text-xl">Play Online</p>
+                    <p class="text-violet-200 text-sm mt-1">vs real players</p>
+                </div>
+            </div>
+
+            <div id="localBtn" class="w-52 h-52 bg-zinc-800 rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer border border-zinc-700 hover:border-violet-500 transition">
+                <span class="text-4xl">👥</span>
+                <div class="text-center">
+                    <p class="text-white font-bold text-lg">Play Local</p>
+                    <p class="text-zinc-400 text-sm mt-1">with a friend</p>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 
-  </div>
-  </div>
 </div>
