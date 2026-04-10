@@ -1,9 +1,3 @@
-// hover:-translate-y-2
-// hover:border-violet-500
-// hover:shadow-lg
-// hover:shadow-violet-500/40
-// transition-all
-// duration-200
 import { navigate } from "../routes/route_helpers.js";
 
 export function initHome() {
