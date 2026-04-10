@@ -1,3 +1,5 @@
+import { createGameCanvas } from "../../routes/routes.js";
+
 import {
   ArcRotateCamera,
   HemisphericLight,
@@ -83,7 +85,8 @@ export function joinOnlineGame(gameId, IsTournament) {
   }
   const currentUserId = String(window.CURRENT_USER?.user_id ?? '');
   const currentUsername = window.CURRENT_USER?.username || 'Player';
-  const canvas = document.getElementById("renderCanvas");
+  const canvas = createGameCanvas();
+
   const engine = new Engine(canvas, true);
   const scene = new Scene(engine);
   let pointerHandler = null;
