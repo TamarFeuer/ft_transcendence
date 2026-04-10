@@ -1,6 +1,6 @@
 import { routes } from '../main.js';
 import { initAIGame } from '../pong/ai/ai.js';
-import { handleRoute, navigate } from "./route_helpers.js";
+import { navigate } from "./route_helpers.js";
 import { joinOnlineGame } from '../pong/game/game.js';
 import { initOfflineGame } from '../pong/game/local_game.js';
 import { startLocalTournament } from '../pong/tournament/local_tournament.js';
@@ -79,12 +79,11 @@ export async function redirectIfNotLoggedIn() {
 
 
 async function loadTemplate(name) {
+  disposeCurrentEngine();
+  document.getElementById('renderCanvas')?.remove();
 	const url = `/routes/${name}.html`;
 	const res = await fetch(url);
 	const html = await res.text();
-
-  // disposeCurrentEngine();
-
 	const appRoot = document.getElementById("app-root");
 	appRoot.innerHTML = html;
 	
@@ -103,13 +102,11 @@ export function setupRoutes() {
   routes['/login'] = async () => {
     stopTournamentAutoRefresh();
     await loadTemplate('login');
-    document.getElementById('renderCanvas').style.display = 'none'; //
     initLoginPage();
   };
   routes['/register'] = async () =>{
     stopTournamentAutoRefresh();
     await loadTemplate('register');
-    document.getElementById('renderCanvas').style.display = 'none'; //
     registerPage();
   }
   routes['/chess'] = async () => {
@@ -117,7 +114,7 @@ export function setupRoutes() {
     if(await redirectIfNotLoggedIn())
 			return;
     await loadTemplate('chess');
-    document.getElementById('renderCanvas').style.display = 'none';
+
     initChessGame();
   }
 
@@ -125,7 +122,7 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    // disposeCurrentEngine();
+
     await loadTemplate('pong');
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
     document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
@@ -137,9 +134,9 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    // disposeCurrentEngine();
+
     await loadTemplate('local');
-    const canvas = document.getElementById("renderCanvas");
+    const canvas = createGameCanvas();
     currentEngine = new Engine(canvas, true);
     const scene = new Scene(currentEngine);
     const gameObjects = initGameScene(scene, canvas, 2);
@@ -155,7 +152,7 @@ export function setupRoutes() {
 			return;
     // disposeCurrentEngine();
     await loadTemplate('ai');
-    const canvas = document.getElementById("renderCanvas");
+    const canvas = createGameCanvas();
     currentEngine = new Engine(canvas, true);
     const scene = new Scene(currentEngine);
     const gameObjects = initGameScene(scene, canvas, 2);
@@ -329,4 +326,12 @@ export function handleTournamentRoute(path) {
       handler(tournamentId);
     }
   }
+}
+
+export function createGameCanvas() {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'renderCanvas';
+    canvas.className = 'absolute inset-0 w-full h-full pointer-events-none';
+    document.body.appendChild(canvas);
+    return canvas;
 }

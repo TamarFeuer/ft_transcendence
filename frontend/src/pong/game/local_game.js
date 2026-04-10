@@ -197,6 +197,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             window.removeEventListener("popstate", browserExitHandler);
             scene.onBeforeRenderObservable.remove(renderObserver);
             disposeCurrentEngine();
+            document.getElementById('renderCanvas')?.remove();
         };
 
         const endGame = (showWinnerMessage = false) => {
