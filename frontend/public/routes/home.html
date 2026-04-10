@@ -1,5 +1,6 @@
 <div class="min-h-screen bg-zinc-900 flex flex-col">
 
+    <!-- Navbar -->
     <nav class="w-full h-16 bg-zinc-800 border-b border-zinc-700 px-8 flex items-center justify-end shrink-0 z-10 relative">
         <button type="button" id="profileNavBtn" class="flex items-center gap-3 cursor-pointer group bg-transparent border-none outline-none">
             <span id="navUsername" class="text-zinc-300 font-semibold group-hover:text-white transition"></span>
@@ -7,37 +8,43 @@
         </button>
     </nav>
 
-    <div class="flex-1 flex flex-col items-center justify-center lg:justify-start lg:pt-20 gap-16 px-8 py-8">
+    <!-- Main content — one centered group, never stretches -->
+    <div class="flex-1 flex flex-col items-center justify-center gap-12 px-6">
 
+        <!-- Title -->
         <div class="text-center">
-            <h1 class="text-5xl lg:text-8xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-violet-200 to-violet-500 bg-clip-text drop-shadow-[0_0_25px_rgba(139,92,246,0.35)]">Transcendence</h1>
+            <h1 class="text-5xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-violet-200 to-violet-500 bg-clip-text drop-shadow-[0_0_25px_rgba(139,92,246,0.35)]">Transcendence</h1>
             <div class="mt-4 h-px w-32 mx-auto bg-gradient-to-r from-transparent via-violet-500/60 to-transparent"></div>
         </div>
 
-        <div class="flex items-center gap-6 lg:gap-8 w-full max-w-xl lg:max-w-4xl xl:max-w-5xl">
+        <!-- Cards — max 768px wide, always centered -->
+        <div class="flex items-center gap-6 w-full max-w-3xl">
 
-            <div id="aiBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+            <!-- Left - Play Computer -->
+            <div id="aiBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl p-5 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
                 <div>
-                    <h2 class="font-bold text-xl lg:text-2xl text-white pb-3">Play Computer</h2>
-                    <p class="font-semibold text-zinc-400 text-xs lg:text-sm">Train against a bot and improve your skills.</p>
+                    <h2 class="font-bold text-lg text-white pb-2">Play Computer</h2>
+                    <p class="text-zinc-400 text-sm">Train against a bot and improve your skills.</p>
                 </div>
-                <button type="button" class="bg-violet-600 rounded-xl h-10 lg:h-12 flex items-center justify-center font-semibold text-white transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
+                <button type="button" class="bg-violet-600 rounded-xl h-10 flex items-center justify-center font-semibold text-white text-sm transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
             </div>
 
-            <div id="onlineBtn" class="flex-[1.25] aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl p-6 lg:p-8 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+            <!-- Middle - Play Online (slightly bigger) -->
+            <div id="onlineBtn" class="flex-[1.3] aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl p-5 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
                 <div>
-                    <h2 class="font-bold text-2xl lg:text-3xl text-white pb-3">Play Online</h2>
-                    <p class="font-semibold text-zinc-400 text-xs lg:text-sm">Match with real players online.</p>
+                    <h2 class="font-bold text-xl text-white pb-2">Play Online</h2>
+                    <p class="text-zinc-400 text-sm">Match with real players online.</p>
                 </div>
-                <button type="button" class="bg-violet-600 rounded-xl h-10 lg:h-12 flex items-center justify-center font-semibold text-white transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
+                <button type="button" class="bg-violet-600 rounded-xl h-10 flex items-center justify-center font-semibold text-white text-sm transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
             </div>
 
-            <div id="localBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+            <!-- Right - Play Local -->
+            <div id="localBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl p-5 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
                 <div>
-                    <h2 class="font-bold text-xl lg:text-2xl text-white pb-3">Play Local</h2>
-                    <p class="font-semibold text-zinc-400 text-xs lg:text-sm">Play on the same device as a friend.</p>
+                    <h2 class="font-bold text-lg text-white pb-2">Play Local</h2>
+                    <p class="text-zinc-400 text-sm">Play on the same device as a friend.</p>
                 </div>
-                <button type="button" class="bg-violet-600 rounded-xl h-10 lg:h-12 flex items-center justify-center font-semibold text-white transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
+                <button type="button" class="bg-violet-600 rounded-xl h-10 flex items-center justify-center font-semibold text-white text-sm transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
             </div>
 
         </div>
