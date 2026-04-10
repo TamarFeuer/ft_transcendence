@@ -47,8 +47,8 @@ export function initChatUI() {
 			openConversation(channelId);
 		}
 
-		// If this is a DM with no history loaded yet, fetch it now
-		if (channelId !== "global" && (!messageHistory[channelId] || messageHistory[channelId].length === 0)) {
+		// Always fetch DM history when switching to a DM tab
+		if (channelId !== "global") {
 			fetchDMHistory(channelId);
 		}
 
@@ -253,13 +253,12 @@ export function initChatUI() {
 	// chat.js dispatches this when DM history is fetched from the database
 	window.addEventListener("dmHistoryReceived", (e) => {
 		const { channelId, messages } = e.detail;
-		if (!messageHistory[channelId]) messageHistory[channelId] = [];
-		// Prepend history — database messages come first, then live messages on top
-		messageHistory[channelId] = [...messages.map(msg => ({
-			senderId: String(msg.sender_id), //sender_id comes back from the database as an integer
+		// Replace messageHistory with DB history (always authoritative — includes all recent messages)
+		messageHistory[channelId] = messages.map(msg => ({
+			senderId: String(msg.sender_id),
 			senderName: msg.sender_name,
 			message: msg.message
-		})), ...messageHistory[channelId]];
+		}));
 		if (channelId === activeChannel) renderMessages(channelId);
 	});
 	
