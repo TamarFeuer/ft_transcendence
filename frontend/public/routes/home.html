@@ -1,34 +1,42 @@
 <div class="min-h-screen bg-zinc-900 flex flex-col">
 
-    <nav class="w-full h-16 bg-zinc-800 border-b border-zinc-700 px-8 flex items-center justify-end shrink-0">
-        <div id="profileNavBtn" class="flex items-center gap-3 cursor-pointer group">
+    <nav class="w-full h-16 bg-zinc-800 border-b border-zinc-700 px-8 flex items-center justify-end shrink-0 z-10 relative">
+        <button type="button" id="profileNavBtn" class="flex items-center gap-3 cursor-pointer group bg-transparent border-none outline-none">
             <span id="navUsername" class="text-zinc-300 font-semibold group-hover:text-white transition"></span>
             <div id="navAvatar" class="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm group-hover:bg-violet-400 transition"></div>
-        </div>
+        </button>
     </nav>
 
-    <div class="flex-1 flex flex-col items-center justify-center gap-10">
-        <div class="flex items-center gap-6">
+    <div class="flex-1 flex flex-col items-center justify-center">
 
-            <div id="aiBtn" class="w-52 h-52 bg-zinc-800 rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer border border-zinc-700 hover:border-violet-500 transition">
-                <div class="text-center">
-                    <p class="text-white font-bold text-lg">Against computer</p>
-                    <p class="text-zinc-400 text-sm mt-1">Train against a bot and improve your skills.</p>
+        <div class="text-center mb-16">
+            <h1 class="text-7xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-violet-200 to-violet-500 bg-clip-text drop-shadow-[0_0_25px_rgba(139,92,246,0.35)]">Transcendence</h1>
+            <div class="mt-4 h-px w-32 mx-auto bg-gradient-to-r from-transparent via-violet-500/60 to-transparent"></div>
+        </div>
+
+        <div class="flex items-center gap-8">
+            <div id="aiBtn" class="w-72 h-72 bg-zinc-800 border border-zinc-700 rounded-2xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+                <div>
+                    <h2 class="font-bold text-2xl text-white pb-4">Play Computer</h2>
+                    <p class="font-semibold text-zinc-400 text-sm">Train against a bot and improve your skills.</p>
                 </div>
+                <button type="button" class="bg-violet-600 rounded-xl h-12 flex items-center justify-center font-semibold text-white hover:bg-violet-500 transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
             </div>
 
-            <div id="onlineBtn" class="w-64 h-64 bg-violet-600 rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer border border-violet-400 hover:bg-violet-500 transition shadow-lg shadow-violet-900/40">
-                <div class="text-center">
-                    <p class="text-white font-bold text-xl">Online game</p>
-                    <p class="text-violet-200 text-sm mt-1">Match with players online.</p>
+            <div id="onlineBtn" class="w-80 h-80 bg-zinc-800 border border-zinc-700 rounded-2xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+                <div>
+                    <h2 class="font-bold text-2xl text-white pb-4">Play Online</h2>
+                    <p class="font-semibold text-zinc-400 text-sm">Match with real players online.</p>
                 </div>
+                <button type="button" class="bg-violet-600 rounded-xl h-12 flex items-center justify-center font-semibold text-white hover:bg-violet-500 transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
             </div>
 
-            <div id="localBtn" class="w-52 h-52 bg-zinc-800 rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer border border-zinc-700 hover:border-violet-500 transition">
-                <div class="text-center">
-                    <p class="text-white font-bold text-lg">Local game</p>
-                    <p class="text-zinc-400 text-sm mt-1">Play on the same device as a friend.</p>
+            <div id="localBtn" class="w-72 h-72 bg-zinc-800 border border-zinc-700 rounded-2xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
+                <div>
+                    <h2 class="font-bold text-2xl text-white pb-4">Play Local</h2>
+                    <p class="font-semibold text-zinc-400 text-sm">Play on the same device as a friend.</p>
                 </div>
+                <button type="button" class="bg-violet-600 rounded-xl h-12 flex items-center justify-center font-semibold text-white hover:bg-violet-500 transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">Play</button>
             </div>
 
         </div>
