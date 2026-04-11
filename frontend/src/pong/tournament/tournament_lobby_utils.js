@@ -4,18 +4,24 @@ import { showMessage } from "../../utils/utils.js"
 import { getCurrentUser } from '../../users_friends/usermanagement.js';
 import { navigate } from '../../routes/route_helpers.js';
 import { t } from '../../i18n/index.js';
+import { stopTournamentUpdatesSocket } from './tournament_ws.js';
 
 let tournamentAutoRefreshInterval = null;
 
+function stopOnlyTournamentAutoRefreshInterval() {
+    if (tournamentAutoRefreshInterval) {
+        clearInterval(tournamentAutoRefreshInterval);
+        tournamentAutoRefreshInterval = null;
+    }
+}
+
 export function stopTournamentAutoRefresh() {
-  if (tournamentAutoRefreshInterval) {
-    clearInterval(tournamentAutoRefreshInterval);
-    tournamentAutoRefreshInterval = null;
-  }
+    stopTournamentUpdatesSocket();
+    stopOnlyTournamentAutoRefreshInterval();
 }
 
 export function startTournamentAutoRefresh(callback, intervalMs = 500) {
-  stopTournamentAutoRefresh();
+    stopOnlyTournamentAutoRefreshInterval();
   tournamentAutoRefreshInterval = setInterval(callback, intervalMs);
 }
 
