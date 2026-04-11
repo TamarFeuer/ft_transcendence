@@ -21,12 +21,14 @@ import { handleRoute, navigate } from "../../routes/route_helpers.js";
 let ws = null;
 let currentGameId = null;
 export let isGameActive = false;
+let suppressOnCloseNavigation = false;
 
 // Close WebSocket before navigation
 export function closeGameConnection() {
 	if (ws) {
 		console.log('Closing WebSocket connection');
 		isGameActive = false;
+    suppressOnCloseNavigation = true;
 		ws.close();
 		ws = null;
 	}
@@ -140,6 +142,21 @@ export function joinOnlineGame(gameId, IsTournament) {
       </div>
     </div>
     `;
+
+    const leaveWaitingBtn = document.getElementById('leaveWaitingBtn');
+    if (leaveWaitingBtn) {
+      leaveWaitingBtn.addEventListener('click', () => {
+        suppressOnCloseNavigation = true;
+        closeGameConnection();
+        sessionStorage.removeItem('activeGameId');
+        sessionStorage.removeItem('activeTournamentId');
+        if (IsTournament) {
+          navigate(`/tournament/${window.currentTournamentId}`);
+        } else {
+          navigate('/online');
+        }
+      });
+    }
   };
 
   ws.onerror = (e) => console.error("WS error", e);
@@ -287,6 +304,10 @@ export function joinOnlineGame(gameId, IsTournament) {
       sessionStorage.removeItem('activeGameId');
       sessionStorage.removeItem('activeTournamentId');
 
+    }
+    if (suppressOnCloseNavigation) {
+      suppressOnCloseNavigation = false;
+      return;
     }
     if (IsTournament) {
       navigate(`/tournament/${window.currentTournamentId}`);
