@@ -116,17 +116,22 @@ export function initChat() {
 				}));
 				break;
 
-			// Another user started typing — show indicator (TODO in UI)
-			case "typing":
-				console.log(`${data.name || data.user} is typing...`);
-				// TODO: dispatch "typingStarted" event and show indicator in UI
+			case "typing": {
+				// For DMs: the channel is the sender's ID (data.user).
+				// For global: data.target is null, channel is "global".
+				const channelId = data.target ? data.user : "global";
+				window.dispatchEvent(new CustomEvent("typingStarted", {
+					detail: { userId: data.user, name: data.name, channelId }
+				}));
 				break;
-
-			// Another user stopped typing
-			case "stop_typing":
-				console.log(`${data.name || data.user} stopped typing`);
-				// TODO: dispatch "typingStopped" event and hide indicator in UI
+			}
+			case "stop_typing": {
+				const channelId = data.target ? data.user : "global";
+				window.dispatchEvent(new CustomEvent("typingStopped", {
+					detail: { userId: data.user, channelId }
+				}));
 				break;
+			}
 
 			default:
 				console.warn("Unknown chat message type:", data.type);
@@ -163,7 +168,7 @@ export function sendChatMessage(message, target = null) {
  * Sends "typing" on input, then "stop_typing" after 1s of inactivity.
  * @param {HTMLTextAreaElement} chatInput - The textarea element.
  */
-export function initTyping(chatInput) {
+export function initTyping(chatInput, getTarget = () => null) {
 	if (!chatInput) {
 		console.warn("initTyping: no chatInput element provided");
 		return;
@@ -187,24 +192,19 @@ export function initTyping(chatInput) {
 			if (chatSocket.readyState !== WebSocket.OPEN) return;
 
 			// Tell the server this user is typing
-			chatSocket.send(JSON.stringify({
-				type: "typing",
-				user: verifiedUserId,
-				name: verifiedUserName,
-			}));
-			
+			const target = getTarget();
+			const typingPayload = { type: "typing", user: verifiedUserId, name: verifiedUserName };
+			if (target) typingPayload.target = target;
+			chatSocket.send(JSON.stringify(typingPayload));
+
 			// Debounce: cancel the previous countdown and start a fresh one
 			// "stop_typing" only fires if the user stops typing for a full second
 			clearTimeout(typingTimeout);
-			// We don't care about the actual value of typingTimeout
-			// we only store it so we can pass it to clearTimeout on the next keystroke
 			typingTimeout = setTimeout(() => {
 				if (chatSocket.readyState === WebSocket.OPEN) {
-					chatSocket.send(JSON.stringify({
-						type: "stop_typing",
-						user: verifiedUserId,
-						name: verifiedUserName
-					}));
+					const stopPayload = { type: "stop_typing", user: verifiedUserId, name: verifiedUserName };
+					if (target) stopPayload.target = target;
+					chatSocket.send(JSON.stringify(stopPayload));
 				}
 			}, 1000);
 		});

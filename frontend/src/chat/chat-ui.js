@@ -18,6 +18,7 @@ export function initChatUI() {
 	const chatMessages = document.getElementById("chatMessages");
 	const channelTitle = document.getElementById("channelTitle");
 	const blockNotice = document.getElementById("blockNotice");
+	const typingIndicator = document.getElementById("typingIndicator");
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	// activeChannel is either "global" or a user ID for DMs
@@ -80,6 +81,7 @@ export function initChatUI() {
 
 		renderMessages(channelId);
 		updateDMInputState(channelId);
+		renderTypingIndicator();
 		document.getElementById("chatInput").focus();
 	}
 
@@ -258,6 +260,40 @@ export function initChatUI() {
 
 	// ── Event listeners ───────────────────────────────────────────────────────
 
+	// ── Typing indicator ─────────────────────────────────────────────────────
+
+	// Tracks who is currently typing, keyed by channelId: Set of userIds
+	const typingUsers = {};
+
+	function renderTypingIndicator() {
+		const typers = typingUsers[activeChannel];
+		if (!typers || typers.size === 0) {
+			typingIndicator.textContent = "";
+			return;
+		}
+		if (typers.size === 1) {
+			const name = [...typers.values()][0];
+			typingIndicator.textContent = `${name} is typing...`;
+		} else {
+			typingIndicator.textContent = `${typers.size} people are typing...`;
+		}
+	}
+
+	window.addEventListener("typingStarted", (e) => {
+		const { userId, name, channelId } = e.detail;
+		if (userId === verifiedUserId) return;
+		if (!typingUsers[channelId]) typingUsers[channelId] = new Map();
+		typingUsers[channelId].set(userId, name);
+		renderTypingIndicator();
+	});
+
+	window.addEventListener("typingStopped", (e) => {
+		const { userId, channelId } = e.detail;
+		if (typingUsers[channelId]) typingUsers[channelId].delete(userId);
+		renderTypingIndicator();
+	});
+
+	// Clear typing indicator when switching channels
 	// chat.js dispatches this whenever the online users list changes
 	window.addEventListener("onlineUsersUpdated", () => {
 		renderOnlineUsers();
@@ -417,7 +453,8 @@ export function initChatUI() {
 	});
 
 	// initTyping attaches the typing indicator to the textarea (chat.js)
-	initTyping(chatInput);
+	// Pass a getTarget callback so typing events include the active DM channel when in a DM
+	initTyping(chatInput, () => activeChannel === "global" ? null : activeChannel);
 
 	if (sendChatBtn && chatInput) {
 		const sendMessage = () => {

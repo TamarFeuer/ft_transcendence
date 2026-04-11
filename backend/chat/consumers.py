@@ -191,15 +191,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			await self.broadcast_online_users()
 
 		elif msg_type in ["typing", "stop_typing"]:
-			await self.channel_layer.group_send(
-				self.group_name,
-				{
-					"type": "typing.notification",
-					"action": msg_type,
-					"user": self.user_id,
-					"name": self.username,
-				}
-			)
+			target = data.get("target")
+			payload = {
+				"type": "typing.notification",
+				"action": msg_type,
+				"user": self.user_id,
+				"name": self.username,
+				"target": target,
+			}
+			if target:
+				# DM typing: send only to the recipient
+				if target in CONNECTED_USERS:
+					for channel_name in CONNECTED_USERS[target]:
+						await self.channel_layer.send(channel_name, payload)
+			else:
+				# Global typing: broadcast to everyone
+				await self.channel_layer.group_send(self.group_name, payload)
 
 	# ─── Event handlers ───────────────────────────────────────────────────────
 	# These are called by the channel layer when a message arrives for this consumer.
@@ -222,7 +229,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": event["action"],  # "typing" or "stop_typing"
 			"user": event["user"],
-			"name": event.get("name")
+			"name": event.get("name"),
+			"target": event.get("target")
 		}))
 
 	async def online_users(self, event):
