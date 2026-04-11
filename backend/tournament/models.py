@@ -13,7 +13,7 @@ class Tournament(models.Model):
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
     ]
-    
+    all_players_in_tournament = None
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tournaments')
