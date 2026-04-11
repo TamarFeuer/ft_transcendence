@@ -225,7 +225,17 @@ def current_user_view(request):
         
         user_id = payload.get('user_id')
         username = payload.get('username')
-        
+        if not user_id:
+            return JsonResponse({
+            'authenticated': False,
+            'error': 'username=None'}, status=404)
+        try:
+            User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({
+            'authenticated': False,
+            'error': 'User.DoesNotExist'}, status=404)
+
         return JsonResponse({
             'authenticated': True,
             'username': username,
