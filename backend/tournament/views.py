@@ -104,10 +104,8 @@ class TournamentStartView(APIView):
         
         # Create round-robin games (each player plays every other player once)
         participants = list(tournament.participants.all())
-        # participants = {"bob", "alice", "eve", "mallory", "trent", "peggy", "kim", "lee", "suk", "wang"}
         random.shuffle(participants)  # Shuffle to randomize pairings
         logger.debug(f"Starting tournament with participants: {[p.user.username for p in participants]}")
-        # logger.debug(f"Starting tournament with participants: {participants}")
 
         all_pairings = []
         round_num = 1
@@ -136,21 +134,6 @@ class TournamentStartView(APIView):
             # Rotate participants for next round
             participants = [participants[0]] + [participants[-1]] + participants[1:-1]
             round_num += 1
-
-        # round_num = 1
-        # all_pairings = []
-        # games_per_round = participant_count // 2
-        # for i in range(len(participants) - 2):
-        #     j = i
-        #     for j in range(len(participants) - 2):
-        #         p1 = participants[j]
-        #         p2 = participants[j + 1]
-        #         all_pairings.append((p1, p2))
-        #         j += 1
-        #     i += 1
-        #     round_num += 1
-        # logger.debug(f"All pairings: {all_pairings}")
-
 
         logger.debug(f"Created {len(all_pairings)} games across {round_num - 1} rounds")
         return Response({'message': 'tournament started'}, status=status.HTTP_200_OK)

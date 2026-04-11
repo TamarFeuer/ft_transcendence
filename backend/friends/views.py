@@ -51,7 +51,6 @@ def  remove_friend(request):
 		if not friend_id:
 			return JsonResponse({'error': 'friend_id is required'}, status=400)
 		to_user = User.objects.get(id=friend_id)
-		# to_user = get_recipient(request)
 		remove_friend_from_db(user, to_user)
 		return JsonResponse({
 			'success': True,
