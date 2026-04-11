@@ -187,7 +187,6 @@ class GameSession:
         
         # Scoring
         winner = None
-        # winner_id = None
         if state['ball']['x'] < -6:
             state['score']['p2'] += 1
             self.reset_ball()
@@ -197,16 +196,10 @@ class GameSession:
         
         # Check win condition
         if state['score']['p1'] >= state['winningScore']:
-            # players = self.game.get_players()
-            # winner = players['left']
             winner = 'left'
-            # winner_id = self.players['left_id']
             self.status = 'finished'
         elif state['score']['p2'] >= state['winningScore']:
-            # players = self.game.get_players()
             winner = 'right'
-            # winner = players['right']
-            # winner_id = self.players['right_id']
             self.status = 'finished'
         
         return {
@@ -309,7 +302,7 @@ class Player(models.Model):
     class Meta:
         ordering = ['-elo_rating', '-total_wins']  # highest ELO first, then most wins (- for descending order)
         db_table = 'stats_players' # custom name for the database table (instead of default 'appname_modelname')
-        
+
 # for leaderboard:
 # Live leaderboard — always up to date
 # PlayerProfile.objects.all()  # already ordered by -elo_rating, -wins

@@ -141,11 +141,6 @@ export function joinOnlineGame(gameId, IsTournament) {
       </div>
     </div>
     `;
-
-    // window.gameObjects = initGameScene(scene, canvas, 2);
-
-    // engine.runRenderLoop(() => scene.render());
-
   };
 
   ws.onerror = (e) => console.error("WS error", e);
@@ -272,8 +267,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         // Clear session storage
         sessionStorage.removeItem('activeGameId');
         sessionStorage.removeItem('activeTournamentId');
-        // Navigate back to tournament with tournament id
-        // navigate(`/tournament/${window.currentTournamentId}`);
       }
 
     } catch (e) {

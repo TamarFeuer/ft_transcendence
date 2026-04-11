@@ -59,14 +59,6 @@ export function disposeCurrentEngine() {
     currentEngine = null;
   }
 }
-// kan dit niet beter in de GameEnd logic van de game event
-
-// async function loadTemplate(name) {
-//   const url = `/routes/${name}.html`;
-//   const res = await fetch(url);
-//   const html = await res.text();
-//   document.body.innerHTML = html;
-// }
 
 export async function redirectIfNotLoggedIn() {
   const noAuth = await checkAuthRequired();

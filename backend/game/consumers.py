@@ -8,7 +8,6 @@ from channels.db import database_sync_to_async
 from .models import GameSession, Player
 from .services import match_ends
 import logging
-# from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +192,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         logger.debug(f"user obj={self.scope.get('user')}, id={getattr(self.scope.get('user'), 'id', None)}, type={type(self.scope.get('user'))}")
         # Add player to game
-        # self.role = self.game.add_player(self.scope['user'], self.scope['id'])
         self.role = self.game.add_player(self.scope['user'], getattr(self.scope.get('user'), 'id', None))
         logger.debug(f"Assigned role: {self.role} to: {self.scope['user']}")
         # Join game group

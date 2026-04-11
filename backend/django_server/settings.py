@@ -2,7 +2,6 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-# from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR.parent / '.env')
@@ -14,10 +13,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # Make cookies accessible to JavaScript
 SESSION_COOKIE_HTTPONLY = False
 CSRF_COOKIE_HTTPONLY = False
-
-# Allow cookies across ports on localhost
-# SESSION_COOKIE_SAMESITE = 'Lax'
-# CSRF_COOKIE_SAMESITE = 'Lax'
 
 # For cross-port localhost cookie sharing
 SESSION_COOKIE_SAMESITE = 'None'
@@ -43,13 +38,11 @@ INSTALLED_APPS = [
     'users',
     'friends',
     'profiles'
-    # 'corsheaders',
 ]
 
 print("Based dir:", BASE_DIR)
 
 MIDDLEWARE = [
-    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
  
@@ -65,16 +58,6 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -141,15 +124,3 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
-
-# # if using cookies for auth
-# CORS_ALLOW_CREDENTIALS = True
-
-# # allow frontend origin
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",
-# ]
-
-# CORS_ALLOW_HEADERS = list(default_headers) + [
-#     'Authorization',
-# ]
