@@ -2,7 +2,8 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked } from './chat.js';
+import { onlineUsers, blockedMeIds, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked } from './chat.js';
+import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 
 export function initChatUI() {
 
@@ -16,6 +17,7 @@ export function initChatUI() {
 	const channelTabs = document.getElementById("channelTabs");
 	const chatMessages = document.getElementById("chatMessages");
 	const channelTitle = document.getElementById("channelTitle");
+	const blockNotice = document.getElementById("blockNotice");
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	// activeChannel is either "global" or a user ID for DMs
@@ -25,6 +27,30 @@ export function initChatUI() {
 	const messageHistory = { global: [] };
 
 	// ── Channel management ────────────────────────────────────────────────────
+
+	function updateDMInputState(channelId) {
+		if (channelId === "global") {
+			chatInput.disabled = false;
+			sendChatBtn.disabled = false;
+			blockNotice.style.display = "none";
+			blockNotice.textContent = "";
+			return;
+		}
+		const blockedByMe = onlineUsers[channelId]?.blocked_by_me;
+		const blockedMe = blockedMeIds.has(channelId);
+		if (blockedByMe || blockedMe) {
+			chatInput.disabled = true;
+			sendChatBtn.disabled = true;
+			chatInput.value = "";
+			blockNotice.textContent = blockedByMe ? "You have blocked this user." : "You have been blocked.";
+			blockNotice.style.display = "block";
+		} else {
+			chatInput.disabled = false;
+			sendChatBtn.disabled = false;
+			blockNotice.style.display = "none";
+			blockNotice.textContent = "";
+		}
+	}
 
 	function switchChannel(channelId) {
 		activeChannel = channelId;
@@ -53,6 +79,7 @@ export function initChatUI() {
 		}
 
 		renderMessages(channelId);
+		updateDMInputState(channelId);
 		document.getElementById("chatInput").focus();
 	}
 
@@ -197,6 +224,7 @@ export function initChatUI() {
 			statusDot.className = "w-2 h-2 rounded-full bg-[#00FF00] flex-shrink-0";
 
 			const nameSpan = document.createElement("span");
+			nameSpan.className = "user-name";
 			nameSpan.textContent = name;
 
 			div.appendChild(statusDot);
@@ -209,9 +237,8 @@ export function initChatUI() {
 				unblockBtn.className = "ml-auto text-xs text-pink-400 hover:text-pink-200";
 				unblockBtn.addEventListener("click", (e) => {
 					e.stopPropagation();
-					fetch('/api/friends/unblock', {
+					fetchWithRefreshAuth('/api/friends/unblock', {
 						method: 'DELETE',
-						credentials: 'include',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ user_id: id })
 					}).then(() => notifyBlocked());
@@ -232,7 +259,10 @@ export function initChatUI() {
 	// ── Event listeners ───────────────────────────────────────────────────────
 
 	// chat.js dispatches this whenever the online users list changes
-	window.addEventListener("onlineUsersUpdated", renderOnlineUsers);
+	window.addEventListener("onlineUsersUpdated", () => {
+		renderOnlineUsers();
+		updateDMInputState(activeChannel);
+	});
 
 	// chat.js dispatches this whenever a message arrives
 	window.addEventListener("chatMessageReceived", (e) => {
@@ -340,14 +370,12 @@ export function initChatUI() {
 			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
 		} else if (action === "block") {
 			const targetId = chatMenuUser.id;
-			fetch('/api/friends/block', {
+			fetchWithRefreshAuth('/api/friends/block', {
 				method: 'POST',
-				credentials: 'include',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ user_id: targetId })
 			}).then(r => r.json()).then(data => {
 				if (data.success) {
-					closeDMChannel(targetId);
 					notifyBlocked();
 				} else {
 					console.warn("Block failed:", data.error);
