@@ -167,6 +167,17 @@ class GameConsumer(AsyncWebsocketConsumer):
         if not self.game:
             await self.close(code=4004)
             return
+        self.tournament_group_name = f'tournament_{self.game.tournament_id}'
+        self.tournament_id = self.game.tournament_id
+        self.all_players_in_tournament = game.all_players_in_tournament
+
+        #adding all players registered to tournament to channel
+        await self.channel_layer.group_add(
+            self.game_group_name,
+            self.channel_name
+        )
+
+
 
         # Check cookies from headers
         headers = dict(self.scope.get('headers', []))

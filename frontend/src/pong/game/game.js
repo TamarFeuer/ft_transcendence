@@ -113,7 +113,6 @@ export function joinOnlineGame(gameId, IsTournament) {
     currentGameId = gameId;
 
     const appRoot = document.getElementById("app-root");
-  
 
     appRoot.innerHTML = `
     <div id="gameContainer">

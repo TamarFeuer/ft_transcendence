@@ -13,7 +13,7 @@ export function stopTournamentAutoRefresh() {
   }
 }
 
-export function startTournamentAutoRefresh(callback, intervalMs = 5000) {
+export function startTournamentAutoRefresh(callback, intervalMs = 500) {
   stopTournamentAutoRefresh();
   tournamentAutoRefreshInterval = setInterval(callback, intervalMs);
 }
