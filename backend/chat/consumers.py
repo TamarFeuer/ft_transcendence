@@ -124,6 +124,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			}
 
 			if target:
+				# Block check: silently drop the message if either user has blocked the other.
+				from friends.models import is_blocked
+				if await database_sync_to_async(is_blocked)(self.user_id, target):
+					return
+
 				# Private message: deliver to all of the recipient's open tabs,
 				# and echo back to all of the sender's own tabs (so other tabs stay in sync).
 				payload["private"] = True
@@ -181,6 +186,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			# Mark this conversation as closed in the database.
 			await self.close_conversation(self.user_id, other_id)
 
+		elif msg_type == "user_blocked":
+			# Re-broadcast online users so blocked users disappear from each other's list immediately.
+			await self.broadcast_online_users()
+
 		elif msg_type in ["typing", "stop_typing"]:
 			await self.channel_layer.group_send(
 				self.group_name,
@@ -220,20 +229,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Deliver the updated online users list to this consumer's client.
 		await self.send(text_data=json.dumps({
 			"type": "online_users",
-			"users": event["users"]
+			"users": event["users"],
+			"blocked_me_ids": event.get("blocked_me_ids", [])
 		}))
 
 	async def broadcast_online_users(self):
-		logger.warning(f"broadcast_online_users called by {self.username}, ONLINE_USERS: {ONLINE_USERS}")
-		# Send the current online users list to everyone in the global group.
-		# "online.users" -> calls online_users() on each consumer in the group.
-		await self.channel_layer.group_send(
-			self.group_name,
-			{
-				"type": "online.users",
-				"users": ONLINE_USERS
-			}
-		)
+		# Send each connected user a personalized online users list.
+		# Users who blocked this user are hidden entirely.
+		# Users this user has blocked appear with blocked_by_me: True so the frontend can show an unblock button.
+		for user_id, channels in CONNECTED_USERS.items():
+			blocked_by_me, blocked_me = await self.get_block_info_for(user_id)
+			users = {}
+			for uid, name in ONLINE_USERS.items():
+				if uid in blocked_me:
+					# This user blocked me — hide them entirely
+					continue
+				users[uid] = {
+					"name": name,
+					"blocked_by_me": uid in blocked_by_me
+				}
+			for channel_name in channels:
+				await self.channel_layer.send(channel_name, {
+					"type": "online.users",
+					"users": users,
+					"blocked_me_ids": list(blocked_me)
+				})
 
 	# ─── Database helpers ─────────────────────────────────────────────────────
 	# All database access must be wrapped in database_sync_to_async because
@@ -385,3 +405,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				conversation_id=shared_conv_id,
 				user_id=user_id
 			).update(is_closed=True)
+
+	@database_sync_to_async
+	def get_block_info_for(self, user_id):
+		from friends.models import Block
+
+		# Returns two sets: users this user has blocked, and users who have blocked this user.
+		blocked_by_me = set(
+			str(uid) for uid in Block.objects.filter(
+				blocker_id=user_id
+			).values_list('blocked_user_id', flat=True)
+		)
+		blocked_me = set(
+			str(uid) for uid in Block.objects.filter(
+				blocked_user_id=user_id
+			).values_list('blocker_id', flat=True)
+		)
+		return blocked_by_me, blocked_me

@@ -9,7 +9,7 @@ from django.db.models import Q
 import json
 import jwt
 import logging
-from .models import FriendRequest
+from .models import FriendRequest, Block
 from .services import remove_friend_from_db
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,6 @@ def  remove_friend(request):
 		if not friend_id:
 			return JsonResponse({'error': 'friend_id is required'}, status=400)
 		to_user = User.objects.get(id=friend_id)
-		# to_user = get_recipient(request)
 		remove_friend_from_db(user, to_user)
 		return JsonResponse({
 			'success': True,
@@ -157,6 +156,47 @@ def delete_request(request):
 			return JsonResponse({'error': 'Friend Request does not exist'}, status=404)
 	except Exception as e:
 		return JsonResponse({'error': "Error declining friend request"}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def block_user(request):
+	try:
+		user, error = get_authenticated_user(request)
+		if error:
+			return error
+		data = json.loads(request.body.decode())
+		target_id = data.get('user_id')
+		if not target_id:
+			return JsonResponse({'error': 'user_id is required'}, status=400)
+		if str(user.id) == str(target_id):
+			return JsonResponse({'error': 'Cannot block yourself'}, status=400)
+		target = User.objects.get(id=target_id)
+		Block.objects.get_or_create(blocker=user, blocked_user=target)
+		return JsonResponse({'success': True, 'message': f'You have blocked {target.username}'})
+	except User.DoesNotExist:
+		return JsonResponse({'error': 'User does not exist'}, status=404)
+	except Exception as e:
+		logger.exception('Error blocking user')
+		return JsonResponse({'error': 'internal error'}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def unblock_user(request):
+	try:
+		user, error = get_authenticated_user(request)
+		if error:
+			return error
+		data = json.loads(request.body.decode())
+		target_id = data.get('user_id')
+		if not target_id:
+			return JsonResponse({'error': 'user_id is required'}, status=400)
+		Block.objects.filter(blocker=user, blocked_user_id=target_id).delete()
+		return JsonResponse({'success': True})
+	except Exception as e:
+		logger.exception('Error unblocking user')
+		return JsonResponse({'error': 'internal error'}, status=500)
+
 
 @csrf_exempt
 @require_http_methods(["GET"])

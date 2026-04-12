@@ -106,11 +106,6 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
             // Clamp maximum speed (resultant velocity)
             const currentSpeed = Math.hypot(ballVX, ballVY);
-            // if (currentSpeed > SPEED_MAX) {
-            // 	const scale = SPEED_MAX / currentSpeed;
-            // 	ballVX *= scale;
-            // 	ballVY *= scale;
-            // }
 
             // Ball collision with top/bottom walls
             if (gameObjects.ball.position.y > 5 || gameObjects.ball.position.y < -5) {
@@ -197,6 +192,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             window.removeEventListener("popstate", browserExitHandler);
             scene.onBeforeRenderObservable.remove(renderObserver);
             disposeCurrentEngine();
+            document.getElementById('renderCanvas')?.remove();
         };
 
         const endGame = (showWinnerMessage = false) => {

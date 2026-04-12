@@ -20,4 +20,4 @@ RUN mkdir -p /app/logs
 # Expose port
 EXPOSE 3000
 
-CMD ["daphne", "-b", "0.0.0.0", "-p", "3000", "django_server.asgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && daphne -b 0.0.0.0 -p 3000 django_server.asgi:application"]

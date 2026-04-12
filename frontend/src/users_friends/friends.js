@@ -40,7 +40,7 @@ export function sendFriendRequest(friendInput, status) {
 }
 
 export function handleAccept(requestId){
-    fetchWithRefreshAuth('/api/friends/accept', {
+    return fetchWithRefreshAuth('/api/friends/accept', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         credentials: 'include',
@@ -49,7 +49,7 @@ export function handleAccept(requestId){
 }
 
 export function handleDelete(requestId){
-    fetchWithRefreshAuth('/api/friends/delete', {
+    return fetchWithRefreshAuth('/api/friends/delete', {
         method: 'POST',
         headers: {'Content-Type' : 'application/json'},
         credentials: 'include',
@@ -58,7 +58,7 @@ export function handleDelete(requestId){
 }
 
 export function removeFriend(friendId){
-    fetchWithRefreshAuth('/api/friends/remove', {
+    return fetchWithRefreshAuth('/api/friends/remove', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ friend_id: friendId})

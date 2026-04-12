@@ -15,6 +15,8 @@ let verifiedUserName = null;
 // Exported so other modules (e.g. main.js) can read the current online users
 // Shape: { user_id: username } e.g. { "42": "tamar", "7": "rik" }
 export let onlineUsers = {};
+// Set of user IDs who have blocked the current user
+export let blockedMeIds = new Set();
 
 export function initChat() {
 	
@@ -94,6 +96,7 @@ export function initChat() {
 			case "online_users":
 				console.log("Received online_users message:", data.users);
 				onlineUsers = data.users;
+				blockedMeIds = new Set(data.blocked_me_ids || []);
 				window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 				break;
 
@@ -252,6 +255,11 @@ export function closeConversation(targetId) {
 		type: "close_conversation",
 		target: targetId
 	}));
+}
+
+export function notifyBlocked() {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({ type: "user_blocked" }));
 }
 
 export function openConversation(targetId) {

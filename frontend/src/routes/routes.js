@@ -1,6 +1,6 @@
 import { routes } from '../main.js';
 import { initAIGame } from '../pong/ai/ai.js';
-import { handleRoute, navigate } from "./route_helpers.js";
+import { navigate } from "./route_helpers.js";
 import { joinOnlineGame } from '../pong/game/game.js';
 import { initOfflineGame } from '../pong/game/local_game.js';
 import { startLocalTournament } from '../pong/tournament/local_tournament.js';
@@ -18,7 +18,7 @@ import { initChessGame } from '../chess/chess.js';
 import { initProfilePage } from "../users_friends/profilePage.js"
 import { initLoginPage } from "../users_friends/loginPage.js"
 import { registerPage } from "../users_friends/register.js"
-
+import { initHome } from "../home/home.js"
 
 // Global engine management to prevent multiple render loops
 export let currentEngine = null;
@@ -59,14 +59,6 @@ export function disposeCurrentEngine() {
     currentEngine = null;
   }
 }
-// kan dit niet beter in de GameEnd logic van de game event
-
-// async function loadTemplate(name) {
-//   const url = `/routes/${name}.html`;
-//   const res = await fetch(url);
-//   const html = await res.text();
-//   document.body.innerHTML = html;
-// }
 
 export async function redirectIfNotLoggedIn() {
   const noAuth = await checkAuthRequired();
@@ -79,10 +71,11 @@ export async function redirectIfNotLoggedIn() {
 
 
 async function loadTemplate(name) {
+  disposeCurrentEngine();
+  document.getElementById('renderCanvas')?.remove();
 	const url = `/routes/${name}.html`;
 	const res = await fetch(url);
 	const html = await res.text();
-
 	const appRoot = document.getElementById("app-root");
 	appRoot.innerHTML = html;
 	
@@ -97,24 +90,18 @@ export function setupRoutes() {
   routes['/'] = async () => {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
-			return;
+        return;
     await loadTemplate('home');
-    document.getElementById('tttBtn')?.addEventListener('click', () => navigate('/ttt'));
-    document.getElementById('chessBtn')?.addEventListener('click', () => navigate('/chess-hub'));
-    document.getElementById('pongBtn')?.addEventListener('click', () => navigate('/pong'));
-    document.getElementById('profileBtn')?.addEventListener('click', () => navigate('/profile'));
-    loadLeaderboard();
+    initHome();
   };
   routes['/login'] = async () => {
     stopTournamentAutoRefresh();
     await loadTemplate('login');
-    document.getElementById('renderCanvas').style.display = 'none'; //
     initLoginPage();
   };
   routes['/register'] = async () =>{
     stopTournamentAutoRefresh();
     await loadTemplate('register');
-    document.getElementById('renderCanvas').style.display = 'none'; //
     registerPage();
   }
   routes['/chess-hub'] = async () => {
@@ -122,13 +109,15 @@ export function setupRoutes() {
     if(await redirectIfNotLoggedIn())
       return;
     await loadTemplate('chess-hub');
-    document.getElementById('renderCanvas').style.display = 'none';
-    document.getElementById('chessPracticeBtn')?.addEventListener('click', () => navigate('/chess'));
-    document.getElementById('chessOnlineBtn')?.addEventListener('click', () => {
+    const practiceBtn = document.getElementById('chessPracticeBtn');
+    const onlineBtn   = document.getElementById('chessOnlineBtn');
+    const backBtn     = document.getElementById('chessBackBtn');
+    if (practiceBtn) practiceBtn.addEventListener('click', () => navigate('/chess'));
+    if (onlineBtn) onlineBtn.addEventListener('click', () => {
       chessOnlineIntended = true;
       navigate('/chess-online');
     });
-    document.getElementById('chessBackBtn')?.addEventListener('click', () => navigate('/'));
+    if (backBtn) backBtn.addEventListener('click', () => navigate('/'));
   }
 
   routes['/chess-online'] = async () => {
@@ -143,7 +132,6 @@ export function setupRoutes() {
     }
     chessOnlineIntended = false;
     await loadTemplate('chess-online');
-    document.getElementById('renderCanvas').style.display = 'none';
     const { initOnlineChessGame } = await import('../chess/chess-online.js');
     initOnlineChessGame();
   }
@@ -153,7 +141,7 @@ export function setupRoutes() {
     if(await redirectIfNotLoggedIn())
 			return;
     await loadTemplate('chess');
-    document.getElementById('renderCanvas').style.display = 'none';
+
     initChessGame();
   }
 
@@ -161,7 +149,7 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    // disposeCurrentEngine();
+
     await loadTemplate('pong');
     document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
     document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
@@ -173,9 +161,9 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
 			return;
-    // disposeCurrentEngine();
+
     await loadTemplate('local');
-    const canvas = document.getElementById("renderCanvas");
+    const canvas = createGameCanvas();
     currentEngine = new Engine(canvas, true);
     const scene = new Scene(currentEngine);
     const gameObjects = initGameScene(scene, canvas, 2);
@@ -191,7 +179,7 @@ export function setupRoutes() {
 			return;
     // disposeCurrentEngine();
     await loadTemplate('ai');
-    const canvas = document.getElementById("renderCanvas");
+    const canvas = createGameCanvas();
     currentEngine = new Engine(canvas, true);
     const scene = new Scene(currentEngine);
     const gameObjects = initGameScene(scene, canvas, 2);
@@ -365,4 +353,12 @@ export function handleTournamentRoute(path) {
       handler(tournamentId);
     }
   }
+}
+
+export function createGameCanvas() {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'renderCanvas';
+    canvas.className = 'absolute inset-0 w-full h-full pointer-events-none';
+    document.body.appendChild(canvas);
+    return canvas;
 }

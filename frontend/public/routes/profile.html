@@ -1,44 +1,78 @@
-<div  class="min-h-screen flex justify-center items-center bg-zinc-900 flex-col">
-    <div class="p-6 bg-zinc-800 rounded-lg w-full max-w-2xl">
-        <div id="profile-avatar" 
-            class="w-20 h-20 rounded-full bg-zinc-700 flex items-center justify-center text-4xl text-zinc-400 font-bold mx-auto mb-1">
+<div class="min-h-screen flex justify-center items-center bg-zinc-900 flex-col">
+    <h1 class="text-white text-6xl font-bold text-center relative -top-20">Profile</h1>
+
+    <div class="p-6 bg-zinc-800 rounded-lg w-full max-w-2xl flex flex-col gap-6">
+
+        <div id="profile-avatar"
+            class="w-20 h-20 rounded-full bg-zinc-700 flex items-center justify-center text-4xl text-zinc-400 font-bold mx-auto">
             ?
-       </div>
-       <p id="profile-username" class="text-white text-xl font-semibold text-center mb-6">Username</p>
-       
-       <div class="bg-zinc-700 rounded-lg p-4 flex justify-around">
-           <div class="text-center">
-               <p class="text-zinc-400 text-sm">Wins</p>
-               <p id="profile-wins" class="text-white text-2xl font-bold">0</p>
-           </div>
+        </div>
+        <p id="profile-username" class="text-white text-xl font-semibold text-center">Username</p>
+
+        <div class="bg-zinc-700 rounded-lg p-4 flex justify-around">
             <div class="text-center">
-               <p class="text-zinc-400 text-sm">Losses</p>
-               <p id="profile-losses" class="text-white text-2xl font-bold">0</p>
-           </div>
-                <div class="text-center">
-               <p class="text-zinc-400 text-sm">ELO</p>
-               <p id="profile-elo" class="text-white text-2xl font-bold">0</p>
-           </div>
-       </div>
-            <div class="bg-zinc-700 rounded-lg p-4">
-                <p class="text-white font-semibold mb-3">Add friends</p>
-                <div class="flex gap-2">
-                    <input id="friend-input" type="text" placeholder="Username"
-                        class="flex-1 p-2 rounded bg-zinc-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
-                        <p id="friend-status" class="text-sm mt-2"></p>
-                        <button id="friend-add-btn"
-                        class="px-4 py-2 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition transform hover:scale-105">
-                        Add
-                    </button>
+                <p class="text-zinc-400 text-sm">Wins</p>
+                <p id="profile-wins" class="text-white text-2xl font-bold">0</p>
             </div>
+            <div class="text-center">
+                <p class="text-zinc-400 text-sm">Losses</p>
+                <p id="profile-losses" class="text-white text-2xl font-bold">0</p>
+            </div>
+            <div class="text-center">
+                <p class="text-zinc-400 text-sm">ELO</p>
+                <p id="profile-elo" class="text-white text-2xl font-bold">0</p>
+            </div>
+        </div>
 
-            <div id="profile-pending-requests"></div>
-            
-            <div id="profile-friends-list"></div>
+        <div class="bg-zinc-700 rounded-lg p-4">
+            <p class="text-white font-semibold mb-3">Add Friend</p>
+            <div class="flex gap-2">
+                <input id="friend-input" type="text" placeholder="Username"
+                    class="flex-1 p-2 rounded bg-zinc-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                <button id="friend-add-btn"
+                    class="px-4 py-2 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition transform hover:scale-105">
+                    Add
+                </button>
+            </div>
+            <p id="friend-status" class="text-sm mt-2"></p>
+        </div>
 
-            <button id="profile-logout" 
-            class="text-zinc-400 font-bold w-full transition transform hover:scale-105 hover:text-white pt-6">
+        <div class="bg-zinc-700 rounded-lg p-4">
+            <p class="text-white font-semibold mb-3">Pending Requests</p>
+            <template id="pending-request-template">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center text-white font-bold pending-avatar"></div>
+                        <p class="text-white pending-username"></p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="accept-btn px-3 py-1 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition">Accept</button>
+                        <button class="decline-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-zinc-500 transition">Decline</button>
+                    </div>
+                </div>
+            </template>
+            <div id="pending-list" class="flex flex-col gap-2" style="max-height: 240px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="bg-zinc-700 rounded-lg p-4">
+            <p class="text-white font-semibold mb-3">Friends</p>
+            <template id="friend-template">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center text-white font-bold friend-avatar"></div>
+                        <p class="text-white friend-username"></p>
+                    </div>
+                    <button class="remove-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-red-500 transition">Remove</button>
+                </div>
+            </template>
+            <div id="friends-list" class="flex flex-col gap-2" style="max-height: 240px; overflow-y: auto;"></div>
+        </div>
+
+
+        <button id="profile-logout"
+            class="w-full py-2 text-zinc-400 font-semibold hover:text-white transition transform hover:scale-105">
             Logout
-            </button>
+        </button>
+
     </div>
 </div>

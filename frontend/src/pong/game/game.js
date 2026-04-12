@@ -1,3 +1,5 @@
+import { createGameCanvas } from "../../routes/routes.js";
+
 import {
   ArcRotateCamera,
   HemisphericLight,
@@ -83,7 +85,8 @@ export function joinOnlineGame(gameId, IsTournament) {
   }
   const currentUserId = String(window.CURRENT_USER?.user_id ?? '');
   const currentUsername = window.CURRENT_USER?.username || 'Player';
-  const canvas = document.getElementById("renderCanvas");
+  const canvas = createGameCanvas();
+
   const engine = new Engine(canvas, true);
   const scene = new Scene(engine);
   let pointerHandler = null;
@@ -138,11 +141,6 @@ export function joinOnlineGame(gameId, IsTournament) {
       </div>
     </div>
     `;
-
-    // window.gameObjects = initGameScene(scene, canvas, 2);
-
-    // engine.runRenderLoop(() => scene.render());
-
   };
 
   ws.onerror = (e) => console.error("WS error", e);
@@ -269,8 +267,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         // Clear session storage
         sessionStorage.removeItem('activeGameId');
         sessionStorage.removeItem('activeTournamentId');
-        // Navigate back to tournament with tournament id
-        // navigate(`/tournament/${window.currentTournamentId}`);
       }
 
     } catch (e) {

@@ -1,5 +1,6 @@
 import { showMessage } from "../../utils/utils.js";
-import { handleRoute, navigate } from "../../routes/route_helpers.js";
+import { disposeCurrentEngine } from "../../routes/routes.js";
+import { navigate } from "../../routes/route_helpers.js";
 
 export function initAIGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {
@@ -141,6 +142,8 @@ export function initAIGame(scene, gameObjects, tournament) {
             window.removeEventListener("pagehide", browserExitHandler);
             window.removeEventListener("popstate", browserExitHandler);
             scene.onBeforeRenderObservable.remove(renderObserver);
+            disposeCurrentEngine()
+            document.getElementById('renderCanvas')?.remove();
         };
 
         const endGame = (showWinnerMessage = false) => {
