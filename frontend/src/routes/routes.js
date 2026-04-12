@@ -124,16 +124,18 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
       return;
+    const params = new URLSearchParams(window.location.search);
+    const inviteGameId = params.get('gameId') || null;
     //redirect to hub on refresh or direct URL access; only run the game when the
-    //user explicitly clicked Online Game from the hub
-    if (!chessOnlineIntended) {
+    //user explicitly clicked Online Game from the hub, or followed an invite link
+    if (!chessOnlineIntended && !inviteGameId) {
       navigate('/chess-hub');
       return;
     }
     chessOnlineIntended = false;
     await loadTemplate('chess-online');
     const { initOnlineChessGame } = await import('../chess/chess-online.js');
-    initOnlineChessGame();
+    initOnlineChessGame(inviteGameId);
   }
 
   routes['/chess'] = async () => {

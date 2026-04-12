@@ -36,7 +36,7 @@ function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
 	}, { once: true });
 }
 
-export async function initOnlineChessGame() {
+export async function initOnlineChessGame(gameId = null){
 	const boardEl   = document.getElementById('chess-board');
 	const waitingEl = document.getElementById('waiting-overlay');
 	const statusEl  = document.getElementById('game-status');
@@ -49,31 +49,32 @@ export async function initOnlineChessGame() {
 	let myTurn    = false;
 	let gameActive = false;
 
-	//get a game id from the server before opening the websocket
-	let gameId;
-	try {
-		const res = await fetch('/api/chess/join/', {
-			method: 'POST',
-			credentials: 'include',
-		});
-		if (!res.ok) {
-			const text = await res.text();
-			console.error('Chess join failed:', res.status, text);
-			if (waitingEl) waitingEl.classList.add('hidden');
-			if (statusEl) {
-				statusEl.textContent = res.status === 401
-					? 'Please log in to play online.'
-					: 'Could not join a game. Please try again.';
+	//if no gameId was passed in, ask the server for one (normal matchmaking flow)
+	if (!gameId) {
+		try {
+			const res = await fetch('/api/chess/join/', {
+				method: 'POST',
+				credentials: 'include',
+			});
+			if (!res.ok) {
+				const text = await res.text();
+				console.error('Chess join failed:', res.status, text);
+				if (waitingEl) waitingEl.classList.add('hidden');
+				if (statusEl) {
+					statusEl.textContent = res.status === 401
+						? 'Please log in to play online.'
+						: 'Could not join a game. Please try again.';
+				}
+				return;
 			}
+			const data = await res.json();
+			gameId = data.gameId;
+		} catch (err) {
+			console.error('Failed to join chess game:', err);
+			if (waitingEl) waitingEl.classList.add('hidden');
+			if (statusEl) statusEl.textContent = 'Failed to connect. Please try again.';
 			return;
 		}
-		const data = await res.json();
-		gameId = data.gameId;
-	} catch (err) {
-		console.error('Failed to join chess game:', err);
-		if (waitingEl) waitingEl.classList.add('hidden');
-		if (statusEl) statusEl.textContent = 'Failed to connect. Please try again.';
-		return;
 	}
 
 	const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
