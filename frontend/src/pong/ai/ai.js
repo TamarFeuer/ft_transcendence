@@ -33,6 +33,7 @@ export function initAIGame(scene, gameObjects, tournament) {
 
             // AI tries to move paddle towards ball
             const difference = ballY - paddleY;
+            const direction = difference > 0 ? 1 : -1;
 
             if (gameObjects.ball.position.x < 0 && Math.abs(difference) > 0.5) {
                 // Current energy (distance from ball)
@@ -52,7 +53,10 @@ export function initAIGame(scene, gameObjects, tournament) {
 
                 // Accept or reject the move
                 if (Math.random() < acceptProbability) {
+                    // Move the paddle if the move makes and improvement, if not wait for the next iteration to try again
+                    if ((newY - paddleY) * direction > 0) {
                     gameObjects.paddleLeft.position.y = newY;
+                    }
                 }
 
                 // Cool down
