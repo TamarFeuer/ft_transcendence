@@ -1,6 +1,7 @@
 import { Chess } from 'chess.js'
 import { renderBoard } from './chess.js'
 import { showChessResultModal } from './chess-modal.js'
+import { navigate } from '../routes/route_helpers.js'
 
 function subtitleFromResult(result) {
 	if (!result) return '';
@@ -110,12 +111,13 @@ export async function initOnlineChessGame() {
 			renderBoard(game, boardEl, null, myColor === 'black');
 
 			const sub = subtitleFromResult(data.result);
+			const goToHub = () => navigate('/chess-hub');
 			if (data.winner === null) {
-				showChessResultModal({ outcome: 'draw', title: 'Draw', subtitle: sub || 'The game is a draw.' });
+				showChessResultModal({ outcome: 'draw', title: 'Draw', subtitle: sub || 'The game is a draw.', onClose: goToHub });
 			} else if (myColor && data.winner === myColor) {
-				showChessResultModal({ outcome: 'win', title: 'Victory', subtitle: sub || 'You won the game.' });
+				showChessResultModal({ outcome: 'win', title: 'Victory', subtitle: sub || 'You won the game.', onClose: goToHub });
 			} else {
-				showChessResultModal({ outcome: 'loss', title: 'Defeat', subtitle: sub || 'You lost the game.' });
+				showChessResultModal({ outcome: 'loss', title: 'Defeat', subtitle: sub || 'You lost the game.', onClose: goToHub });
 			}
 		}
 	};

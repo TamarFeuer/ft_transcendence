@@ -6,7 +6,8 @@ function escapeHtml(text) {
 }
 
 //outcome picks the top border color, title and subtitle are plain text
-export function showChessResultModal({ outcome = 'draw', title, subtitle = '' }) {
+//onClose is called after the overlay is removed
+export function showChessResultModal({ outcome = 'draw', title, subtitle = '', onClose = null }) {
 	const existing = document.getElementById('chess-result-modal-overlay');
 	if (existing) existing.remove();
 
@@ -37,7 +38,10 @@ export function showChessResultModal({ outcome = 'draw', title, subtitle = '' })
 		</div>
 	`;
 
-	const close = () => overlay.remove();
+	const close = () => {
+		overlay.remove();
+		if (onClose) onClose();
+	};
 	overlay.querySelector('.chess-modal-close').addEventListener('click', close);
 
 	document.body.appendChild(overlay);
