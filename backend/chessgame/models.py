@@ -20,11 +20,12 @@ class ChessSession:
 		return game
 
 	def add_player(self, user):
-		if not self.players['white']:
-			self.players['white'] = user
+		#colors are pre-assigned in join_chess, just confirm the connecting user matches
+		white_id = getattr(self.players['white'], 'id', None)
+		black_id = getattr(self.players['black'], 'id', None)
+		if white_id == user.id:
 			return 'white'
-		elif not self.players['black']:
-			self.players['black'] = user
+		elif black_id == user.id:
 			return 'black'
 		return None
 

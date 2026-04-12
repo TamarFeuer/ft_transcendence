@@ -35,15 +35,20 @@ def join_chess(request):
 	if not user:
 		return JsonResponse({'error': 'Authentication required'}, status=401)
 
-	#if someone is already waiting and it is not us, join that table
-	for game in ChessSession._games.values():
-		if game.status == 'waiting' and game.players['black'] is None:
-			white = game.players['white']
-			white_id = getattr(white, 'id', None)
-			if white_id != user.id:
-				logger.info(f"Player {user} is joining game {game.id}")
-				return JsonResponse({'gameId': game.id})
+	#search and create are atomic so two players never both see an empty lobby
+	#colors are pre-assigned here so WS connect order does not cause a race
+	with ChessSession._lock:
+		for game in ChessSession._games.values():
+			if game.status == 'waiting' and game.players['black'] is None:
+				white_id = getattr(game.players['white'], 'id', None)
+				if white_id != user.id:
+					game.players['black'] = user
+					logger.info(f"Player {user} joining game {game.id} as black")
+					return JsonResponse({'gameId': game.id})
 
-	game = ChessSession.create_game()
-	logger.info(f"Player {user} created game {game.id}")
+		game = ChessSession()
+		game.players['white'] = user
+		ChessSession._games[game.id] = game
+
+	logger.info(f"Player {user} created game {game.id} as white")
 	return JsonResponse({'gameId': game.id})

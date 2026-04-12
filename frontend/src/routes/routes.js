@@ -90,6 +90,9 @@ async function loadTemplate(name) {
 	updatePageTranslations();
 }
 
+//only allow chess-online when the user navigated here intentionally from the hub
+let chessOnlineIntended = false;
+
 export function setupRoutes() {
   routes['/'] = async () => {
     stopTournamentAutoRefresh();
@@ -121,7 +124,10 @@ export function setupRoutes() {
     await loadTemplate('chess-hub');
     document.getElementById('renderCanvas').style.display = 'none';
     document.getElementById('chessPracticeBtn')?.addEventListener('click', () => navigate('/chess'));
-    document.getElementById('chessOnlineBtn')?.addEventListener('click', () => navigate('/chess-online'));
+    document.getElementById('chessOnlineBtn')?.addEventListener('click', () => {
+      chessOnlineIntended = true;
+      navigate('/chess-online');
+    });
     document.getElementById('chessBackBtn')?.addEventListener('click', () => navigate('/'));
   }
 
@@ -129,6 +135,13 @@ export function setupRoutes() {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
       return;
+    //redirect to hub on refresh or direct URL access; only run the game when the
+    //user explicitly clicked Online Game from the hub
+    if (!chessOnlineIntended) {
+      navigate('/chess-hub');
+      return;
+    }
+    chessOnlineIntended = false;
     await loadTemplate('chess-online');
     document.getElementById('renderCanvas').style.display = 'none';
     const { initOnlineChessGame } = await import('../chess/chess-online.js');
