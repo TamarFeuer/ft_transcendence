@@ -39,10 +39,17 @@ window.addEventListener('load', async () => {
 
 setupRoutes();
 
-window.addEventListener("DOMContentLoaded", async () => {
-	
+window.addEventListener("pagehide", (event) => {
+  console.log("pagehide fired---------------------------------------------------------");
+  console.log("persisted:", event.persisted);
+});
+
+
+window.addEventListener("load", async () => {
+	const langBtn = document.getElementById("langBtn");
 	const currentUser = await fetchCurrentUser(); // wait for token refresh, ignore the result
 	if (currentUser.authenticated) {
+		langBtn.style.display = "block";
 		initChat();
 		initChatUI();
 	}
