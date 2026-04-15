@@ -1,4 +1,5 @@
-import { Chess } from 'chess.js';
+import { Chess } from 'chess.js'
+import { showChessResultModal } from './chess-modal.js'
 
 let selectedSquare = null;
 
@@ -9,12 +10,24 @@ const pieces = {
 
 function checkGameEnd(game){
 	if (game.isCheckmate()) {
-
-		const winner = game.turn() === 'w' ? 'Black' : 'White'; // turn has already switched
-		alert(`${winner} wins by checkmate!`);
+		const winner = game.turn() === 'w' ? 'Black' : 'White';
+		showChessResultModal({
+			outcome: 'neutral',
+			title: 'Checkmate',
+			subtitle: `${winner} wins`,
+		});
+		return;
 	}
 	if (game.isDraw()) {
-		alert('Draw!');
+		let subtitle = 'Game drawn';
+		if (game.isStalemate()) subtitle = 'Stalemate';
+		else if (game.isThreefoldRepetition()) subtitle = 'Threefold repetition';
+		else if (game.isInsufficientMaterial()) subtitle = 'Insufficient material';
+		showChessResultModal({
+			outcome: 'draw',
+			title: 'Draw',
+			subtitle,
+		});
 	}
 }
 
@@ -81,11 +94,9 @@ export function initChessGame(){
 	const game = new Chess();
 	console.log('initChessGame called');
 	const boardEl = document.getElementById('chess-board');
-	// const turnEl = document.getElementById('turn-indicator');
 
 
 	boardEl.className = 'grid grid-cols-8 w-[36rem] h-[36rem] auto-rows-fr';
-	// console.log('it goes before click');
 	boardEl.addEventListener('click', (e) => {
 		const square = e.target.closest('[data-notation]');
 
@@ -114,7 +125,8 @@ function drawDot(square){
 	square.appendChild(dotWrap);
 }
 
-function renderBoard(game, boardEl, selectedSquare){
+export function renderBoard(game, boardEl, selectedSquare, flipped = false){
+
 	let possibleMoves = [];
 
 	boardEl.innerHTML = '';
@@ -122,17 +134,25 @@ function renderBoard(game, boardEl, selectedSquare){
 		possibleMoves = game.moves({
 			square: selectedSquare,
 			verbose: true}).map(m => m.to); //return an array of only the "to" squares the piece can move
-		}		
+		}
+	//in case player is black, flip the board for them
+	let rows = game.board();
+	if (flipped){
+		rows = rows.reverse();
+		rows = rows.map(row => row.reverse());
+	}	
 	//go through each row to render the pieces and the board
-	game.board().forEach((row, rowIndex) => {
+	rows.forEach((row, rowIndex) => {
 		row.forEach((cell, cellIndex) => {
 			const square = document.createElement('div');
-			//which square needs to be light
-			const isLight = (rowIndex + cellIndex) % 2 === 0
+			//which square needs to be light from real rank and file when flipped
+			const fileIndex = flipped ? (7 - cellIndex) : cellIndex;
+			const rankIndex = flipped ? (7 - rowIndex) : rowIndex;
+			const isLight = (rankIndex + fileIndex) % 2 === 0;
 			square.className = `relative w-full h-full flex items-center justify-center text-4xl ${isLight ? 'bg-amber-100' : 'bg-amber-800'}`;
 
-			//name the square
-			square.dataset.notation = getNotation(rowIndex, cellIndex);
+			//notation lines up with chess.js and fen; flip is only how we draw
+			square.dataset.notation = getNotation(rankIndex, fileIndex);
 
 			//if cell has a piece then render the piece
 			if (cell){
@@ -148,7 +168,6 @@ function renderBoard(game, boardEl, selectedSquare){
 
 			//highlight possible moves if user clicks their own piece
 			if (possibleMoves.includes(square.dataset.notation)){
-				//TODO draw the dot
 				drawDot(square);
 
 			}

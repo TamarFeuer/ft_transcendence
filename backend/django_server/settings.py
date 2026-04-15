@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'tournament',
     'users',
     'friends',
+    'chessgame',
     'profiles'
 ]
 
@@ -44,8 +45,9 @@ print("Based dir:", BASE_DIR)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
- 
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
 ]
 
 ROOT_URLCONF = 'django_server.urls'
