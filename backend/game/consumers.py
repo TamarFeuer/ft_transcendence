@@ -288,7 +288,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_send(
                     "global_chat",                                                               
                     {           
-                        "type": "game.result",
+                        "type": "game_result",
                         "winner": winner_name,              
                         "game_type": "pong",        # or "chess"
                         "is_tournament": self.game.isTournamentGame
@@ -315,7 +315,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_send(
                     "global_chat",                                                               
                     {           
-                        "type": "game.result",
+                        "type": "game_result",
                         "winner": None,              
                         "game_type": "pong",        # or "chess"
                         "is_tournament": self.game.isTournamentGame
@@ -341,7 +341,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """Main game loop running at 60 FPS"""
         while self.game and self.game.status == 'active':
             result = self.game.tick()
-            logger.debug(f"Game tick result: {result}")
+            # logger.debug(f"Game tick result: {result}")
             if result:
                 await self.channel_layer.group_send(
                     self.game_group_name,
@@ -412,7 +412,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             'winner': event['winner'],
             'winner_id': event['winner_id']
         }))
-    
+
     async def check_join_timeout(self):
         """Check for join timeout and handle results if expired"""
         while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
