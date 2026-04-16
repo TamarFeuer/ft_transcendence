@@ -113,7 +113,21 @@ export function joinOnlineGame(gameId, IsTournament) {
     currentGameId = gameId;
 
     const appRoot = document.getElementById("app-root");
-  
+
+    // Only show waiting modal for tournament games
+    const waitingModalHTML = IsTournament ? `
+        <div id="waitingModal" class="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 pointer-events-auto">
+          <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
+            <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
+            <p class="text-gray-300 mb-2">Game will start soon</p>
+            <div class="text-4xl font-mono font-bold text-green-400 mb-6" id="countdownTimer">60</div>
+            <p class="text-gray-400 text-sm mb-6">Game will proceed automatically when timer expires</p>
+            <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
+              Leave Game
+            </button>
+          </div>
+        </div>
+      ` : '';
 
     appRoot.innerHTML = `
     <div id="gameContainer">
@@ -128,17 +142,7 @@ export function joinOnlineGame(gameId, IsTournament) {
           <div id="scoreP2" class="font-mono font-bold text-6xl text-green-400 drop-shadow-lg" style="text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);">0</div>
         </div>
       </div>
-      <div id="waitingModal" class="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 pointer-events-auto">
-        <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
-          <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
-          <p class="text-gray-300 mb-2">Game will start soon</p>
-          <div class="text-4xl font-mono font-bold text-green-400 mb-6" id="countdownTimer">60</div>
-          <p class="text-gray-400 text-sm mb-6">Game will proceed automatically when timer expires</p>
-          <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
-            Leave Game
-          </button>
-        </div>
-      </div>
+      ${waitingModalHTML}
     </div>
     `;
   };

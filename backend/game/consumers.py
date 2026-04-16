@@ -250,7 +250,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             asyncio.create_task(self.game_loop())
         else:
             # Start timeout checker if this is a tournament game in waiting state
-            asyncio.create_task(self.check_join_timeout())
+            if self.game.isTournamentGame:
+                logger.info(f"Game {self.game_id} is a tournament game waiting for opponent to join")
+                asyncio.create_task(self.check_join_timeout())
 
     async def disconnect(self, close_code):
         logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
