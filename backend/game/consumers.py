@@ -265,6 +265,11 @@ class GameConsumer(AsyncWebsocketConsumer):
 
             status_before = self.game.status
             self.game.remove_player(self.scope['user'])
+            if status_before == 'waiting' and players['left'] is None and players['right'] is None and self.game.invitee_id is not None:
+                await self.channel_layer.group_send(
+                    f"user_{self.game.invitee_id}",
+                    {"type": "game.invite.expired", "game_id": self.game_id}
+                )
 
             # If a participant disconnects during an active game, finish the game
             # and award win to the remaining player to avoid freeze on opponent side.
