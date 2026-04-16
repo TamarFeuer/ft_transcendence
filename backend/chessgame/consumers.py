@@ -61,6 +61,21 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					'result': 'abandonment'
 				})
 
+				#announce result to global chat
+				winner_name = getattr(self.game.players[winner], 'username', winner)
+				await self.channel_layer.group_send('global_chat', {
+					'type': 'game.result',
+					'winner': winner_name,
+					'game_type': 'chess',
+					'is_tournament': False
+				})
+			
+			elif self.game.status == 'waiting' and self.game.invitee_id is not None:
+				await self.channel_layer.group_send(
+					f'user_{self.game.invitee_id}',
+					{'type': 'game.invite.expired', 'game_id': self.game_id}
+				)
+
 			#TODO save match to db before dropping the session from memory
 			ChessSession.delete_game(self.game_id)
 
@@ -98,6 +113,19 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'type': 'game_over',
 				'winner': over['winner'],
 				'result': over['result']
+			})
+
+			#announce result to global chat
+			winner_color = over['winner']
+			if winner_color:
+				winner_name = getattr(self.game.players[winner_color], 'username', winner_color)
+			else:
+				winner_name = None
+			await self.channel_layer.group_send('global_chat', {
+				'type': 'game.result',
+				'winner': winner_name,
+				'game_type': 'chess',
+				'is_tournament': False
 			})
 	
 	async def game_start(self, event):

@@ -11,6 +11,7 @@ class ChessSession:
 		self.board = chess.Board()
 		self.players = {'white': None, 'black': None}
 		self.status = 'waiting'
+		self.invitee_id = None
 
 	@classmethod
 	def create_game(cls):
