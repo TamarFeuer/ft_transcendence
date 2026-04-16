@@ -12,8 +12,8 @@ export function initHome() {
         
         toggleBtn.style.left = '';
         toggleBtn.style.right = '0.25rem';
-        document.getElementById("pong") = "text-zinc-500 font-semibold text-xl";
-        document.getElementById("chess") = "text-white font-semibold text-xl";
+        document.getElementById.className("pong").className = "text-zinc-500 font-semibold text-xl";
+        document.getElementById.className("chess").className = "text-white font-semibold text-xl";
         }
     
     document.getElementById("toggle-game-mode").addEventListener('click', () => {
