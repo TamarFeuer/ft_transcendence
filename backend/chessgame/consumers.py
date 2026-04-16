@@ -1,6 +1,8 @@
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
+from .models import ChessPlayer, ChessMatch
 from .models import ChessSession
 
 logger = logging.getLogger(__name__)
@@ -121,3 +123,13 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		'winner': event['winner'],
 		'result': event['result'],
 		}))
+
+	async def save_chess_result(self, game, winner, result_str):
+		white_user = game.players['white']
+		black_user = game.players['black']
+		if not white_user or not black_user:
+			return
+
+		@sync_to_async
+		def _save():
+			white_cp, 
