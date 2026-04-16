@@ -1,4 +1,5 @@
 import { navigate } from "../routes/route_helpers.js";
+import { setChessOnlineIntended } from "../routes/routes.js";
 
 export function initHome() {
     const username = localStorage.getItem('username');
@@ -59,8 +60,10 @@ export function initHome() {
         
         if (mode === 'pong')
             navigate('/online');
-        else
+        else{
+            setChessOnlineIntended();
             navigate('/chess-online');
+        }
     });
 
     document.getElementById('localBtn')?.addEventListener('click', () => {
