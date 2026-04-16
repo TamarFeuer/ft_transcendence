@@ -63,7 +63,9 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					'result': 'abandonment'
 				})
 
-			#TODO save match to db before dropping the session from memory
+				#save result in db
+				await self.save_chess_result(self.game, winner, 'abandonment')
+				
 			ChessSession.delete_game(self.game_id)
 
 		if hasattr(self, 'game_group_name'):
@@ -93,7 +95,8 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		})
 
 		if over:
-			#TODO persist result then forget the in memory table
+			#save result in db
+			await self.save_chess_result(self.game, over['winner'], over['result'])
 			ChessSession.delete_game(self.game_id)
 			
 			await self.channel_layer.group_send(self.game_group_name, {
@@ -132,4 +135,29 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 		@sync_to_async
 		def _save():
-			white_cp, 
+			white_cp, _ = ChessPlayer.objects.get_or_create(user=white_user)
+			black_cp, _ = ChessPlayer.objects.get_or_create(user=black_user)
+
+			white_elo_before = white_cp.elo_rating
+			black_elo_before = black_cp.elo_rating
+
+			if winner == 'white':
+				white_result, black_result = 1, 0
+			elif winner == 'black':
+				white_result, black_result = 0, 1
+			else:
+				white_result, black_result = 0.5, 0.5
+			
+			#update players' elo
+			white_cp.update_elo(black_elo_before, white_result)
+			black_cp.update_elo(white_elo_before, black_result)
+
+			ChessMatch.objects.create(
+				white=white_cp,
+				black=black_cp,
+				result=result_str,
+				white_elo_before=white_elo_before,
+				black_elo_before=black_elo_before,
+			)
+
+		await _save()
