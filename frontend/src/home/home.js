@@ -60,7 +60,7 @@ export function initHome() {
         if (mode === 'pong')
             navigate('/online');
         else
-            navigate('chess-hub');
+            navigate('/chess-online');
     });
 
     document.getElementById('localBtn')?.addEventListener('click', () => {
