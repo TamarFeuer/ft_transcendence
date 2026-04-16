@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 def create_game(request):
     game = GameSession.create_game()
     game.isTournamentGame = False
+
     # Use logging so output is captured by gunicorn/daphne/docker logs
     logger.info(f"Created game with ID: {game.id}")
     return JsonResponse({

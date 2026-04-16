@@ -285,7 +285,16 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'winner_id': winner_id
                     }
                 )
-            
+                await self.channel_layer.group_send(
+                    "global_chat",                                                               
+                    {           
+                        "type": "game.result",
+                        "winner": winner_name,              
+                        "game_type": "pong",        # or "chess"
+                        "is_tournament": self.game.isTournamentGame
+                    }                                                                            
+                )
+
             # If all players are gone, reset game to waiting state
             players = self.game.get_players()
             if players['left'] is None and players['right'] is None and self.game.status != "completed":
@@ -302,6 +311,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'winner': 'Player disconnected',
                         'winner_id': None
                     }
+                )
+                await self.channel_layer.group_send(
+                    "global_chat",                                                               
+                    {           
+                        "type": "game.result",
+                        "winner": None,              
+                        "game_type": "pong",        # or "chess"
+                        "is_tournament": self.game.isTournamentGame
+                    }                                                                            
                 )
         
         if hasattr(self, 'game_group_name'):
