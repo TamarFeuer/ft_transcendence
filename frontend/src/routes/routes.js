@@ -138,6 +138,12 @@ export function setupRoutes() {
     initOnlineChessGame(inviteGameId);
   }
 
+
+  let chessIntended = false;
+  export function setChessOnlineIntended(){
+      chessOnlineIntended = true;
+  }
+
   routes['/chess'] = async () => {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
