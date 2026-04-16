@@ -39,10 +39,11 @@ window.addEventListener('load', async () => {
 
 setupRoutes();
 
-window.addEventListener("DOMContentLoaded", async () => {
-	
+window.addEventListener("load", async () => {
+	const langBtn = document.getElementById("langBtn");
 	const currentUser = await fetchCurrentUser(); // wait for token refresh, ignore the result
 	if (currentUser.authenticated) {
+		langBtn.style.display = "block";
 		initChat();
 		initChatUI();
 	}
