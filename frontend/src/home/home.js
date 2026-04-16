@@ -12,8 +12,8 @@ export function initHome() {
         
         toggleBtn.style.left = '';
         toggleBtn.style.right = '0.25rem';
-        document.getElementById.className("pong").className = "text-zinc-500 font-semibold text-xl";
-        document.getElementById.className("chess").className = "text-white font-semibold text-xl";
+        document.getElementById("pong").className = "text-zinc-500 font-semibold text-xl";
+        document.getElementById("chess").className = "text-white font-semibold text-xl";
         }
     
     document.getElementById("toggle-game-mode").addEventListener('click', () => {
@@ -60,7 +60,7 @@ export function initHome() {
         if (mode === 'pong')
             navigate('/online');
         else
-            navigate('/online-chess');
+            navigate('chess-hub');
     });
 
     document.getElementById('localBtn')?.addEventListener('click', () => {
