@@ -5,7 +5,14 @@ export function initHome() {
     
     document.getElementById('navAvatar').textContent = username.charAt(0).toUpperCase();
     document.getElementById('navUsername').textContent = username;
-    
+    const mode = localStorage.getItem('gameMode') || 'pong';
+
+    if(mode === 'chess'){
+        toggleBtn.style.left = '';
+        toggleBtn.style.right = '0.25rem';
+        pongText.className = "text-zinc-500 font-semibold text-xl";
+        chessText.className = "text-white font-semibold text-xl";
+        }
     
     document.getElementById("toggle-game-mode").addEventListener('click', () => {
         const current = localStorage.getItem('gameMode') || 'pong';
