@@ -285,7 +285,16 @@ export function setupRoutes() {
 
     document.getElementById('createGameBtn')?.addEventListener('click', async () => {
       try {
-        const response = await fetch('/api/game/create', { method: 'POST' });
+        // for testing
+        const inviteeId = 'test'
+
+        const response = await fetch('/api/game/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ invitee_id: inviteeId })
+        });
         const data = await response.json();
         document.getElementById('lobbyStatus').innerHTML = `<p class="text-green-400">Game created with ID: ${data.gameId}.</p>`;
       } catch (error) {
