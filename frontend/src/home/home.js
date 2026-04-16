@@ -8,10 +8,12 @@ export function initHome() {
     const mode = localStorage.getItem('gameMode') || 'pong';
 
     if(mode === 'chess'){
+        const toggleBtn = document.getElementById('toggle-btn');
+        
         toggleBtn.style.left = '';
         toggleBtn.style.right = '0.25rem';
-        pongText.className = "text-zinc-500 font-semibold text-xl";
-        chessText.className = "text-white font-semibold text-xl";
+        document.getElementById("pong") = "text-zinc-500 font-semibold text-xl";
+        document.getElementById("chess") = "text-white font-semibold text-xl";
         }
     
     document.getElementById("toggle-game-mode").addEventListener('click', () => {
