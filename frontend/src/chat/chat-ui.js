@@ -333,6 +333,7 @@ export function initChatUI() {
 
 	const chatUserMenu = document.getElementById("chatUserMenu");
 	const chatUserMenuName = document.getElementById("chatUserMenuName");
+	const gamePickerMenu = document.getElementById("gamePickerMenu");
 	let chatMenuUser = null; // the user the menu is currently open for
 
 	function showChatUserMenu(user, mouseX, mouseY) {
@@ -364,8 +365,13 @@ export function initChatUI() {
 			// TODO: show user profile
 			console.log("View profile:", chatMenuUser);
 		} else if (action === "invite") {
-			// TODO: send game invite
-			console.log("Invite to game:", chatMenuUser);
+			// Show game picker below the context menu — keep chatMenuUser alive for when picker is clicked
+			e.stopPropagation();
+			const rect = chatUserMenu.getBoundingClientRect();
+			gamePickerMenu.style.left = chatUserMenu.style.left;
+			gamePickerMenu.style.top = `${rect.bottom + 4}px`;
+			gamePickerMenu.style.display = "block";
+			return; // skip hideChatUserMenu() at the bottom
 		} else if (action === "chat") {
 			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
 		} else if (action === "block") {
@@ -386,10 +392,13 @@ export function initChatUI() {
 		hideChatUserMenu();
 	});
 
-	// Close menu when clicking anywhere outside it
+	// Close menus when clicking anywhere outside them
 	document.addEventListener("click", (e) => {
 		if (!chatUserMenu.contains(e.target)) {
 			hideChatUserMenu();
+		}
+		if (!gamePickerMenu.contains(e.target)) {
+			gamePickerMenu.style.display = "none";
 		}
 	});
 
