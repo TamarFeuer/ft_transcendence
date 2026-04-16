@@ -63,6 +63,9 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					'result': 'abandonment'
 				})
 
+				#save result in db
+				await self.save_chess_result(self.game, winner, 'abandonment')
+
 				#announce result to global chat
 				winner_name = getattr(self.game.players[winner], 'username', winner)
 				await self.channel_layer.group_send('global_chat', {
@@ -72,9 +75,6 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					'is_tournament': False
 				})
 
-				#save result in db
-				await self.save_chess_result(self.game, winner, 'abandonment')
-			
 			elif self.game.status == 'waiting' and self.game.invitee_id is not None:
 				await self.channel_layer.group_send(
 					f'user_{self.game.invitee_id}',
