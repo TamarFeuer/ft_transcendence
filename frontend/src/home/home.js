@@ -40,13 +40,13 @@ export function initHome() {
 
     
     document.getElementById('aiBtn')?.addEventListener('click', () => {
-        const mode = localStorage.getItem('gameMode');
+        const mode = localStorage.getItem('gameMode') || 'pong';
         if(mode === 'pong')
-            navigate('ai');
+            navigate('/ai');
     });
 
     document.getElementById('onlineBtn')?.addEventListener('click', () => {
-        const mode = localStorage.getItem('gameMode');
+        const mode = localStorage.getItem('gameMode') || 'pong';
         
         if (mode === 'pong')
             navigate('/online');
@@ -55,7 +55,7 @@ export function initHome() {
     });
 
     document.getElementById('localBtn')?.addEventListener('click', () => {
-        const mode = localStorage.getItem('gameMode');
+        const mode = localStorage.getItem('gameMode') || 'pong';
         
         if(mode === 'pong')
             navigate('/local')
