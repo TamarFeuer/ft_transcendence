@@ -1,6 +1,8 @@
 import uuid
 from threading import Lock
 import chess
+from django.db import models
+from django.conf import settings
 
 class ChessSession:
 	_games = {}
@@ -73,3 +75,32 @@ class ChessSession:
 		if self.can_start():
 			self.status = 'active'
 	
+class ChessPlayer(models.Model):
+	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name = 'chess_player')
+	elo_rating = models.IntegerField(default=1200)
+	total_games = models.IntegerField(default = 0)
+	total_wins = models.IntegerField(default = 0)
+	total_losses = models.IntegerField(default = 0)
+
+	def update_elo(self, opponent_elo, result):
+		#result is 1 for win, .5 for draw and 0 for loss
+		k = 40
+		expected = 1 / (1 + 10 ** ((opponent_elo - self.elo_rating) / 400))
+		self.elo_rating = round(self.elo_rating + k * (result - expected))
+		self.total_games += 1
+		#we currently don't track draws since we don't do it for stats either
+		if result == 1:
+			self.total_wins += 1
+		elif result == 0:
+			self.total_losses += 1
+		self.save()
+
+class ChessMatch(models.Model):
+	white = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_white')
+	black = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_black')
+	result = models.CharField(max_length=10) # standard chess notation is 1-0 for white winning, 0-1 for black and 1/2-1/2 for draw
+	white_elo_before = models.IntegerField()
+	black_elo_before = models.IntegerField()
+	timestamp = models.DateTimeField(auto_now_add=True)
+
+

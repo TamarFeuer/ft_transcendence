@@ -23,7 +23,7 @@ export function sendFriendRequest(friendInput, status) {
       .then(data => {
         if (data.success) {
           status.style.color = 'lightgreen';
-          status.textContent = 'Friend Request Sent';
+          status.textContent = data.message || 'Friend Request Sent';
           clearOnNextClick(status);
         } else if (data.error) {
           status.style.color = 'red';
