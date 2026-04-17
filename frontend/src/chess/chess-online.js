@@ -3,6 +3,15 @@ import { renderBoard } from './chess.js'
 import { showChessResultModal } from './chess-modal.js'
 import { navigate } from '../routes/route_helpers.js'
 
+let _chessWs = null;
+
+export function closeChessConnection(){
+	if (_chessWs && (_chessWs.readyState === WebSocket.OPEN || _chessWs.readyState === WebSocket.CONNECTING)){
+		_chessWs.close();
+	}
+	_chessWs = null;
+}
+
 function subtitleFromResult(result) {
 	if (!result) return '';
 	const r = String(result).toLowerCase();
@@ -79,6 +88,7 @@ export async function initOnlineChessGame(gameId = null){
 
 	const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 	const ws = new WebSocket(`${proto}//${location.host}/ws/chess/${gameId}`);
+	_chessWs = ws;
 
 	ws.onmessage = (event) => {
 		const data = JSON.parse(event.data);
@@ -123,9 +133,16 @@ export async function initOnlineChessGame(gameId = null){
 		}
 	};
 
+	const browserExitHandler = () => closeChessConnection();
+	window.addEventListener('beforeunload', browserExitHandler);
+	window.addEventListener('pagehide', browserExitHandler);
+
 	ws.onclose = () => {
 		gameActive = false;
 		myTurn     = false;
+		_chessWs = null;
+		window.removeEventListener('beforeunload', browserExitHandler);
+   		window.removeEventListener('pagehide',     browserExitHandler);
 	};
 
 	boardEl.addEventListener('click', (e) => {
