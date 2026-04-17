@@ -30,8 +30,12 @@ class ChessSession:
 			return 'white'
 		elif black_id == user.id:
 			return 'black'
-		elif black_id is None and white_id != user.id:
-			# invite flow: invitee connects directly without going through join_chess
+		elif white_id is None and black_id is not None and black_id != user.id:
+			# invite flow: invitor is black, invitee takes white
+			self.players['white'] = user
+			return 'white'
+		elif black_id is None and white_id is not None and white_id != user.id:
+			# invite flow: invitor is white, invitee takes black
 			self.players['black'] = user
 			return 'black'
 		return None
