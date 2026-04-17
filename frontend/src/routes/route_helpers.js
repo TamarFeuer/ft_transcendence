@@ -2,8 +2,12 @@
 import { routes } from "../main.js";
 import { updatePageTranslations } from '../i18n/index.js';
 import { handleTournamentRoute } from './routes.js';
+import { closeChessConnection } from "../chess/chess-online.js";
 
 export function navigate(path) {
+    if (window.location.pathname === '/chess-online' && path !== '/chess-online'){
+        closeChessConnection();
+    }
     window.history.pushState({}, path, window.location.origin + path);
     handleRoute(path);
 }
