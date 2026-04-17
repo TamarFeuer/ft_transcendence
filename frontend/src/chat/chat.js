@@ -116,6 +116,23 @@ export function initChat() {
 				}));
 				break;
 
+			case "game_invite":
+				window.dispatchEvent(new CustomEvent("gameInviteReceived", {
+					detail: {
+						senderId: data.sender,
+						senderName: data.name,
+						gameType: data.game_type,
+						gameId: data.game_id,
+					}
+				}));
+				break;
+
+			case "game_invite_expired":
+				window.dispatchEvent(new CustomEvent("gameInviteExpired", {
+					detail: { gameId: data.game_id }
+				}));
+				break;
+
 			// Another user started typing — show indicator (TODO in UI)
 			case "typing":
 				console.log(`${data.name || data.user} is typing...`);
@@ -260,6 +277,25 @@ export function closeConversation(targetId) {
 export function notifyBlocked() {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({ type: "user_blocked" }));
+}
+
+export function sendGameInvite(targetId, gameType, gameId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "game_invite",
+		target: targetId,
+		game_type: gameType,
+		game_id: gameId,
+	}));
+}
+
+export function sendGameInviteExpired(targetId, gameId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "game_invite_expired",
+		target: targetId,
+		game_id: gameId,
+	}));
 }
 
 export function openConversation(targetId) {

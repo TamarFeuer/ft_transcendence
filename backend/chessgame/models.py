@@ -30,6 +30,10 @@ class ChessSession:
 			return 'white'
 		elif black_id == user.id:
 			return 'black'
+		elif black_id is None and white_id != user.id:
+			# invite flow: invitee connects directly without going through join_chess
+			self.players['black'] = user
+			return 'black'
 		return None
 
 	#returns whether the uci worked, the fen string, and None or a small dict when the game ends
