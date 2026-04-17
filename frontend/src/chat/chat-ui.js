@@ -316,12 +316,11 @@ export function initChatUI() {
 	window.addEventListener("dmHistoryReceived", (e) => {
 		const { channelId, messages } = e.detail;
 		if (!messageHistory[channelId]) messageHistory[channelId] = [];
-		// Prepend history — database messages come first, then live messages on top
-		messageHistory[channelId] = [...messages.map(msg => ({
-			senderId: String(msg.sender_id), //sender_id comes back from the database as an integer
+		messageHistory[channelId] = messages.map(msg => ({
+			senderId: String(msg.sender_id),
 			senderName: msg.sender_name,
 			message: msg.message
-		})), ...messageHistory[channelId]];
+		}));
 		if (channelId === activeChannel) renderMessages(channelId);
 	});
 	

@@ -141,6 +141,7 @@ export async function initOnlineChessGame(gameId = null){
 		gameActive = false;
 		myTurn     = false;
 		_chessWs = null;
+		window.dispatchEvent(new CustomEvent("chessGameLeft"));
 		window.removeEventListener('beforeunload', browserExitHandler);
    		window.removeEventListener('pagehide',     browserExitHandler);
 	};
