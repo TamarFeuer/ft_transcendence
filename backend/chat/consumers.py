@@ -55,6 +55,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		# Join the global group via the channel layer.
 		await self.channel_layer.group_add(self.group_name, self.channel_name)
+		# Join personal group so other consumers (e.g. chess) can send signals to this user.
+		await self.channel_layer.group_add(f"user_{self.user_id}", self.channel_name)
 		await self.accept()
 
 		# Track channel for private messaging.
@@ -81,6 +83,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# If connect() failed early (e.g. invalid token), group_name was never set.
 		if hasattr(self, "group_name"):
 			await self.channel_layer.group_discard(self.group_name, self.channel_name)
+			await self.channel_layer.group_discard(f"user_{self.user_id}", self.channel_name)
 
 		# Only clean up user data if we successfully authenticated in connect().
 		# getattr with default None avoids AttributeError if user_id was never set.
