@@ -2,9 +2,10 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, blockedMeIds, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked, sendGameInvite, sendGameInviteExpired } from './chat.js';
+import { onlineUsers, blockedMeIds, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked, sendGameInvite, sendGameInviteExpired, sendDeleteInvite } from './chat.js';
 import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 import { navigate, handleRoute } from '../routes/route_helpers.js';
+import { showMessage } from '../utils/utils.js';
 
 export function initChatUI() {
 
@@ -173,13 +174,12 @@ export function initChatUI() {
 
 			// Game invite — render as a card with an Accept button
 			if (msg.invite) {
-				msgDiv.classList.add("dm-received");
-				const senderSpan = document.createElement("span");
-				senderSpan.className = "sender";
-				senderSpan.textContent = isOwnMessage ? "Me" : msg.senderName;
-				msgDiv.appendChild(senderSpan);
-				msgDiv.appendChild(document.createTextNode(` invited you to a game of ${msg.invite.gameType}!`));
-				if (!isOwnMessage) {
+				msgDiv.classList.add(isOwnMessage ? "self" : "dm-received", "game-invite");
+				if (isOwnMessage) {
+					const recipientName = msg.recipientName || "them";
+					msgDiv.appendChild(document.createTextNode(`You invited ${recipientName} to a game of ${msg.invite.gameType}`));
+				} else {
+					msgDiv.appendChild(document.createTextNode(`${msg.senderName} invited you to a game of ${msg.invite.gameType}`));
 					const acceptBtn = document.createElement("button");
 					acceptBtn.textContent = "Accept";
 					acceptBtn.className = "ml-2 px-2 py-0.5 text-xs bg-pink-500 hover:bg-pink-400 rounded font-semibold";
@@ -187,6 +187,7 @@ export function initChatUI() {
 						msgDiv.remove();
 						const idx = messageHistory[channelId].indexOf(msg);
 						if (idx !== -1) messageHistory[channelId].splice(idx, 1);
+						sendDeleteInvite(msg.invite.gameId);
 						if (msg.invite.gameType === "chess") {
 							window.history.pushState({}, '', `/chess-online?gameId=${msg.invite.gameId}`);
 							handleRoute('/chess-online');
@@ -316,11 +317,18 @@ export function initChatUI() {
 	window.addEventListener("dmHistoryReceived", (e) => {
 		const { channelId, messages } = e.detail;
 		if (!messageHistory[channelId]) messageHistory[channelId] = [];
-		messageHistory[channelId] = messages.map(msg => ({
-			senderId: String(msg.sender_id),
-			senderName: msg.sender_name,
-			message: msg.message
-		}));
+		messageHistory[channelId] = messages.map(msg => {
+			const entry = {
+				senderId: String(msg.sender_id),
+				senderName: msg.sender_name,
+				message: msg.message,
+			};
+			if (msg.invite) {
+				entry.invite = msg.invite;
+				entry.recipientName = msg.recipient_name;
+			}
+			return entry;
+		});
 		if (channelId === activeChannel) renderMessages(channelId);
 	});
 	
@@ -370,6 +378,12 @@ export function initChatUI() {
 	function showChatUserMenu(user, mouseX, mouseY) {
 		chatMenuUser = user;
 		chatUserMenuName.textContent = user.name || user.id;
+
+		const inviteBtn = chatUserMenu.querySelector('[data-action="invite"]');
+		if (inviteBtn) {
+			const targetInGame = onlineUsers[user.id]?.in_game;
+			inviteBtn.style.display = (targetInGame || pendingInvite) ? "none" : "";
+		}
 
 		// Position at cursor - nudge left/up if too close to screen edge
 		const menuWidth = 160;
@@ -459,10 +473,21 @@ export function initChatUI() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ invitee_id: targetId })
 			});
+			if (!res.ok) {
+				pendingInvite = false;
+				showMessage("Could not create game. Please try again.", "error");
+				return;
+			}
 			const data = await res.json();
 			const gameId = data.gameId;
 			sendGameInvite(targetId, "chess", gameId);
 			openDMChannel(targetId, targetName);
+			addMessage(targetId, {
+				senderId: verifiedUserId,
+				senderName: null,
+				recipientName: targetName,
+				invite: { gameType: "chess", gameId }
+			});
 			// pendingInvite stays true until A leaves /chess-online
 			window.history.pushState({}, '', `/chess-online?gameId=${gameId}`);
 			handleRoute('/chess-online');
@@ -491,8 +516,17 @@ export function initChatUI() {
 		pendingInvite = false;
 	});
 
-	window.addEventListener("gameInviteExpired", (e) => {
-		const { gameId } = e.detail;
+	window.addEventListener("gameInviteRejected", (e) => {
+		pendingInvite = false;
+		// Navigate back since the chess game was created but nobody will join it
+		window.history.back();
+		// Show feedback to the invitor
+		if (e.detail.reason === "in_game") {
+			showMessage("That user is currently in a game.", "error");
+		}
+	});
+
+	function removeInviteFromHistory(gameId) {
 		for (const channelId in messageHistory) {
 			const idx = messageHistory[channelId].findIndex(m => m.invite?.gameId === gameId);
 			if (idx !== -1) {
@@ -501,7 +535,10 @@ export function initChatUI() {
 				break;
 			}
 		}
-	});
+	}
+
+	window.addEventListener("gameInviteAccepted", (e) => removeInviteFromHistory(e.detail.gameId));
+	window.addEventListener("gameInviteExpired", (e) => removeInviteFromHistory(e.detail.gameId));
 
 	// ── Send message ──────────────────────────────────────────────────────────
 	

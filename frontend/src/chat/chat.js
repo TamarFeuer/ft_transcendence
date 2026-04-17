@@ -133,6 +133,18 @@ export function initChat() {
 				}));
 				break;
 
+			case "game_invite_rejected":
+				window.dispatchEvent(new CustomEvent("gameInviteRejected", {
+					detail: { reason: data.reason }
+				}));
+				break;
+
+			case "game_invite_accepted":
+				window.dispatchEvent(new CustomEvent("gameInviteAccepted", {
+					detail: { gameId: data.game_id }
+				}));
+				break;
+
 			// Another user started typing — show indicator (TODO in UI)
 			case "typing":
 				console.log(`${data.name || data.user} is typing...`);
@@ -294,6 +306,14 @@ export function sendGameInviteExpired(targetId, gameId) {
 	chatSocket.send(JSON.stringify({
 		type: "game_invite_expired",
 		target: targetId,
+		game_id: gameId,
+	}));
+}
+
+export function sendDeleteInvite(gameId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "delete_invite",
 		game_id: gameId,
 	}));
 }

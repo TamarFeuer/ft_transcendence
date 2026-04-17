@@ -4,6 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import ChessPlayer, ChessMatch
 from .models import ChessSession
+from chat.consumers import IN_GAME_USERS
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 		if self.game.can_start():
 			self.game.start()
+			# Mark both players as in-game so chat can reject invites to them
+			for player in self.game.players.values():
+				if player:
+					IN_GAME_USERS.add(str(player.id))
+			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
 			await self.channel_layer.group_send(self.game_group_name, {
 				'type': 'game_start',
 				'fen': self.game.board.fen(),
@@ -81,6 +87,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					{'type': 'game.invite.expired', 'game_id': self.game_id}
 				)
 
+			# Remove both players from in-game tracking
+			for player in self.game.players.values():
+				if player:
+					IN_GAME_USERS.discard(str(player.id))
+			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
 			ChessSession.delete_game(self.game_id)
 
 		if hasattr(self, 'game_group_name'):
