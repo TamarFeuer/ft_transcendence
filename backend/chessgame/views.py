@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 import jwt
 from django.conf import settings
 import logging
+import random
 from .models import ChessSession
 
 logger = logging.getLogger(__name__)
@@ -39,16 +40,24 @@ def join_chess(request):
 	#colors are pre-assigned here so WS connect order does not cause a race
 	with ChessSession._lock:
 		for game in ChessSession._games.values():
-			if game.status == 'waiting' and game.players['black'] is None:
+			if game.status == 'waiting':
 				white_id = getattr(game.players['white'], 'id', None)
-				if white_id != user.id:
-					game.players['black'] = user
-					logger.info(f"Player {user} joining game {game.id} as black")
+				black_id = getattr(game.players['black'], 'id', None)
+				#if only one slot is filled
+				if (white_id is None) != (black_id is None):
+					#if the slot is not filled by this user
+					if user.id not in (white_id, black_id):
+						if game.players['white'] is None:
+							game.players['white'] = user
+						else:
+							game.players['black'] = user
+					
 					return JsonResponse({'gameId': game.id})
 
 		game = ChessSession()
-		game.players['white'] = user
+		color = random.choice(['white', 'black'])
+		game.players[color] = user
 		ChessSession._games[game.id] = game
 
-	logger.info(f"Player {user} created game {game.id} as white")
+	logger.info(f"Player {user} created game {game.id} as {color}")
 	return JsonResponse({'gameId': game.id})
