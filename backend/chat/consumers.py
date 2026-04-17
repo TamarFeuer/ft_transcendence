@@ -194,7 +194,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			target = data.get("target")
 			game_type = data.get("game_type")
 			game_id = data.get("game_id")
+			logger.debug(f"[invite] game_invite from {self.user_id} → target={target} game_id={game_id}")
 			if not target or not game_type or not game_id:
+				logger.warning(f"[invite] missing fields — target={target} game_type={game_type} game_id={game_id}")
 				return
 			if target in IN_GAME_USERS:
 				await self.send(text_data=json.dumps({
@@ -210,8 +212,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"game_id": game_id,
 			}
 			if target in CONNECTED_USERS:
+				logger.debug(f"[invite] delivering to {len(CONNECTED_USERS[target])} channel(s) for target {target}")
 				for channel_name in CONNECTED_USERS[target]:
 					await self.channel_layer.send(channel_name, payload)
+			else:
+				logger.warning(f"[invite] target {target} not in CONNECTED_USERS — saved to DB only")
 			await self.save_invite(target, game_type, game_id)
 
 		elif msg_type == "game_invite_expired":
@@ -315,7 +320,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Send each connected user a personalized online users list.
 		# Users who blocked this user are hidden entirely.
 		# Users this user has blocked appear with blocked_by_me: True so the frontend can show an unblock button.
-		for user_id, channels in CONNECTED_USERS.items():
+		for user_id, channels in list(CONNECTED_USERS.items()):
 			blocked_by_me, blocked_me = await self.get_block_info_for(user_id)
 			users = {}
 			for uid, name in ONLINE_USERS.items():

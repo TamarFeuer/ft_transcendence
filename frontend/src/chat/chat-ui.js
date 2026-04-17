@@ -468,11 +468,13 @@ export function initChatUI() {
 		pendingInvite = true;
 
 		if (gameType === "chess") {
+			console.log('[invite] POSTing /api/chess/join/ for target:', targetId);
 			const res = await fetchWithRefreshAuth('/api/chess/join/', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ invitee_id: targetId })
 			});
+			console.log('[invite] /api/chess/join/ response — status:', res.status, 'ok:', res.ok);
 			if (!res.ok) {
 				pendingInvite = false;
 				showMessage("Could not create game. Please try again.", "error");
@@ -480,6 +482,7 @@ export function initChatUI() {
 			}
 			const data = await res.json();
 			const gameId = data.gameId;
+			console.log('[invite] gameId from response:', gameId);
 			sendGameInvite(targetId, "chess", gameId);
 			openDMChannel(targetId, targetName);
 			addMessage(targetId, {

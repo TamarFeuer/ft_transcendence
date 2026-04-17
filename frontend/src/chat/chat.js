@@ -292,7 +292,11 @@ export function notifyBlocked() {
 }
 
 export function sendGameInvite(targetId, gameType, gameId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	console.log('[invite] sendGameInvite — WS state:', chatSocket?.readyState, '(1=OPEN), gameId:', gameId, 'target:', targetId);
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+		console.warn('[invite] DROPPED — WS not open');
+		return;
+	}
 	chatSocket.send(JSON.stringify({
 		type: "game_invite",
 		target: targetId,
