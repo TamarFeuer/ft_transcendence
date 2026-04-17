@@ -6,6 +6,7 @@ import jwt
 from django.conf import settings
 import logging
 import random
+import json
 from .models import ChessSession
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,10 @@ def join_chess(request):
 		game = ChessSession()
 		color = random.choice(['white', 'black'])
 		game.players[color] = user
+		body = json.loads(request.body or '{}')
+		invitee_id = body.get('invitee_id')
+		if invitee_id:
+			game.invitee_id = str(invitee_id)
 		ChessSession._games[game.id] = game
 
 	logger.info(f"Player {user} created game {game.id} as {color}")
