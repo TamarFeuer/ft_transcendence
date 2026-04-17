@@ -399,11 +399,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			for msg in reversed(list(messages))
 		]
 
-		# Append any pending game invites for this conversation
-		invites = GameInvite.objects.filter(
+		inv = GameInvite.objects.filter(
 			conversation_id=shared_conv_id
-		).select_related('sender', 'recipient')
-		for inv in invites:
+		).select_related('sender', 'recipient').first()
+		if inv:
 			result.append({
 				"sender_id": inv.sender_id,
 				"sender_name": inv.sender.username if inv.sender else "deleted user",
