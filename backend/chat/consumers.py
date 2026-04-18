@@ -443,13 +443,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		from django.db.models import F
 
 		conversation = self._get_or_create_conversation(recipient_id)
-		GameInvite.objects.create(
-			conversation=conversation,
-			sender=self.user,
-			recipient_id=recipient_id,
-			game_type=game_type,
+		# get_or_create prevents IntegrityError when two players mutually invite each
+		# other before either accepts — both use the same gameId (same chess session).
+		_, created = GameInvite.objects.get_or_create(
 			game_id=game_id,
+			defaults={
+				'conversation': conversation,
+				'sender': self.user,
+				'recipient_id': recipient_id,
+				'game_type': game_type,
+			}
 		)
+		if not created:
+			return
 		recipient_is_viewing = ACTIVE_CONVERSATION.get(str(recipient_id)) == self.user_id
 		if not recipient_is_viewing:
 			from chat.models import ConversationParticipant

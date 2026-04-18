@@ -46,10 +46,22 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		if self.game.can_start():
 			self.game.start()
 			# Mark both players as in-game so chat can reject invites to them
-			for player in self.game.players.values():
-				if player:
-					IN_GAME_USERS.add(str(player.id))
+			player_ids = [str(p.id) for p in self.game.players.values() if p]
+			for pid in player_ids:
+				IN_GAME_USERS.add(pid)
 			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+
+			# Expire any pending invites between these two players so the
+			# Accept buttons disappear from both DM windows once the game starts.
+			if len(player_ids) == 2:
+				invite_ids = await self.get_invite_ids_between(player_ids[0], player_ids[1])
+				for gid in invite_ids:
+					for uid in player_ids:
+						await self.channel_layer.group_send(
+							f'user_{uid}',
+							{'type': 'game.invite.expired', 'game_id': gid}
+						)
+
 			await self.channel_layer.group_send(self.game_group_name, {
 				'type': 'game_start',
 				'fen': self.game.board.fen(),
@@ -169,6 +181,22 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		'winner': event['winner'],
 		'result': event['result'],
 		}))
+
+	@sync_to_async
+	def get_invite_ids_between(self, user1_id, user2_id):
+		from chat.models import GameInvite, ConversationParticipant
+		conv_ids = ConversationParticipant.objects.filter(
+			user_id=user1_id
+		).values_list('conversation_id', flat=True)
+		shared_conv_id = ConversationParticipant.objects.filter(
+			conversation_id__in=conv_ids,
+			user_id=user2_id
+		).values_list('conversation_id', flat=True).first()
+		if not shared_conv_id:
+			return []
+		return list(GameInvite.objects.filter(
+			conversation_id=shared_conv_id
+		).values_list('game_id', flat=True))
 
 	async def save_chess_result(self, game, winner, result_str):
 		white_user = game.players['white']

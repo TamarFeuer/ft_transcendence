@@ -531,12 +531,9 @@ export function initChatUI() {
 
 	function removeInviteFromHistory(gameId) {
 		for (const channelId in messageHistory) {
-			const idx = messageHistory[channelId].findIndex(m => m.invite?.gameId === gameId);
-			if (idx !== -1) {
-				messageHistory[channelId].splice(idx, 1);
-				renderMessages(channelId);
-				break;
-			}
+			const before = messageHistory[channelId].length;
+			messageHistory[channelId] = messageHistory[channelId].filter(m => m.invite?.gameId !== gameId);
+			if (messageHistory[channelId].length < before) renderMessages(channelId);
 		}
 	}
 
