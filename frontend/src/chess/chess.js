@@ -3,10 +3,20 @@ import { showChessResultModal } from './chess-modal.js'
 
 let selectedSquare = null;
 
-const pieces = {
-    w: { k: '♔', q: '♕', r: '♖', b: '♗', n: '♘', p: '♙' },
-    b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }
-};
+/** Cburnett-style SVGs in /public/chess-pieces/ (same set Lichess uses). */
+function pieceImageSrc(color, type) {
+	return `/chess-pieces/${color}${type.toUpperCase()}.svg`;
+}
+
+function appendPieceImage(square, color, type) {
+	const img = document.createElement('img');
+	img.src = pieceImageSrc(color, type);
+	img.alt = '';
+	img.draggable = false;
+	img.className =
+		'w-[82%] h-[82%] max-h-full object-contain select-none pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]';
+	square.appendChild(img);
+}
 
 function checkGameEnd(game){
 	if (game.isCheckmate()) {
@@ -36,7 +46,7 @@ function handlePromotion(game, boardEl, fromSquare, toSquare){
 	picker.classList.remove('hidden');
 
 	picker.addEventListener('click', (e) => {
-		const piece = e.target.dataset.piece;
+		const piece = e.target.closest('[data-piece]')?.dataset.piece;
 		if (!piece)
 			return;
 
@@ -149,16 +159,14 @@ export function renderBoard(game, boardEl, selectedSquare, flipped = false){
 			const fileIndex = flipped ? (7 - cellIndex) : cellIndex;
 			const rankIndex = flipped ? (7 - rowIndex) : rowIndex;
 			const isLight = (rankIndex + fileIndex) % 2 === 0;
-			square.className = `relative w-full h-full flex items-center justify-center text-4xl ${isLight ? 'bg-amber-100' : 'bg-amber-800'}`;
+			square.className = `relative w-full h-full flex items-center justify-center ${isLight ? 'bg-amber-100' : 'bg-amber-800'}`;
 
 			//notation lines up with chess.js and fen; flip is only how we draw
 			square.dataset.notation = getNotation(rankIndex, fileIndex);
 
 			//if cell has a piece then render the piece
 			if (cell){
-				// console.log('cell type', cell.type, 'in square ', square.dataset.notation);
-				const symbol = pieces[cell.color][cell.type];
-				square.textContent = symbol;
+				appendPieceImage(square, cell.color, cell.type);
 			}
 
 			//if user clicks their piece, highlight it
