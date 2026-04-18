@@ -427,7 +427,7 @@ export function initChatUI() {
 				body: JSON.stringify({ user_id: targetId })
 			}).then(r => r.json()).then(data => {
 				if (data.success) {
-					notifyBlocked();
+					notifyBlocked(targetId);
 				} else {
 					console.warn("Block failed:", data.error);
 				}
@@ -484,7 +484,7 @@ export function initChatUI() {
 			const gameId = data.gameId;
 			console.log('[invite] gameId from response:', gameId);
 			sendGameInvite(targetId, "chess", gameId);
-			openDMChannel(targetId, targetName);
+			openDMChannel(targetId, targetName, true, false);
 			addMessage(targetId, {
 				senderId: verifiedUserId,
 				senderName: null,
@@ -539,6 +539,13 @@ export function initChatUI() {
 
 	window.addEventListener("gameInviteAccepted", (e) => removeInviteFromHistory(e.detail.gameId));
 	window.addEventListener("gameInviteExpired", (e) => removeInviteFromHistory(e.detail.gameId));
+	window.addEventListener("gameInviteBlocked", (e) => {
+		removeInviteFromHistory(e.detail.gameId);
+		if (pendingInvite) {
+			pendingInvite = false;
+			window.history.back();
+		}
+	});
 
 	// ── Send message ──────────────────────────────────────────────────────────
 	

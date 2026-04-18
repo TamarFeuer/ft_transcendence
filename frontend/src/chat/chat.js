@@ -133,6 +133,12 @@ export function initChat() {
 				}));
 				break;
 
+			case "game_invite_blocked":
+				window.dispatchEvent(new CustomEvent("gameInviteBlocked", {
+					detail: { gameId: data.game_id }
+				}));
+				break;
+
 			case "game_invite_rejected":
 				window.dispatchEvent(new CustomEvent("gameInviteRejected", {
 					detail: { reason: data.reason }
@@ -286,9 +292,9 @@ export function closeConversation(targetId) {
 	}));
 }
 
-export function notifyBlocked() {
+export function notifyBlocked(targetId = null) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "user_blocked" }));
+	chatSocket.send(JSON.stringify({ type: "user_blocked", target: targetId }));
 }
 
 export function sendGameInvite(targetId, gameType, gameId) {
