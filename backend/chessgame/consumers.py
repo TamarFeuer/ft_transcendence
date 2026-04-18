@@ -46,7 +46,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			#get users so we can get their ELOs
 			white_user = self.game.players['white']
 			black_user = self.game.players['black']
-			white_elo, black_elo = get_elos(white_user, black_user)
+			white_elo, black_elo = await get_elos(white_user, black_user)
 
 			self.game.start()
 			await self.channel_layer.group_send(self.game_group_name, {
@@ -209,5 +209,4 @@ def get_elos(white_user, black_user):
 	white_elo = white_cp.elo_rating
 	black_elo = black_cp.elo_rating
 
-	print('white elo  {white_elo}')
 	return white_elo, black_elo
