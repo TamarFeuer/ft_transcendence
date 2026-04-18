@@ -123,8 +123,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		if over:
 			#save result in db
 			await self.save_chess_result(self.game, over['winner'], over['result'])
+			for player in self.game.players.values():
+				if player:
+					IN_GAME_USERS.discard(str(player.id))
+			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
 			ChessSession.delete_game(self.game_id)
-			
+
 			await self.channel_layer.group_send(self.game_group_name, {
 				'type': 'game_over',
 				'winner': over['winner'],

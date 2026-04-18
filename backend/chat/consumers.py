@@ -283,7 +283,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"game_id": event["game_id"],
 		}))
 
+	async def game_result(self, event):
+		pass
+
 	async def trigger_online_users_broadcast(self, event):
+		logger.debug(f"[broadcast] IN_GAME_USERS at broadcast time: {IN_GAME_USERS}")
 		await self.broadcast_online_users()
 
 	async def game_invite_accepted(self, event):
@@ -323,7 +327,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		for user_id, channels in list(CONNECTED_USERS.items()):
 			blocked_by_me, blocked_me = await self.get_block_info_for(user_id)
 			users = {}
-			for uid, name in ONLINE_USERS.items():
+			for uid, name in list(ONLINE_USERS.items()):
 				if uid in blocked_me:
 					# This user blocked me — hide them entirely
 					continue
