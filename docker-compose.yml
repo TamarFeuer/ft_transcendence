@@ -48,8 +48,6 @@ services:
       - POSTGRES_PASSWORD=transcendence_pass
     volumes:
       - db_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
       - pongnet
 
