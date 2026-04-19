@@ -1,6 +1,6 @@
 # services file for business logic
 
-from .models import Match, Player, Achievement, PlayerAchievement
+from .models import Match, Player
 
 
 def _resolve_player(entity):
@@ -42,37 +42,10 @@ def match_ends(game_session, p1, p2):
     w.player_wins(win_point = winner_score, opponent_elo = l.elo_rating)
     l.player_loses(loss_point = loser_score, opponent_elo = w.elo_rating)
 
-    # TO DO: correct player achievements
+    w.check_new_achievements()
+    l.check_new_achievements()
 
     return match
-
-
-def award_achievements(player: Player) -> list:
-    """
-    Check all achievements and grant any the player now qualifies for
-    but hasn't received yet. Returns the list of newly awarded achievements.
-    """
-    stat_map = {
-        'total_wins':  player.total_wins,
-        'total_games': player.total_games,
-        'win_streak':  player.best_win_streak,
-        'elo_rating':  player.elo_rating,
-    }
-
-    already_earned = set(
-        player.achievements.values_list('achievement_id', flat=True)
-    )
-
-    newly_awarded = []
-    for achievement in Achievement.objects.all():
-        if achievement.id in already_earned:
-            continue
-        player_stat = stat_map.get(achievement.requirement_type, 0)
-        if player_stat >= achievement.requirement_value:
-            PlayerAchievement.objects.create(player=player, achievement=achievement)
-            newly_awarded.append(achievement)
-
-    return newly_awarded
 
 
 def get_match_history(player: Player, limit: int = 10) -> list:
