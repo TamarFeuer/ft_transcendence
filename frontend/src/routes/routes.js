@@ -161,7 +161,43 @@ export function setupRoutes() {
     // Top-left: current user's achievements
     fetchWithRefreshAuth('/api/auth/me')
       .then(r => r.json())
-      .then(me => fetchWithRefreshAuth(`/api/player/${me.username}/achievements`))
+      .then(me => {
+        // Top-right: current user's match history
+        fetchWithRefreshAuth('/api/match-history')
+          .then(r => r.json())
+          .then(data => {
+            const tbody = document.getElementById('pong-history-table');
+            if (!tbody) return;
+            if (!data.matches || data.matches.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400 pt-1">No games yet.</td></tr>';
+              return;
+            }
+            tbody.innerHTML = data.matches.slice(0, 10)
+              .map(m => {
+                const opponent = m.player1 === me.username ? m.player2 : m.player1;
+                const myScore = m.player1 === me.username ? m.player1_score : m.player2_score;
+                const oppScore = m.player1 === me.username ? m.player2_score : m.player1_score;
+                const won = m.winner === me.username;
+                const result = m.winner
+                  ? (won ? '<span class="text-green-400">Win</span>' : '<span class="text-red-400">Loss</span>')
+                  : '<span class="text-gray-400">-</span>';
+                const date = new Date(m.timestamp).toLocaleDateString();
+                return `<tr class="border-t border-white/10">
+                  <td class="py-1 pr-2">${opponent}</td>
+                  <td class="py-1 pr-2 font-semibold">${myScore}–${oppScore}</td>
+                  <td class="py-1 pr-2">${result}</td>
+                  <td class="py-1 text-gray-400">${date}</td>
+                </tr>`;
+              })
+              .join('');
+          })
+          .catch(() => {
+            const tbody = document.getElementById('pong-history-table');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400">Could not load.</td></tr>';
+          });
+
+        return fetchWithRefreshAuth(`/api/player/${me.username}/achievements`);
+      })
       .then(r => r.json())
       .then(data => {
         const list = document.getElementById('pong-achievements-list');

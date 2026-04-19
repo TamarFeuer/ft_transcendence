@@ -35,11 +35,28 @@
     </button>
   </div>
 
-  <div id="pong-achievements" class="absolute top-4 left-4 bg-black/70 text-white rounded-xl p-4 max-w-xs text-sm">
+  <div id="pong-achievements" class="absolute top-1/2 -translate-y-1/2 left-4 bg-black/70 text-white rounded-xl p-4 max-w-xs text-sm">
     <div class="font-bold mb-2">🏆 My Achievements</div>
     <ul id="pong-achievements-list" class="list-disc pl-4 space-y-1">
       <li class="text-gray-400">Loading...</li>
     </ul>
+  </div>
+
+  <div class="absolute top-1/2 -translate-y-1/2 right-4 bg-black/75 text-white rounded-xl p-4 w-80 text-sm z-20">
+    <div class="font-bold mb-2">🕹️ My Last 10 Games</div>
+    <table class="w-full border-collapse">
+      <thead>
+        <tr class="text-orange-400 text-xs uppercase">
+          <th class="text-left pb-1 pr-2">Opponent</th>
+          <th class="text-left pb-1 pr-2">Score</th>
+          <th class="text-left pb-1 pr-2">Result</th>
+          <th class="text-left pb-1">Date</th>
+        </tr>
+      </thead>
+      <tbody id="pong-history-table">
+        <tr><td colspan="4" class="text-gray-400 pt-1">Loading...</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/75 text-white rounded-xl p-4 w-[36rem] text-sm z-20">

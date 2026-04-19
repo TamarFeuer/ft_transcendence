@@ -103,7 +103,7 @@ def record_local_match(request):
     # Use a dedicated inactive system user as the local-game placeholder opponent
     User = get_user_model()
     opponent_user, _ = User.objects.get_or_create(
-        username='local_game_opponent',
+        username='Local opponent',
         defaults={'is_active': False}
     )
     opponent_player, _ = Player.objects.get_or_create(user=opponent_user)
