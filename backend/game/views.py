@@ -19,10 +19,6 @@ def create_game(request):
     except Exception:
         invitee_id = None
 
-    # Fallback: allow invitee_id via query param for manual testing
-    if invitee_id is None:
-        invitee_id = request.GET.get('invitee_id')
-
     game = GameSession.create_game()
     game.isTournamentGame = False
 
