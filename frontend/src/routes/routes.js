@@ -6,7 +6,7 @@ import { initOfflineGame } from '../pong/game/local_game.js';
 import { startLocalTournament } from '../pong/tournament/local_tournament.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "../pong/game/game.js";
-import { checkAuthRequired } from '../users_friends/usermanagement.js';
+import { checkAuthRequired, fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 import { updatePageTranslations } from '../i18n/index.js';
 import { verifiedUserId } from '../chat/chat.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
@@ -150,6 +150,60 @@ export function setupRoutes() {
     document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
     document.getElementById('onlineBtn')?.addEventListener('click', () => navigate('/online'));
     document.getElementById('tournamentBtn')?.addEventListener('click', () => navigate('/tournament'));
+
+    const TYPE_LABELS = {
+      'total_wins':  'Total Wins',
+      'total_games': 'Total Games',
+      'win_streak':  'Win Streak',
+      'elo_rating':  'ELO Rating',
+    };
+
+    // Top-left: current user's achievements
+    fetchWithRefreshAuth('/api/auth/me')
+      .then(r => r.json())
+      .then(me => fetchWithRefreshAuth(`/api/player/${me.username}/achievements`))
+      .then(r => r.json())
+      .then(data => {
+        const list = document.getElementById('pong-achievements-list');
+        if (!list) return;
+        if (!data.achievements || data.achievements.length === 0) {
+          list.innerHTML = '<li class="text-gray-400">No achievements yet.</li>';
+          return;
+        }
+        list.innerHTML = data.achievements
+          .map(a => `<li><b>${a.name}</b>: ${a.description}</li>`)
+          .join('');
+      })
+      .catch(() => {
+        const list = document.getElementById('pong-achievements-list');
+        if (list) list.innerHTML = '<li class="text-gray-400">Could not load.</li>';
+      });
+
+    // Bottom table: latest 10 achievements across all players
+    fetchWithRefreshAuth('/api/achievements')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('pong-results-table');
+        if (!tbody) return;
+        if (!data.achievements || data.achievements.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="text-gray-400 pt-1">No achievements yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.achievements
+          .map(a => {
+            const date = new Date(a.timestamp).toLocaleDateString();
+            return `<tr class="border-t border-white/10">
+              <td class="py-1 pr-3 font-semibold">${a.player_name}</td>
+              <td class="py-1 pr-3 text-orange-300">${a.achievement_name}</td>
+              <td class="py-1 text-gray-400">${date}</td>
+            </tr>`;
+          })
+          .join('');
+      })
+      .catch(() => {
+        const tbody = document.getElementById('pong-results-table');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-gray-400">Could not load.</td></tr>';
+      });
   };
 
   routes['/local'] = async () => {

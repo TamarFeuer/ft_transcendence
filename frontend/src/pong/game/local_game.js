@@ -4,6 +4,17 @@ import { handleRoute, navigate } from "../../routes/route_helpers.js";
 import { currentEngine, disposeCurrentEngine, resizeListener } from "../../routes/routes.js";
 import { fetchWithRefreshAuth } from "../../users_friends/usermanagement.js";
 
+function showAchievements(achievements) {
+    if (!achievements || achievements.length === 0) return;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;color:#fff;padding:16px 20px;border-radius:10px;z-index:9999;max-width:320px;box-shadow:0 4px 16px rgba(0,0,0,0.5);';
+    const title = achievements.length === 1 ? '🏆 Achievement Unlocked!' : `🏆 ${achievements.length} Achievements Unlocked!`;
+    overlay.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;">${title}</div><ul style="margin:0;padding-left:20px;">` +
+        achievements.map(a => `<li style="margin-bottom:4px;"><b>${a.name}</b>: ${a.description}</li>`).join('') +
+        '</ul>';
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 6000);
+}
 
 export function initOfflineGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {
@@ -196,19 +207,25 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             document.getElementById('renderCanvas')?.remove();
         };
 
-        const endGame = (showWinnerMessage = false) => {
+        const endGame = async (showWinnerMessage = false) => {
             if (hasEnded) return;
             hasEnded = true;
             cleanup();
             
             if (showWinnerMessage && !tournament) {
-                fetchWithRefreshAuth('/api/game/record-local-match/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ player_score: scoreP2int, opponent_score: scoreP1int })
-                }).catch(err => console.error('Failed to record local match:', err));
                 showMessage(scoreP1int >= 10 ? "They win!" : "You win!");
-                navigate('/pong')
+                try {
+                    const res = await fetchWithRefreshAuth('/api/game/record-local-match/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ player_score: scoreP2int, opponent_score: scoreP1int })
+                    });
+                    const data = await res.json();
+                    showAchievements(data.new_achievements);
+                } catch (err) {
+                    console.error('Failed to record local match:', err);
+                }
+                navigate('/pong');
             }
 
             resolve();

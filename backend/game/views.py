@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 import json
 import jwt
-from .models import GameSession, Player, Match
+from .models import GameSession, Player, Match, PlayerAchievement
 from .services import get_match_history
 import logging
 
@@ -131,9 +131,15 @@ def record_local_match(request):
     w.player_wins(win_point=winner_score, opponent_elo=l.elo_rating)
     l.player_loses(loss_point=loser_score, opponent_elo=w.elo_rating)
 
-    game_player.check_new_achievements()
+    newly_earned = game_player.check_new_achievements()
 
-    return JsonResponse({'status': 'recorded'})
+    return JsonResponse({
+        'status': 'recorded',
+        'new_achievements': [
+            {'name': a.name, 'description': a.description}
+            for a in newly_earned
+        ]
+    })
 
 @require_http_methods(["GET"])
 def match_history(request):
@@ -158,4 +164,60 @@ def match_history(request):
             }
             for m in matches
         ]
+    })
+    
+@require_http_methods(["GET"])
+def player_achievements(request, username):
+    try:
+        player = Player.objects.get(user__username=username)
+    except Player.DoesNotExist:
+        return JsonResponse({'error': 'Player not found'}, status=404)
+
+    achievements = PlayerAchievement.objects.filter(player=player).select_related('achievement').order_by('-timestamp')
+    return JsonResponse({
+        'player': player.user.username,
+        'achievements': [
+            {
+                'name': pa.achievement.name,
+                'description': pa.achievement.description,
+                'requirement_type': pa.achievement.requirement_type,
+                'requirement_value': pa.achievement.requirement_value,
+                'timestamp': pa.timestamp.isoformat()
+            }
+            for pa in achievements
+        ]
+    })
+    
+@require_http_methods(["GET"])
+def all_achievements(request):
+    achievements = PlayerAchievement.objects.select_related('player__user', 'achievement').order_by('-timestamp')[:10]
+    return JsonResponse({
+        'achievements': [
+            {
+                'player_name': pa.player.user.username,
+                'achievement_name': pa.achievement.name,
+                'requirement_type': pa.achievement.requirement_type,
+                'requirement_value': pa.achievement.requirement_value,
+                'timestamp': pa.timestamp.isoformat()
+            }
+            for pa in achievements
+        ]
+    })
+
+@require_http_methods(["GET"])
+def my_stats(request):
+    user, err = get_authenticated_user(request)
+    if err:
+        return err
+    try:
+        player = Player.objects.get(user=user)
+    except Player.DoesNotExist:
+        return JsonResponse({'error': 'Player profile not found'}, status=404)
+    return JsonResponse({
+        'username': user.username,
+        'total_wins': player.total_wins,
+        'total_losses': player.total_losses,
+        'total_games': player.total_games,
+        'elo_rating': player.elo_rating,
+        'current_win_streak': player.current_win_streak,
     })
