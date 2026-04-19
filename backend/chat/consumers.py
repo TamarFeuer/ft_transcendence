@@ -55,6 +55,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		# Join the global group via the channel layer.
 		await self.channel_layer.group_add(self.group_name, self.channel_name)
+		self.user_group_name = f"user_{self.user_id}"
+		await self.channel_layer.group_add(self.user_group_name, self.channel_name)
 		await self.accept()
 
 		# Track channel for private messaging.
@@ -81,6 +83,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# If connect() failed early (e.g. invalid token), group_name was never set.
 		if hasattr(self, "group_name"):
 			await self.channel_layer.group_discard(self.group_name, self.channel_name)
+		if hasattr(self, "user_group_name"):
+			await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
 
 		# Only clean up user data if we successfully authenticated in connect().
 		# getattr with default None avoids AttributeError if user_id was never set.
@@ -231,6 +235,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"type": "online_users",
 			"users": event["users"],
 			"blocked_me_ids": event.get("blocked_me_ids", [])
+		}))
+
+	async def game_invite_created(self, event):
+		await self.send(text_data=json.dumps({
+			"type": "gameInviteCreated",
+			"game_id": event.get("game_id"),
+			"inviter_id": event.get("inviter_id"),
+			"inviter_name": event.get("inviter_name"),
+			"invitee_id": event.get("invitee_id"),
+		}))
+
+	async def game_invite_expired(self, event):
+		await self.send(text_data=json.dumps({
+			"type": "gameInviteExpired",
+			"game_id": event.get("game_id")
 		}))
 
 	async def broadcast_online_users(self):

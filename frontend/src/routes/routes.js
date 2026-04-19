@@ -289,7 +289,7 @@ export function setupRoutes() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
-          },
+          }
         });
         const data = await response.json();
         document.getElementById('lobbyStatus').innerHTML = `<p class="text-green-400">Game created with ID: ${data.gameId}.</p>`;

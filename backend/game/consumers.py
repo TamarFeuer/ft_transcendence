@@ -199,6 +199,10 @@ class GameConsumer(AsyncWebsocketConsumer):
             self.game_group_name,
             self.channel_name
         )
+        user_id = getattr(self.scope.get('user'), 'id', None)
+        self.user_group_name = f"user_{user_id}" if user_id is not None else None
+        if self.user_group_name:
+            await self.channel_layer.group_add(self.user_group_name, self.channel_name)
         
         # Accept WebSocket connection with subprotocol if provided
         headers = dict(self.scope.get('headers', []))
@@ -267,11 +271,23 @@ class GameConsumer(AsyncWebsocketConsumer):
 
             status_before = self.game.status
             self.game.remove_player(self.scope['user'])
-            if status_before == 'waiting' and players['left'] is None and players['right'] is None and self.game.invitee_id is not None:
-                await self.channel_layer.group_send(
-                    f"user_{self.game.invitee_id}",
-                    {"type": "game.invite.expired", "game_id": self.game_id}
-                )
+            players_after_removal = self.game.get_players()
+            if (
+                status_before == 'waiting'
+                and players_after_removal['left'] is None
+                and players_after_removal['right'] is None
+            ):
+                target_user_ids = {
+                    self.game.invitee_id,
+                    getattr(self.game, 'inviter_id', None),
+                }
+                for target_user_id in target_user_ids:
+                    if target_user_id is None:
+                        continue
+                    await self.channel_layer.group_send(
+                        f"user_{target_user_id}",
+                        {"type": "game.invite.expired", "game_id": self.game_id}
+                    )
 
             # If a participant disconnects during an active game, finish the game
             # and award win to the remaining player to avoid freeze on opponent side.
@@ -314,6 +330,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         if hasattr(self, 'game_group_name'):
             await self.channel_layer.group_discard(
                 self.game_group_name,
+                self.channel_name
+            )
+        if getattr(self, 'user_group_name', None):
+            await self.channel_layer.group_discard(
+                self.user_group_name,
                 self.channel_name
             )
     
@@ -467,3 +488,20 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def close_connection(self, event):
         """Close the websocket connection"""
         await self.close(code=1008)
+
+    async def game_invite_created(self, event):
+        """Forward invite creation notifications for this user."""
+        await self.send(text_data=json.dumps({
+            'type': 'gameInviteCreated',
+            'game_id': event.get('game_id'),
+            'inviter_id': event.get('inviter_id'),
+            'inviter_name': event.get('inviter_name'),
+            'invitee_id': event.get('invitee_id')
+        }))
+
+    async def game_invite_expired(self, event):
+        """Forward invite expiration notifications for this user."""
+        await self.send(text_data=json.dumps({
+            'type': 'gameInviteExpired',
+            'game_id': event.get('game_id')
+        }))

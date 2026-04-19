@@ -8,6 +8,8 @@
 // WebSocket.CLOSING     // 2 - closing
 // WebSocket.CLOSED      // 3 - closed
 
+import { showMessage } from '../utils/utils.js';
+
 let chatSocket = null; // Single shared WebSocket connection for all chat
 export let verifiedUserId = null; // Set after server sends "self_id" confirmation
 let verifiedUserName = null;
@@ -40,12 +42,14 @@ export function initChat() {
 	chatSocket.onmessage = (ev) => {
 		// All messages from the server are JSON
 		const data = JSON.parse(ev.data);
+		const currentUserId = String(verifiedUserId || localStorage.getItem('user_id') || '');
 		
 		switch (data.type) {
 
 			// Server confirms our identity after connect
 			case "self_id":
 					verifiedUserId = data.user_id;
+					localStorage.setItem('user_id', String(data.user_id));
 					verifiedUserName = data.name || "Guest";
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
 					window.dispatchEvent(new CustomEvent("userIdentified", {
@@ -114,6 +118,32 @@ export function initChat() {
 				window.dispatchEvent(new CustomEvent("conversationsReceived", {
 					detail: { conversations: data.conversations }
 				}));
+				break;
+
+			case "gameInviteCreated":
+			case "game.invite.created": {
+				const isInvitee = String(data.invitee_id) === currentUserId;
+				const inviteDetail = {
+					game_id: data.game_id,
+					inviter_id: data.inviter_id,
+					inviter_name: data.inviter_name,
+					invitee_id: data.invitee_id,
+					isInvitee
+				};
+				showMessage(
+					isInvitee
+						? `Game invite from ${data.inviter_name || data.inviter_id}`
+						: `Game invite created for ${data.invitee_id}`,
+					'info'
+				);
+				window.dispatchEvent(new CustomEvent("gameInviteCreated", { detail: inviteDetail }));
+				break;
+			}
+
+			case "gameInviteExpired":
+			case "game.invite.expired":
+				showMessage('Game invite expired', 'error');
+				window.dispatchEvent(new CustomEvent("gameInviteExpired", { detail: data }));
 				break;
 
 			// Another user started typing — show indicator (TODO in UI)

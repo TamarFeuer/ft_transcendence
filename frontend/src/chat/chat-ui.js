@@ -4,6 +4,8 @@
 
 import { onlineUsers, blockedMeIds, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked } from './chat.js';
 import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
+import { showMessage } from '../utils/utils.js';
+import { handleRoute } from '../routes/route_helpers.js';
 
 export function initChatUI() {
 
@@ -309,6 +311,18 @@ export function initChatUI() {
 			}
 		});
 	});
+
+	window.addEventListener("gameInviteCreated", (e) => {
+		const data = e.detail || {};
+		const isInvitee = data.isInvitee ?? (String(data.invitee_id) === String(verifiedUserId || localStorage.getItem('user_id') || ''));
+		if (!isInvitee) return;
+		showInvitePrompt(data.game_id, data.inviter_name || data.inviter_id);
+	});
+
+	window.addEventListener("gameInviteExpired", (e) => {
+		const data = e.detail || {};
+		removeInvitePrompt(data.game_id);
+	});
 	
 	// ── Chat open/close ───────────────────────────────────────────────────────
 
@@ -355,21 +369,88 @@ export function initChatUI() {
 		chatMenuUser = null;
 	}
 
+	function removeInvitePrompt(gameId = null) {
+		const container = document.getElementById('chatInvitePromptContainer');
+		if (!container) return;
+		if (!gameId) {
+			container.remove();
+			return;
+		}
+		const card = container.querySelector(`[data-game-id="${gameId}"]`);
+		if (card) card.remove();
+		if (!container.children.length) container.remove();
+	}
+
+	function showInvitePrompt(gameId, inviterName) {
+		if (!gameId) return;
+		let container = document.getElementById('chatInvitePromptContainer');
+		if (!container) {
+			container = document.createElement('div');
+			container.id = 'chatInvitePromptContainer';
+			container.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2';
+			document.body.appendChild(container);
+		}
+
+		removeInvitePrompt(gameId);
+
+		const card = document.createElement('div');
+		card.dataset.gameId = gameId;
+		card.className = 'pointer-events-auto bg-gray-900 border border-blue-400 rounded-md p-3 shadow-lg max-w-sm';
+		card.innerHTML = `
+			<p class="text-white text-sm mb-2">${inviterName || 'A player'} invited you to a game.</p>
+			<div class="flex gap-2">
+				<button data-action="join" class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded">Join</button>
+				<button data-action="dismiss" class="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded">Dismiss</button>
+			</div>
+		`;
+
+		card.addEventListener('click', (e) => {
+			const action = e.target?.dataset?.action;
+			if (action === 'join') {
+				window.history.pushState({}, '', `/online?gameId=${encodeURIComponent(gameId)}`);
+				handleRoute('/online');
+				removeInvitePrompt(gameId);
+			}
+			if (action === 'dismiss') {
+				removeInvitePrompt(gameId);
+			}
+		});
+
+		container.appendChild(card);
+	}
+
 	// Handle menu option clicks
 	chatUserMenu.addEventListener("click", (e) => {
 		const action = e.target.dataset.action;
 		if (!action || !chatMenuUser) return;
+		const selectedUser = { ...chatMenuUser };
 
 		if (action === "profile") {
 			// TODO: show user profile
-			console.log("View profile:", chatMenuUser);
+			console.log("View profile:", selectedUser);
 		} else if (action === "invite") {
-			// TODO: send game invite
-			console.log("Invite to game:", chatMenuUser);
+			fetchWithRefreshAuth('/api/game/create', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ invitee_id: selectedUser.id })
+			})
+				.then(r => r.json())
+				.then(data => {
+					if (data.gameId) {
+						showMessage(`Invite sent to ${selectedUser.name || selectedUser.id}`, 'success');
+						console.log('Game invite created:', data);
+					} else {
+						showMessage(data.error || 'Failed to send invite', 'error');
+					}
+				})
+				.catch(err => {
+					console.error('Failed to send invite:', err);
+					showMessage('Failed to send invite', 'error');
+				});
 		} else if (action === "chat") {
-			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
+			openDMChannel(selectedUser.id, selectedUser.name || selectedUser.id);
 		} else if (action === "block") {
-			const targetId = chatMenuUser.id;
+			const targetId = selectedUser.id;
 			fetchWithRefreshAuth('/api/friends/block', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },

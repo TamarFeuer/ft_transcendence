@@ -23,7 +23,7 @@ async function refreshAccessToken() {
                 const data = await res.json();
                 if (data.username) {
                     localStorage.setItem('username', data.username);
-                    localStorage.setItem('user_id', data.id);
+                    localStorage.setItem('user_id', data.user_id ?? data.id);
                 }
                 return true;
             }
@@ -80,7 +80,7 @@ export async function registerUser(username, password) {
     const data = await res.json();
     if (res.ok && data.username) {
         localStorage.setItem('username', data.username);
-        localStorage.setItem('user_id', data.id);
+        localStorage.setItem('user_id', data.user_id ?? data.id);
     }
     return data;
 }
@@ -95,7 +95,7 @@ export async function loginUser(username, password) {
     const data = await res.json();
     if (res.ok && data.username) {
         localStorage.setItem('username', data.username);
-        localStorage.setItem('user_id', data.id);
+        localStorage.setItem('user_id', data.user_id ?? data.id);
     }
     return data;
 }
@@ -116,7 +116,7 @@ export async function getCurrentUser() {
             const data = await res.json();
             if (data.authenticated && data.username) {
                 localStorage.setItem('username', data.username);
-                localStorage.setItem('user_id', data.id);
+                localStorage.setItem('user_id', data.user_id ?? data.id);
                 return data;
             }
         }
