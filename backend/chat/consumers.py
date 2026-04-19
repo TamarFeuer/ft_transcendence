@@ -233,15 +233,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"blocked_me_ids": event.get("blocked_me_ids", [])
 		}))
 
-	async def game_result(self, event):
-		# This handles messages sent with type='game_result' to the global_chat group.
-		await self.send(text_data=json.dumps({
-			"type": "game_result",
-			"winner": event.get("winner"),
-			"game_type": event.get("game_type"),
-			"is_tournament": event.get("is_tournament")
-		}))
-
 	async def broadcast_online_users(self):
 		# Send each connected user a personalized online users list.
 		# Users who blocked this user are hidden entirely.
