@@ -1,8 +1,12 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.contrib.auth import get_user_model
 import json
-from .models import GameSession, Player
+import jwt
+from .models import GameSession, Player, Match
+from .services import get_match_history
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,5 +69,93 @@ def get_leaderboard(request):
                 'current_win_streak': player.current_win_streak
             }
             for player in leaderboard
+        ]
+    })
+
+def get_authenticated_user(request):
+    access_token = request.COOKIES.get('access_token')
+    if not access_token:
+        return None, JsonResponse({'error': 'Authentication required'}, status=401)
+    try:
+        payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
+        if payload.get('type') != 'access':
+            return None, JsonResponse({'error': 'Invalid token type'}, status=401)
+        user_id = payload.get('user_id')
+        if not user_id:
+            return None, JsonResponse({'error': 'Invalid token payload'}, status=401)
+        User = get_user_model()
+        user = User.objects.get(pk=user_id)
+        return user, None
+    except (jwt.ExpiredSignatureError, jwt.DecodeError, User.DoesNotExist):
+        return None, JsonResponse({'error': 'Invalid or expired token'}, status=401)
+
+# Cross-Site Request Forgery token is exempted because
+# Auth is handled via JWT in cookies, not Django's session system
+# The frontend sends JSON (Content-Type: application/json), not a form, so there's no easy place to attach a CSRF token
+@csrf_exempt
+@require_http_methods(["POST"])
+def record_local_match(request):
+    real_user, err = get_authenticated_user(request)
+    if err:
+        return err
+    game_player = Player.objects.get(user=real_user)
+
+    # Use a dedicated inactive system user as the local-game placeholder opponent
+    User = get_user_model()
+    opponent_user, _ = User.objects.get_or_create(
+        username='local_game_opponent',
+        defaults={'is_active': False}
+    )
+    opponent_player, _ = Player.objects.get_or_create(user=opponent_user)
+
+    data = json.loads(request.body.decode())
+    player_score = data.get('player_score')
+    opponent_score = data.get('opponent_score')
+
+    if player_score > opponent_score:
+        w, l = game_player, opponent_player
+        winner_score, loser_score = player_score, opponent_score
+    else:
+        w, l = opponent_player, game_player
+        winner_score, loser_score = opponent_score, player_score
+
+    Match.objects.create(
+        player1=game_player,
+        player2=opponent_player,
+        player1_score=player_score,
+        player2_score=opponent_score,
+        winner=w,
+        loser=l,
+    )
+
+    w.player_wins(win_point=winner_score, opponent_elo=l.elo_rating)
+    l.player_loses(loss_point=loser_score, opponent_elo=w.elo_rating)
+
+    game_player.check_new_achievements()
+
+    return JsonResponse({'status': 'recorded'})
+
+@require_http_methods(["GET"])
+def match_history(request):
+    user, err = get_authenticated_user(request)
+    if err:
+        return err
+    try:
+        player = Player.objects.get(user=user)
+    except Player.DoesNotExist:
+        return JsonResponse({'error': 'Player profile not found'}, status=404)
+
+    matches = get_match_history(player)
+    return JsonResponse({
+        'matches': [
+            {
+                'timestamp': m.timestamp.isoformat(),
+                'player1': m.player1.user.username,
+                'player2': m.player2.user.username,
+                'player1_score': m.player1_score,
+                'player2_score': m.player2_score,
+                'winner': m.winner.user.username if m.winner else None,
+            }
+            for m in matches
         ]
     })

@@ -2,6 +2,7 @@ import "../../styles.css";
 import { showMessage } from "../../utils/utils.js"
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
 import { currentEngine, disposeCurrentEngine, resizeListener } from "../../routes/routes.js";
+import { fetchWithRefreshAuth } from "../../users_friends/usermanagement.js";
 
 
 export function initOfflineGame(scene, gameObjects, tournament) {
@@ -201,7 +202,12 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             cleanup();
             
             if (showWinnerMessage && !tournament) {
-                showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
+                fetchWithRefreshAuth('/api/game/record-local-match/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ player_score: scoreP2int, opponent_score: scoreP1int })
+                }).catch(err => console.error('Failed to record local match:', err));
+                showMessage(scoreP1int >= 10 ? "They win!" : "You win!");
                 navigate('/pong')
             }
 

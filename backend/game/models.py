@@ -382,7 +382,20 @@ class Achievement(models.Model):
 # Since a player can unlock multiple achievements, the separate PlayerAchievement table is the correct design.
 class PlayerAchievement(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='achievements')
+    @property
+    def player_name(self):
+        return self.player.user.username
+    #  achievement.players.all() to get all PlayerAchievement records for a given achievement (i.e. everyone who earned it)
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name='players')
+    @property
+    def achievement_name(self):
+        return self.achievement.name
+    @property
+    def achievement_description(self):
+        return self.achievement.description
+    # on_delete=models.SET_NULL: if the referenced Match is deleted, don't delete this PlayerAchievement; just set match to NULL instead. Preserves the achievement record even if the match is gone.
+    # match.earned_achievements.all() to get all achievements earned during that match
+    match = models.ForeignKey(Match, on_delete=models.SET_NULL, null=True, blank=True, related_name='earned_achievements')
     timestamp = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

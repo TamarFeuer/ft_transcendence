@@ -277,6 +277,19 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game.status = 'completed'
                 await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
 
+                # Force winner's score so match_ends can determine winner correctly
+                if departing_role == 'left':
+                    self.game.state['score']['p1'] = 0
+                    self.game.state['score']['p2'] = 1
+                else:
+                    self.game.state['score']['p1'] = 1
+                    self.game.state['score']['p2'] = 0
+                await database_sync_to_async(match_ends)(
+                    self.game,
+                    self.game.players['left'],
+                    self.game.players['right'],
+                )
+
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
