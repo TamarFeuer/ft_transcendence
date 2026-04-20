@@ -233,6 +233,11 @@
   color: #60a5fa;
 }
 
+.chat-message.game-invite {
+  font-style: italic;
+  color: #a78bfa;
+}
+
 /* Scrollbar styling */
 #chatMessages::-webkit-scrollbar,
 #onlineUsersList::-webkit-scrollbar,
