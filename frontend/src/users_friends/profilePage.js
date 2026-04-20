@@ -16,6 +16,8 @@ export async function initProfilePage(){
         await logoutUser();
         navigate("/login");
     })
+
+    document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
     addFriend();
     renderPendingRequests();
     renderFriendList();

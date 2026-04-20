@@ -42,10 +42,15 @@ def match_ends(game_session, p1, p2):
     w.player_wins(win_point = winner_score, opponent_elo = l.elo_rating)
     l.player_loses(loss_point = loser_score, opponent_elo = w.elo_rating)
 
-    w.check_new_achievements()
-    l.check_new_achievements()
+    w_new = w.check_new_achievements()
+    l_new = l.check_new_achievements()
 
-    return match
+    new_achievements = {
+        str(w.user_id): [{'name': a.name, 'description': a.description} for a in w_new],
+        str(l.user_id): [{'name': a.name, 'description': a.description} for a in l_new],
+    }
+
+    return {'match': match, 'new_achievements': new_achievements}
 
 
 def get_match_history(player: Player, limit: int = 10) -> list:
