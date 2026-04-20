@@ -228,8 +228,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
         logger.debug(f"Start game?: {self.game.can_start()}")
 
-		# Mark this player unavailable for invites as soon as they enter any chess session.
-		IN_GAME_USERS.add(str(user_id))
+        # Mark this player unavailable for invites as soon as they enter any chess session.
+        IN_GAME_USERS.add(str(user_id))
 
         # Start game if both players connected
         if self.game.can_start():
@@ -302,10 +302,10 @@ class GameConsumer(AsyncWebsocketConsumer):
                         {"type": "game.invite.expired", "game_id": self.game_id}
                     )
 
-			# Remove both players from in-game tracking
-			for player_id in self.game.players_ids.values():
-				if player_id:
-					IN_GAME_USERS.discard(str(player_id))
+            # Remove both players from in-game tracking
+            for player_id in self.game.players_ids.values():
+                if player_id:
+                    IN_GAME_USERS.discard(str(player_id))
 
             # If a participant disconnects during an active game, finish the game
             # and award win to the remaining player to avoid freeze on opponent side.
