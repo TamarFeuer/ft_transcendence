@@ -8,6 +8,7 @@ from channels.db import database_sync_to_async
 from .models import GameSession, Player
 from .services import match_ends
 import logging
+from chat.consumers import IN_GAME_USERS
 
 logger = logging.getLogger(__name__)
 
@@ -227,11 +228,17 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
         logger.debug(f"Start game?: {self.game.can_start()}")
 
+		# Mark this player unavailable for invites as soon as they enter any chess session.
+		IN_GAME_USERS.add(str(user_id))
+
         # Start game if both players connected
         if self.game.can_start():
             self.game.start_game()
             # Update tournament game status to ongoing
             await sync_to_async(update_game_to_ongoing)(self.game_id)
+
+            for pid in self.game.player_ids:
+                IN_GAME_USERS.add(str(pid))
             # Refresh players after start
             players = self.game.get_players()
             p1 = players.get('left')
@@ -295,6 +302,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                         {"type": "game.invite.expired", "game_id": self.game_id}
                     )
 
+			# Remove both players from in-game tracking
+			for player_id in self.game.players_ids.values():
+				if player_id:
+					IN_GAME_USERS.discard(str(player_id))
+
             # If a participant disconnects during an active game, finish the game
             # and award win to the remaining player to avoid freeze on opponent side.
             if departing_role in ('left', 'right') and status_before == 'active':
@@ -314,7 +326,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'winner_id': winner_id
                     }
                 )
-            
             # If all players are gone, reset game to waiting state
             players = self.game.get_players()
             if players['left'] is None and players['right'] is None and self.game.status != "completed":
