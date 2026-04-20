@@ -61,7 +61,6 @@ function handlePromotion(game, boardEl, fromSquare, toSquare){
 function handleSquareClick(game, square, boardEl){
 	if (!selectedSquare){
 		const piece = game.get(square.dataset.notation);
-		console.log('piece is', piece);
 		if (piece){
 
 			if (piece.color === game.turn()){
@@ -88,21 +87,20 @@ function handleSquareClick(game, square, boardEl){
 			}
 
 			//move the piece to desired square
-			const resultedMove = game.move({from: selectedSquare, to: square.dataset.notation});
-			if (!resultedMove){
-				//TODO show that move is illegal with an animation or sound
+			if (move){
+				const resultedMove = game.move({from: selectedSquare, to: square.dataset.notation});
+				
+				selectedSquare = null;
+				//check if game ended and alert players
+				checkGameEnd(game);
+				renderBoard(game, boardEl, selectedSquare);
 			}
-			selectedSquare = null;
-			//check if game ended and alert players
-			checkGameEnd(game);
-			renderBoard(game, boardEl, selectedSquare);
 		}
 	}
 }
 
 export function initChessGame(){
 	const game = new Chess();
-	console.log('initChessGame called');
 	const boardEl = document.getElementById('chess-board');
 
 
