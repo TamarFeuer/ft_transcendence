@@ -68,3 +68,15 @@ class Message(models.Model):
 	class Meta:
 		db_table = 'chat_message'
 		ordering = ['created_at']  # oldest first by default
+
+
+class GameInvite(models.Model):
+	conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='game_invites')
+	sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_game_invites')
+	recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='received_game_invites')
+	game_type = models.CharField(max_length=20)
+	game_id = models.CharField(max_length=100, unique=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		db_table = 'chat_game_invite'

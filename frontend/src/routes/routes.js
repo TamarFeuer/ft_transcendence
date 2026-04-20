@@ -118,10 +118,14 @@ export function setupRoutes() {
     //redirect to hub on refresh or direct URL access; only run the game when the
     //user explicitly clicked Online Game from the hub, or followed an invite link
     if (!chessOnlineIntended && !inviteGameId) {
-      navigate('/');
+      window.history.back();
       return;
     }
     chessOnlineIntended = false;
+    // Strip gameId from URL so a refresh doesn't reconnect to the same game
+    if (inviteGameId) {
+      window.history.replaceState({}, '', '/chess-online');
+    }
     await loadTemplate('chess-online');
     const { initOnlineChessGame } = await import('../chess/chess-online.js');
     initOnlineChessGame(inviteGameId);
