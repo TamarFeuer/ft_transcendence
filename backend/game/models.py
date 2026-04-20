@@ -15,7 +15,7 @@ class GameSession:
     
     JOIN_TIMEOUT = 10  # Maximum time in seconds to wait for both players to join
     
-    def __init__(self, game_id=None):
+    def __init__(self, game_id=None, creator_id=None):
         self.id = game_id or str(uuid.uuid4())
         self.state = {
             'ball': {'x': 0, 'y': 0, 'vx': 3, 'vy': 1},
@@ -32,6 +32,7 @@ class GameSession:
         self.created_at = time.time()  # Track when game was created
         self.timeout_handled = False  # Flag to prevent timeout from being handled twice
         self.invitee_id = None
+        self.creator_id = creator_id
 
     def get_players(self):
         """Return current players"""
@@ -40,9 +41,9 @@ class GameSession:
             'right': self.players['right']
         }
     @classmethod
-    def create_game(cls):
+    def create_game(cls, creator_id=None):
         """Create a new game session"""
-        game = cls()
+        game = cls(creator_id=creator_id)
         with cls._lock:
             cls._games[game.id] = game
         return game

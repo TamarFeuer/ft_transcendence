@@ -267,16 +267,34 @@ class GameConsumer(AsyncWebsocketConsumer):
 
             status_before = self.game.status
             self.game.remove_player(self.scope['user'])
-            if status_before == 'waiting' and players['left'] is None and players['right'] is None and self.game.invitee_id is not None:
-                await self.channel_layer.group_send(
-                    f"user_{self.game.invitee_id}",
-                    {"type": "game.invite.expired", "game_id": self.game_id}
-                )
-            if status_before == 'waiting' and players['left'] is None and players['right'] is None and self.game.invitor_id is not None:
-                await self.channel_layer.group_send(
-                    f"user_{self.game.invitor_id}",
-                    {"type": "game.invite.expired", "game_id": self.game_id}
-                )
+            players_after = self.game.get_players()
+            logger.debug(f"players_after: {players_after}")
+
+            if (
+                status_before == 'waiting'
+                and players_after['left'] is None
+                and players_after['right'] is None
+                and self.game.invitee_id is not None
+            ):
+                target_user_ids = set()
+
+                for player_id in self.game.players_ids.values():
+                    if player_id is not None:
+                        target_user_ids.add(player_id)
+                logger.debug(f"target_user_ids: {target_user_ids}")
+
+                target_user_ids.add(self.game.invitee_id)
+                if getattr(self.game, 'creator_id', None) is not None:
+                    target_user_ids.add(self.game.creator_id)
+                logger.debug(f"target_user_ids: {target_user_ids}")
+
+                for uid in target_user_ids:
+                    logger.debug(f"uid: {uid} in target_user_ids: {target_user_ids}")
+                    await self.channel_layer.group_send(
+                        f"user_{uid}",
+                        {"type": "game.invite.expired", "game_id": self.game_id}
+                    )
+
             # If a participant disconnects during an active game, finish the game
             # and award win to the remaining player to avoid freeze on opponent side.
             if departing_role in ('left', 'right') and status_before == 'active':
