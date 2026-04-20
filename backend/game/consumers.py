@@ -237,7 +237,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Update tournament game status to ongoing
             await sync_to_async(update_game_to_ongoing)(self.game_id)
 
-            for pid in self.game.player_ids:
+            for pid in self.game.players_ids:
                 IN_GAME_USERS.add(str(pid))
             # Refresh players after start
             players = self.game.get_players()
