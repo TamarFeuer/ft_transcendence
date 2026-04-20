@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 # on restart. Online status is naturally ephemeral so in-memory is the right
 # place for it — there's no point persisting "was online before the server restarted".
 ONLINE_USERS = {}          # user_id -> username
-CONNECTED_USERS = {}       # user_id -> set of channel_names
+USER_CONNECTION_COUNT = {}  # user_id -> number of open tabs; reaches 0 when last tab closes
 ACTIVE_CONVERSATION = {}   # user_id -> other_user_id they currently have open
 IN_GAME_USERS = set()      # user_ids currently in an active game (any game type)
 # unread_count and is_closed are stored in ConversationParticipant in the database.
@@ -45,7 +45,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			return
 
 		# Every user joins the global group so they receive global messages.
-		# DMs are handled separately via CONNECTED_USERS, not through groups.
+		# DMs and invites are delivered via the personal user_{id} group joined below.
 		self.group_name = "global_chat"
 
 		# get_user_from_token returns Django's proper User model object,
@@ -60,10 +60,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.channel_layer.group_add(f"user_{self.user_id}", self.channel_name)
 		await self.accept()
 
-		# Track channel for private messaging.
-		# We use a set because the same user can have multiple tabs open,
-		# each with its own channel_name. DMs need to reach all of them.
-		CONNECTED_USERS.setdefault(self.user_id, set()).add(self.channel_name)
+		# Count open connections so we know when the user goes fully offline.
+		USER_CONNECTION_COUNT[self.user_id] = USER_CONNECTION_COUNT.get(self.user_id, 0) + 1
 
 		# Register user as online.
 		ONLINE_USERS[self.user_id] = self.username
@@ -89,17 +87,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Only clean up user data if we successfully authenticated in connect().
 		# getattr with default None avoids AttributeError if user_id was never set.
 		user_id = getattr(self, "user_id", None)
-		if user_id and user_id in CONNECTED_USERS:
-			# Remove this specific channel (tab) from the user's set.
-			CONNECTED_USERS[self.user_id].discard(self.channel_name)
-
-			# Only remove from ONLINE_USERS if this was their last tab —
-			# if they still have other tabs open, they're still online.
-			if not CONNECTED_USERS[self.user_id]:
-				del CONNECTED_USERS[self.user_id]
-				ONLINE_USERS.pop(self.user_id, None)
-				# Remove active conversation — user is no longer viewing anything
-				ACTIVE_CONVERSATION.pop(self.user_id, None)
+		if user_id:
+			count = USER_CONNECTION_COUNT.get(user_id, 1) - 1
+			if count <= 0:
+				# Last tab closed — user is fully offline.
+				USER_CONNECTION_COUNT.pop(user_id, None)
+				ONLINE_USERS.pop(user_id, None)
+				ACTIVE_CONVERSATION.pop(user_id, None)
+			else:
+				USER_CONNECTION_COUNT[user_id] = count
 
 		# Only broadcast if group_name exists; if connect() failed early, it was never set.
 		if hasattr(self, "group_name"):
@@ -135,14 +131,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 				# Private message: deliver to all of the recipient's open tabs,
 				# and echo back to all of the sender's own tabs (so other tabs stay in sync).
+				# group_send reaches every connection in the group automatically.
 				payload["private"] = True
 				payload["target"] = target
-				if target in CONNECTED_USERS:
-					for channel_name in CONNECTED_USERS[target]:
-						await self.channel_layer.send(channel_name, payload)
-				if self.user_id in CONNECTED_USERS:
-					for channel_name in CONNECTED_USERS[self.user_id]:
-						await self.channel_layer.send(channel_name, payload)
+				await self.channel_layer.group_send(f"user_{target}", payload)
+				await self.channel_layer.group_send(f"user_{self.user_id}", payload)
 				# Persist the message and update conversation state in the database.
 				await self.save_dm(target, message)
 			else:
@@ -211,12 +204,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"game_type": game_type,
 				"game_id": game_id,
 			}
-			if target in CONNECTED_USERS:
-				logger.debug(f"[invite] delivering to {len(CONNECTED_USERS[target])} channel(s) for target {target}")
-				for channel_name in CONNECTED_USERS[target]:
-					await self.channel_layer.send(channel_name, payload)
-			else:
-				logger.warning(f"[invite] target {target} not in CONNECTED_USERS — saved to DB only")
+			# If the target has no open tabs the group_send is a no-op; the invite is still saved to DB.
+			await self.channel_layer.group_send(f"user_{target}", payload)
 			await self.save_invite(target, game_type, game_id)
 
 		elif msg_type == "game_invite_expired":
@@ -228,20 +217,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"type": "game.invite.expired",
 				"game_id": game_id,
 			}
-			if target in CONNECTED_USERS:
-				for channel_name in CONNECTED_USERS[target]:
-					await self.channel_layer.send(channel_name, payload)
+			await self.channel_layer.group_send(f"user_{target}", payload)
 
 		elif msg_type == "delete_invite":
 			game_id = data.get("game_id")
 			if game_id:
 				sender_id = await self.delete_invite(game_id)
-				if sender_id and sender_id in CONNECTED_USERS:
-					for channel_name in CONNECTED_USERS[sender_id]:
-						await self.channel_layer.send(channel_name, {
-							"type": "game.invite.accepted",
-							"game_id": game_id,
-						})
+				if sender_id:
+					await self.channel_layer.group_send(f"user_{sender_id}", {
+						"type": "game.invite.accepted",
+						"game_id": game_id,
+					})
 
 		elif msg_type == "user_blocked":
 			target = data.get("target")
@@ -340,27 +326,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		}))
 
 	async def broadcast_online_users(self):
-		# Send each connected user a personalized online users list.
-		# Users who blocked this user are hidden entirely.
-		# Users this user has blocked appear with blocked_by_me: True so the frontend can show an unblock button.
-		for user_id, channels in list(CONNECTED_USERS.items()):
+		# Send each online user a personalized online users list.
+		# Each user sees a different list: users who blocked them are hidden,
+		# and users they blocked appear with blocked_by_me: True for the unblock button.
+		# group_send to user_{id} reaches all their open tabs at once.
+		for user_id in list(ONLINE_USERS.keys()):
 			blocked_by_me, blocked_me = await self.get_block_info_for(user_id)
 			users = {}
 			for uid, name in list(ONLINE_USERS.items()):
 				if uid in blocked_me:
-					# This user blocked me — hide them entirely
 					continue
 				users[uid] = {
 					"name": name,
 					"blocked_by_me": uid in blocked_by_me,
 					"in_game": uid in IN_GAME_USERS,
 				}
-			for channel_name in channels:
-				await self.channel_layer.send(channel_name, {
-					"type": "online.users",
-					"users": users,
-					"blocked_me_ids": list(blocked_me)
-				})
+			await self.channel_layer.group_send(f"user_{user_id}", {
+				"type": "online.users",
+				"users": users,
+				"blocked_me_ids": list(blocked_me)
+			})
 
 	# ─── Database helpers ─────────────────────────────────────────────────────
 	# All database access must be wrapped in database_sync_to_async because
