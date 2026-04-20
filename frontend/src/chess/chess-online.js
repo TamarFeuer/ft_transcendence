@@ -45,12 +45,43 @@ function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
 	}, { once: true });
 }
 
+function populateChessAttributes(data, myColor){
+	const selfEl = document.getElementById('player-self-name')
+	const oppEl = document.getElementById('player-opponent-name')
+
+	const selfElo = document.getElementById('player-self-elo');
+	const oppElo = document.getElementById('player-opponent-elo')
+
+	if (!oppEl || !selfEl)
+		return;
+
+	const whiteName = data.white ?? '-';
+	const blackName = data.black ?? '-';
+
+	const whiteElo = data.white_elo;
+	const blackElo = data.black_elo;
+
+	if (myColor === 'white'){
+		selfEl.textContent = whiteName;
+		selfElo.textContent = whiteElo;
+		oppEl.textContent = blackName;
+		oppElo.textContent = blackElo;
+	}
+	else{
+		selfEl.textContent = blackName;
+		oppEl.textContent = whiteName;
+		selfElo.textContent = blackElo;
+		oppElo.textContent = whiteElo;
+	}
+}
+
 export async function initOnlineChessGame(gameId = null){
 	const boardEl   = document.getElementById('chess-board');
 	const waitingEl = document.getElementById('waiting-overlay');
 	const statusEl  = document.getElementById('game-status');
 
-	boardEl.className = 'grid grid-cols-8 w-[36rem] h-[36rem] auto-rows-fr';
+	// Keep board square but responsive to container width to avoid right-edge clipping.
+	boardEl.className = 'mx-auto grid w-full max-w-[36rem] grid-cols-8 aspect-square auto-rows-fr';
 
 	const game = new Chess();
 	let myColor   = null;
@@ -102,6 +133,7 @@ export async function initOnlineChessGame(gameId = null){
 			gameActive = true;
 			if (waitingEl) waitingEl.classList.add('hidden');
 			game.load(data.fen);
+			populateChessAttributes(data, myColor);
 			myTurn = (myColor === 'white');
 			updateStatus(statusEl, myTurn);
 			renderBoard(game, boardEl, null, myColor === 'black');
