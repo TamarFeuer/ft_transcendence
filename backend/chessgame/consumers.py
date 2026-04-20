@@ -43,9 +43,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			'color': self.color
 		}))
 
+		# Mark this player unavailable for invites as soon as they enter any chess session.
+		IN_GAME_USERS.add(str(self.scope['user'].id))
+
 		if self.game.can_start():
 			self.game.start()
-			# Mark both players as in-game so chat can reject invites to them
 			player_ids = [str(p.id) for p in self.game.players.values() if p]
 			for pid in player_ids:
 				IN_GAME_USERS.add(pid)
@@ -68,6 +70,8 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'white': getattr(self.game.players['white'], 'username', 'Player 1'),
 				'black': getattr(self.game.players['black'], 'username', 'Player 2'),
 			})
+		else:
+			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
 	
 
 	async def disconnect(self, _close_code):
@@ -94,10 +98,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				})
 
 			elif self.game.status == 'waiting' and self.game.invitee_id is not None:
-				await self.channel_layer.group_send(
-					f'user_{self.game.invitee_id}',
-					{'type': 'game.invite.expired', 'game_id': self.game_id}
-				)
+				invitor_id = str(self.game.players[self.color].id)
+				for uid in [self.game.invitee_id, invitor_id]:
+					await self.channel_layer.group_send(
+						f'user_{uid}',
+						{'type': 'game.invite.expired', 'game_id': self.game_id}
+					)
 
 			# Remove both players from in-game tracking
 			for player in self.game.players.values():
