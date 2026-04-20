@@ -107,7 +107,7 @@ class ChessPlayer(models.Model):
 class ChessMatch(models.Model):
 	white = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_white')
 	black = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_black')
-	result = models.CharField(max_length=10) # standard chess notation is 1-0 for white winning, 0-1 for black and 1/2-1/2 for draw
+	result = models.CharField(max_length=20) # standard chess notation: 1-0, 0-1, 1/2-1/2; also 'abandonment' (11 chars)
 	white_elo_before = models.IntegerField()
 	black_elo_before = models.IntegerField()
 	timestamp = models.DateTimeField(auto_now_add=True)
