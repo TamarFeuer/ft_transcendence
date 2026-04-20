@@ -47,6 +47,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		IN_GAME_USERS.add(str(self.scope['user'].id))
 
 		if self.game.can_start():
+			#get users so we can get their ELOs
+			white_user = self.game.players['white']
+			black_user = self.game.players['black']
+			white_elo, black_elo = await get_elos(white_user, black_user)
+
 			self.game.start()
 			player_ids = [str(p.id) for p in self.game.players.values() if p]
 			for pid in player_ids:
@@ -69,6 +74,8 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'fen': self.game.board.fen(),
 				'white': getattr(self.game.players['white'], 'username', 'Player 1'),
 				'black': getattr(self.game.players['black'], 'username', 'Player 2'),
+				'white_elo': white_elo,
+				'black_elo': black_elo,
 			})
 		else:
 			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
@@ -172,6 +179,8 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			'fen': event['fen'],
 			'white': event['white'],
 			'black': event['black'],
+			'white_elo': event['white_elo'],
+			'black_elo': event['black_elo'],
 		}))
 	
 	async def game_state(self, event):
@@ -238,3 +247,15 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			)
 
 		await _save()
+
+@sync_to_async
+def get_elos(white_user, black_user):
+	#get players from ChessPlayer Model
+	white_cp, _ = ChessPlayer.objects.get_or_create(user=white_user)
+	black_cp, _ = ChessPlayer.objects.get_or_create(user=black_user)
+
+	#get their ELOs
+	white_elo = white_cp.elo_rating
+	black_elo = black_cp.elo_rating
+
+	return white_elo, black_elo
