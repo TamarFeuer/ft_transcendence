@@ -52,7 +52,7 @@ def join_chess(request):
 							game.players['white'] = user
 						else:
 							game.players['black'] = user
-					
+
 					return JsonResponse({'gameId': game.id})
 
 		game = ChessSession()

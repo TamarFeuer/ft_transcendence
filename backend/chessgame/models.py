@@ -53,7 +53,7 @@ class ChessSession:
 		self.board.push(move)
 
 		#game might have just ended
-		outcome = self.board.outcome()
+		outcome = self.board.outcome(claim_draw=True)
 		if outcome:
 			self.status = 'finished'
 			if outcome.winner == chess.WHITE:

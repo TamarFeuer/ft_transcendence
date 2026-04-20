@@ -244,7 +244,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
 						})
 
 		elif msg_type == "user_blocked":
-			# Re-broadcast online users so blocked users disappear from each other's list immediately.
+			target = data.get("target")
+			if target:
+				invite_ids = await self.get_invite_ids_with(target)
+				for gid in invite_ids:
+					await self.channel_layer.group_send(
+						f'user_{self.user_id}',
+						{'type': 'game.invite.blocked', 'game_id': gid}
+					)
+					await self.channel_layer.group_send(
+						f'user_{target}',
+						{'type': 'game.invite.expired', 'game_id': gid}
+					)
 			await self.broadcast_online_users()
 
 		elif msg_type in ["typing", "stop_typing"]:
@@ -294,6 +305,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": "game_invite_accepted",
 			"game_id": event["game_id"],
+		}))
+
+	async def game_invite_blocked(self, event):
+		game_id = event["game_id"]
+		await self.delete_invite(game_id)
+		await self.send(text_data=json.dumps({
+			"type": "game_invite_blocked",
+			"game_id": game_id,
 		}))
 
 	async def game_invite_expired(self, event):
@@ -463,6 +482,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				conversation=conversation,
 				user_id=recipient_id
 			).update(unread_count=F('unread_count') + 1, is_closed=False)
+
+	@database_sync_to_async
+	def get_invite_ids_with(self, other_id):
+		from chat.models import GameInvite, ConversationParticipant
+		my_conv_ids = ConversationParticipant.objects.filter(
+			user_id=self.user_id
+		).values_list('conversation_id', flat=True)
+		shared_conv_id = ConversationParticipant.objects.filter(
+			conversation_id__in=my_conv_ids,
+			user_id=other_id
+		).values_list('conversation_id', flat=True).first()
+		if not shared_conv_id:
+			return []
+		return list(GameInvite.objects.filter(
+			conversation_id=shared_conv_id
+		).values_list('game_id', flat=True))
 
 	@database_sync_to_async
 	def delete_invite(self, game_id):

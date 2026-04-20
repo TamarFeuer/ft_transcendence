@@ -37,7 +37,7 @@ function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
 	picker.classList.remove('hidden');
 
 	picker.addEventListener('click', (e) => {
-		const piece = e.target.dataset.piece;
+		const piece = e.target.closest('[data-piece]')?.dataset.piece;
 		if (!piece) return;
 		picker.classList.add('hidden');
 		ws.send(JSON.stringify({ type: 'move', from: fromSquare, to: toSquare, promotion: piece }));
