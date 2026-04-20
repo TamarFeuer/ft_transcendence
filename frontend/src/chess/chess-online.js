@@ -80,7 +80,8 @@ export async function initOnlineChessGame(gameId = null){
 	const waitingEl = document.getElementById('waiting-overlay');
 	const statusEl  = document.getElementById('game-status');
 
-	boardEl.className = 'grid grid-cols-8 w-[36rem] h-[36rem] auto-rows-fr';
+	// Keep board square but responsive to container width to avoid right-edge clipping.
+	boardEl.className = 'mx-auto grid w-full max-w-[36rem] grid-cols-8 aspect-square auto-rows-fr';
 
 	const game = new Chess();
 	let myColor   = null;
