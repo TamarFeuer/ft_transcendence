@@ -230,6 +230,23 @@ export function setupRoutes() {
       }
     }, 4000);
   };
+  async function create_game(params) {
+      try {
+         const response = await fetch('/api/game/create', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json'
+           },
+        });
+        const data = await response.json();
+        document.getElementById('lobbyStatus').innerHTML = `<p class="text-green-400">Game created with ID: ${data.gameId}.</p>`;
+      } catch (error) {
+        console.error('Failed to create game:', error);
+        document.getElementById('lobbyStatus').innerHTML = `<p class="text-red-400">Failed to create game. Please try again.</p>`;
+        showMessage('Failed to create game. Please try again.', 'error');
+      }
+  }
+
 
   routes['/online'] = async () => {
     stopTournamentAutoRefresh();
@@ -242,6 +259,36 @@ export function setupRoutes() {
       return;
     }
 
+    // await loadTemplate('chess-online');
+    // const { initOnlineChessGame } = await import('../chess/chess-online.js');
+    // initOnlineChessGame(null);
+
+    const response = await fetch('/api/games', { method: 'GET' });
+    var data = await response.json();
+    var game_to_join = null;
+    console.log("data: ", data);
+
+    if (!data.games || data.games.length === 0)
+      game_to_join = create_game();
+    else
+    {
+        for (const game of data.games) {
+          console.log("game.id: ", game.id);
+          console.log("game.status: ", game.status);
+          if (game.isTournamentGame == false && game.status == "waiting")
+          {
+            game_to_join = game;
+            break;
+          }
+        }
+    }
+    if (game_to_join == null)
+      game_to_join = create_game();
+    console.log("data.game: ", game_to_join);
+
+    joinOnlineGame(game_to_join.id, false);
+
+    return;
     // If we landed here with a gameId query param (e.g. from a tournament start), join the game right away
     const params = new URLSearchParams(window.location.search);
     const gameId = params.get('gameId');
@@ -287,22 +334,7 @@ export function setupRoutes() {
       }
     });
 
-    document.getElementById('createGameBtn')?.addEventListener('click', async () => {
-       try {
-         const response = await fetch('/api/game/create', {
-           method: 'POST',
-           headers: {
-             'Content-Type': 'application/json'
-           },
-        });
-        const data = await response.json();
-        document.getElementById('lobbyStatus').innerHTML = `<p class="text-green-400">Game created with ID: ${data.gameId}.</p>`;
-      } catch (error) {
-        console.error('Failed to create game:', error);
-        document.getElementById('lobbyStatus').innerHTML = `<p class="text-red-400">Failed to create game. Please try again.</p>`;
-        showMessage('Failed to create game. Please try again.', 'error');
-      }
-    });
+    document.getElementById('createGameBtn')?.addEventListener('click', async () => create_game());
   };
   routes['/profile'] = async () => {
     stopTournamentAutoRefresh();
