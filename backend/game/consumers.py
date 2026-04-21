@@ -181,8 +181,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         logger.debug(f"Current players: {self.game.get_players()}")
 
-        players = self.game.get_players()
-        if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
+        if self.scope['user'] in self.game.clients:
             logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
             self.game.status = 'ready'
             # Update tournament game status in database

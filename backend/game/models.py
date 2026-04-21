@@ -66,6 +66,16 @@ class GameSession:
     
     def add_player(self, name, id, role=None):
         """Add a player or spectator to the game"""
+        # If matchmaking pre-assigned this user to a side, reconnect them there.
+        if self.players['left'] == name:
+            self.players_ids['left'] = id
+            self.clients.add(name)
+            return 'left'
+        if self.players['right'] == name:
+            self.players_ids['right'] = id
+            self.clients.add(name)
+            return 'right'
+
         if not self.players['left']:
             self.players['left'] = name
             self.players_ids['left'] = id

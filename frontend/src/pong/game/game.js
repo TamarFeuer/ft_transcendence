@@ -112,11 +112,11 @@ export function joinOnlineGame(gameId, IsTournament) {
   // Connect to backend on port 3000 (not vite dev server on 5173)
   const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
 
-  console.log("DEV import:", import.meta.env.DEV);
-  console.log("WS Host:", wsHost);
-  console.log("location.host:", location.host);
+  // console.log("DEV import:", import.meta.env.DEV);
+  // console.log("WS Host:", wsHost);
+  // console.log("location.host:", location.host);
 
-  const url = `${proto}//${location.host}/ws/${gameId}`;
+  const url = `${proto}//${wsHost}/ws/${gameId}`;
   ws = new WebSocket(url);
 
   ws.onopen = () => {
@@ -308,7 +308,19 @@ export function joinOnlineGame(gameId, IsTournament) {
       navigate(`/tournament/${window.currentTournamentId}`);
     } else {
       console.log("DIBADIBADIBADOEDOE\n");
-      navigate('/online');
+      navigate('/');
     }
   };
+}
+
+
+export async function joinMatchmaking(){
+  const res = await fetch('api/game/join', { method: 'POST'});
+
+  if (!res.ok){
+    const text = await res.text();
+    throw new Error('join failed ${res.status}: ${text}');
+  }
+  const { gameId } = await res.json();
+  joinOnlineGame(gameId, false);
 }

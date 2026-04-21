@@ -233,154 +233,18 @@ export function setupRoutes() {
 
   routes['/online'] = async () => {
     stopTournamentAutoRefresh();
-    if(await redirectIfNotLoggedIn())
+    if (await redirectIfNotLoggedIn())
 			return;
-    // disposeCurrentEngine();
-    if (await checkAuthRequired() == true)
-      {
-      showMessage('You need to be logged in to access online games.', 'error');
-      return;
-    }
-
-    // If we landed here with a gameId query param (e.g. from a tournament start), join the game right away
     const params = new URLSearchParams(window.location.search);
     const gameId = params.get('gameId');
-    if (gameId) {
+    if (gameId){
+      window.history.replaceState({}, '', '/online');
       joinOnlineGame(gameId, false);
-
-      // Drop the query param so popstate/back does not re-join repeatedly
-      params.delete('gameId');
-      const newUrl = `${window.location.pathname}${params.toString() ? `?${params}` : ''}`;
-      window.history.replaceState({}, '', newUrl);
+      return;
     }
-
-    await loadTemplate('online');
-
-    // Load current user's match history and achievements
-    fetchWithRefreshAuth('/api/auth/me')
-      .then(r => r.json())
-      .then(me => {
-        fetchWithRefreshAuth('/api/match-history')
-          .then(r => r.json())
-          .then(data => {
-            const tbody = document.getElementById('pong-history-table');
-            if (!tbody) return;
-            if (!data.matches || data.matches.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400 pt-1">No games yet.</td></tr>';
-              return;
-            }
-            tbody.innerHTML = data.matches.slice(0, 10)
-              .map(m => {
-                const opponent = m.player1 === me.username ? m.player2 : m.player1;
-                const myScore = m.player1 === me.username ? m.player1_score : m.player2_score;
-                const oppScore = m.player1 === me.username ? m.player2_score : m.player1_score;
-                const won = m.winner === me.username;
-                const result = m.winner
-                  ? (won ? '<span class="text-green-400">Win</span>' : '<span class="text-red-400">Loss</span>')
-                  : '<span class="text-gray-400">-</span>';
-                const date = new Date(m.timestamp).toLocaleDateString();
-                return `<tr class="border-t border-white/10">
-                  <td class="py-1 pr-2">${opponent}</td>
-                  <td class="py-1 pr-2 font-semibold">${myScore}–${oppScore}</td>
-                  <td class="py-1 pr-2">${result}</td>
-                  <td class="py-1 text-gray-400">${date}</td>
-                </tr>`;
-              })
-              .join('');
-          })
-          .catch(() => {
-            const tbody = document.getElementById('pong-history-table');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400">Could not load.</td></tr>';
-          });
-
-        return fetchWithRefreshAuth(`/api/player/${me.username}/achievements`);
-      })
-      .then(r => r.json())
-      .then(data => {
-        const list = document.getElementById('pong-achievements-list');
-        if (!list) return;
-        if (!data.achievements || data.achievements.length === 0) {
-          list.innerHTML = '<li class="text-gray-400">No achievements yet.</li>';
-          return;
-        }
-        list.innerHTML = data.achievements
-          .map(a => `<li><b>${a.name}</b>: ${a.description}</li>`)
-          .join('');
-      })
-      .catch(() => {
-        const list = document.getElementById('pong-achievements-list');
-        if (list) list.innerHTML = '<li class="text-gray-400">Could not load.</li>';
-      });
-
-    // Bottom table: latest 10 achievements across all players
-    fetchWithRefreshAuth('/api/achievements')
-      .then(r => r.json())
-      .then(data => {
-        const tbody = document.getElementById('pong-results-table');
-        if (!tbody) return;
-        if (!data.achievements || data.achievements.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="3" class="text-gray-400 pt-1">No achievements yet.</td></tr>';
-          return;
-        }
-        tbody.innerHTML = data.achievements
-          .map(a => {
-            const date = new Date(a.timestamp).toLocaleDateString();
-            return `<tr class="border-t border-white/10">
-              <td class="py-1 pr-3 font-semibold">${a.player_name}</td>
-              <td class="py-1 pr-3 text-orange-300">${a.achievement_name}</td>
-              <td class="py-1 text-gray-400">${date}</td>
-            </tr>`;
-          })
-          .join('');
-      })
-      .catch(() => {
-        const tbody = document.getElementById('pong-results-table');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-gray-400">Could not load.</td></tr>';
-      });
-
-    document.getElementById('backBtn')?.addEventListener('click', () => navigate('/'));
-
-    document.getElementById('refreshGamesBtn')?.addEventListener('click', async () => {
-      const response = await fetch('/api/games', { method: 'GET' });
-      const data = await response.json();
-      const availableGamesDiv = document.getElementById('availableGames');
-      availableGamesDiv.innerHTML = '<h3 class="text-white">Available Games:</h3>';
-      if (!data.games || data.games.length === 0) {
-        availableGamesDiv.innerHTML += '<p class="text-gray-300">No available games.</p>';
-      } else {
-        data.games.forEach((game) => {
-          console.log("Processing game:", game);
-          if (game.isTournamentGame == true)
-          {
-            // Skip tournament games
-            return;
-          }
-          const gameBtn = document.createElement('button');
-          gameBtn.textContent = `Join Game ${game.id}`;
-          gameBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded m-1';
-          console.log("Adding join button for game ID:", game.id);
-          gameBtn.addEventListener('click', () => joinOnlineGame(game.id));
-          const gameStatusDiv = document.createElement('div');
-          gameStatusDiv.className = 'text-white';
-          gameStatusDiv.innerHTML = `<p>Status: ${game.status}</p>`;
-          availableGamesDiv.appendChild(gameBtn);
-          availableGamesDiv.appendChild(gameStatusDiv);
-        });
-      }
-    });
-
-    document.getElementById('createGameBtn')?.addEventListener('click', async () => {
-      try {
-        const response = await fetch('/api/game/create', { method: 'POST' });
-        const data = await response.json();
-        document.getElementById('lobbyStatus').innerHTML = `<p class="text-green-400">Game created with ID: ${data.gameId}.</p>`;
-      } catch (error) {
-        console.error('Failed to create game:', error);
-        document.getElementById('lobbyStatus').innerHTML = `<p class="text-red-400">Failed to create game. Please try again.</p>`;
-        showMessage('Failed to create game. Please try again.', 'error');
-      }
-    });
+    navigate('/');
   };
+
   routes['/profile'] = async () => {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
