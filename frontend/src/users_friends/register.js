@@ -12,6 +12,7 @@ export function registerPage(){
 
         const username = document.getElementById("register-username").value.trim();
         const password = document.getElementById("register-password").value.trim();
+        const legalAccepted = document.getElementById("register-legal-accept")?.checked;
 
         if(!username || !password)
             return;
@@ -34,6 +35,11 @@ export function registerPage(){
             return;
         }
 
+        if (!legalAccepted) {
+            showError("You must accept the Terms of Service and Privacy Policy.");
+            return;
+        }
+
         const result = await registerUser(username, password);
 
         if (result.error) {
@@ -50,5 +56,21 @@ export function registerPage(){
     backLoginBtn.addEventListener("click", () => {
         navigate("/login");
     })
+
+    const termsLink = document.getElementById("register-terms-link");
+    if (termsLink) {
+        termsLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            navigate("/terms-of-service");
+        });
+    }
+
+    const privacyLink = document.getElementById("register-privacy-link");
+    if (privacyLink) {
+        privacyLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            navigate("/privacy-policy");
+        });
+    }
 
 }
