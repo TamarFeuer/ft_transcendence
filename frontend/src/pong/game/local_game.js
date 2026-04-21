@@ -3,7 +3,6 @@ import { showMessage } from "../../utils/utils.js"
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
 import { currentEngine, disposeCurrentEngine, resizeListener } from "../../routes/routes.js";
 
-
 export function initOfflineGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {
         // Speed configuration: tweak these to make the game slower/faster
@@ -201,8 +200,8 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             cleanup();
             
             if (showWinnerMessage && !tournament) {
-                showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
-                navigate('/pong')
+                showMessage(scoreP1int >= 10 ? "They win!" : "You win!");
+                navigate('/pong');
             }
 
             resolve();

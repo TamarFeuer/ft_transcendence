@@ -156,7 +156,7 @@ export function initAIGame(scene, gameObjects, tournament) {
             cleanup();
 
             if (showWinnerMessage && !tournament) {
-                showMessage(scoreP1int >= 10 ? "Player 1 wins!" : "Player 2 wins!");
+                showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
                 navigate('/pong')
             }
 
