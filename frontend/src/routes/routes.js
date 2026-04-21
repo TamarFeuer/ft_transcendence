@@ -78,7 +78,7 @@ async function loadTemplate(name) {
 	const html = await res.text();
 	const appRoot = document.getElementById("app-root");
 	appRoot.innerHTML = html;
-	
+
 	// Sync translations with current app language
 	updatePageTranslations();
 }
