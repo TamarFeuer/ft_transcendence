@@ -10,19 +10,6 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-def get_user_id_from_token(token: str):
-    if not token:
-        return None
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        if payload.get("type") != "access":
-            return None
-        return payload.get("user_id")
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.DecodeError:
-        return None
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def create_game(request):
@@ -37,8 +24,9 @@ def create_game(request):
 
     creator_id = request.user.id
     token = request.COOKIES.get('access_token')
-    user_id = get_user_id_from_token(token)
-    if user_id == None:
+    user = await get_user_from_token(token)
+
+    if user.id == None:
         return JsonResponse({
         'gameId': None,
         'status': None,
@@ -46,7 +34,7 @@ def create_game(request):
         'creator_id': None,
         'message': 'error with token'
         })
-    game = GameSession.create_game(creator_id=user_id)
+    game = GameSession.create_game(creator_id=user.id)
     game.isTournamentGame = False
 
     if invitee_id is not None:
