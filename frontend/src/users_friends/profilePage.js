@@ -1,5 +1,5 @@
 import { navigate } from "../routes/route_helpers.js";
-import { getCurrentUser, logoutUser } from "./usermanagement.js";
+import { getCurrentUser, logoutUser, fetchWithRefreshAuth } from "./usermanagement.js";
 import { fetchFriendsList, removeFriend, sendFriendRequest } from "./friends.js";
 import { fetchPendingRequests, handleAccept, handleDelete } from "./friends.js";
 
@@ -16,13 +16,30 @@ export async function initProfilePage(){
         await logoutUser();
         navigate("/login");
     })
+
+    document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
     addFriend();
     renderPendingRequests();
     renderFriendList();
+    loadStats();
 
     // setInterval(() => {
     // renderPendingRequests();
     // }, 3000);
+}
+
+function loadStats() {
+    fetchWithRefreshAuth('/api/player/me/stats')
+        .then(r => r.json())
+        .then(data => {
+            const wins = document.getElementById('profile-wins');
+            const losses = document.getElementById('profile-losses');
+            const elo = document.getElementById('profile-elo');
+            if (wins) wins.textContent = data.total_wins ?? 0;
+            if (losses) losses.textContent = data.total_losses ?? 0;
+            if (elo) elo.textContent = data.elo_rating ?? 0;
+        })
+        .catch(() => {});
 }
 
 function addFriend(){

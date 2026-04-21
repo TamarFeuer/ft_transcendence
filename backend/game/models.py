@@ -291,7 +291,33 @@ class Player(models.Model):
         self.current_win_streak = 0
         
         self.save()
+
+    def check_new_achievements(self):
+        """Check if the player has unlocked any new achievements after a match.
         
+        Returns a list of newly earned Achievement objects.
+        """
+        stat_map = {
+            'total_games': self.total_games,
+            'total_wins': self.total_wins,
+            'win_streak': self.best_win_streak,
+            'best_win_streak': self.best_win_streak,
+            'elo_rating': self.elo_rating,
+        }
+
+        already_earned = set(
+            self.achievements.values_list('achievement_id', flat=True)
+        )
+
+        newly_earned = []
+        for achievement in Achievement.objects.exclude(pk__in=already_earned):
+            stat_value = stat_map.get(achievement.requirement_type)
+            if stat_value is not None and stat_value >= achievement.requirement_value:
+                PlayerAchievement.objects.create(player=self, achievement=achievement)
+                newly_earned.append(achievement)
+
+        return newly_earned
+
     # The method receives the class (cls) as its first argument, not an instance (self). 
     # This allows us to call it on the class itself (Player.get_leaderboard()) rather than on an instance of the class.
     # With select_related: All user data is fetched together with the players in one query.
@@ -345,7 +371,7 @@ class Achievement(models.Model):
         return self.name
     
     class Meta:
-        ordering = ['requirement_value', 'requirement_type', 'name']  # order by requirement value, then type, then name
+        ordering = ['requirement_type', 'requirement_value', 'name', 'description']  # order by requirement type, then value, then name
         db_table = 'stats_achievements'
         
 # The rule of thumb:
@@ -356,7 +382,20 @@ class Achievement(models.Model):
 # Since a player can unlock multiple achievements, the separate PlayerAchievement table is the correct design.
 class PlayerAchievement(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='achievements')
+    @property
+    def player_name(self):
+        return self.player.user.username
+    #  achievement.players.all() to get all PlayerAchievement records for a given achievement (i.e. everyone who earned it)
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name='players')
+    @property
+    def achievement_name(self):
+        return self.achievement.name
+    @property
+    def achievement_description(self):
+        return self.achievement.description
+    # on_delete=models.SET_NULL: if the referenced Match is deleted, don't delete this PlayerAchievement; just set match to NULL instead. Preserves the achievement record even if the match is gone.
+    # match.earned_achievements.all() to get all achievements earned during that match
+    match = models.ForeignKey(Match, on_delete=models.SET_NULL, null=True, blank=True, related_name='earned_achievements')
     timestamp = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
