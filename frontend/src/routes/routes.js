@@ -19,6 +19,7 @@ import { initProfilePage } from "../users_friends/profilePage.js"
 import { initLoginPage } from "../users_friends/loginPage.js"
 import { registerPage } from "../users_friends/register.js"
 import { initHome } from "../home/home.js"
+import { initLegalPage } from "../legal/legal.js";
 
 // Global engine management to prevent multiple render loops
 export let currentEngine = null;
@@ -108,6 +109,16 @@ export function setupRoutes() {
     await loadTemplate('register');
     registerPage();
   }
+  routes['/terms-of-service'] = async () => {
+    stopTournamentAutoRefresh();
+    await loadTemplate('terms-of-service');
+    initLegalPage();
+  };
+  routes['/privacy-policy'] = async () => {
+    stopTournamentAutoRefresh();
+    await loadTemplate('privacy-policy');
+    initLegalPage();
+  };
 
   routes['/chess-online'] = async () => {
     stopTournamentAutoRefresh();
