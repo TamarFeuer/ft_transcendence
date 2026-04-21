@@ -4,43 +4,65 @@ import { fetchFriendsList, removeFriend, sendFriendRequest } from "./friends.js"
 import { fetchPendingRequests, handleAccept, handleDelete } from "./friends.js";
 
 
-export async function initProfilePage(){
-    const user = await getCurrentUser();
+export async function initProfilePage(username){
+    let isSelf = false;
     
-    document.getElementById("profile-avatar").textContent = user.username.charAt(0).toUpperCase();
-    document.getElementById("profile-username").textContent = user.username;
+    if (!username)
+    {
+        username = localStorage.getItem('username');
+        isSelf = true;
+    }
 
-    const logoutBtn = document.getElementById("profile-logout");
+    renderUser(username);
+    renderStats(username);
 
-    logoutBtn.addEventListener("click", async () =>{
-        await logoutUser();
-        navigate("/login");
-    })
+    if (isSelf){
+        const logoutBtn = document.getElementById("profile-logout");
 
-    document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
-    addFriend();
-    renderPendingRequests();
-    renderFriendList();
-    loadStats();
-
-    // setInterval(() => {
-    // renderPendingRequests();
-    // }, 3000);
-}
-
-function loadStats() {
-    fetchWithRefreshAuth('/api/player/me/stats')
-        .then(r => r.json())
-        .then(data => {
-            const wins = document.getElementById('profile-wins');
-            const losses = document.getElementById('profile-losses');
-            const elo = document.getElementById('profile-elo');
-            if (wins) wins.textContent = data.total_wins ?? 0;
-            if (losses) losses.textContent = data.total_losses ?? 0;
-            if (elo) elo.textContent = data.elo_rating ?? 0;
+        logoutBtn.addEventListener("click", async () =>{
+            await logoutUser();
+            navigate("/login");
         })
-        .catch(() => {});
+
+        document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
+        addFriend();
+        renderPendingRequests();
+        renderFriendList();
+    }
+
+    else{
+        document.getElementById("friends-section")?.remove();
+        document.getElementById("logout-section")?.remove();
+    }
 }
+
+function renderUser(username){
+    document.getElementById("profile-avatar").textContent = username.charAt(0).toUpperCase();
+    document.getElementById("profile-username").textContent = username;
+}
+
+function renderStats(username) {
+    document.getElementById('profile-wins').textContent = 0;
+    document.getElementById('profile-losses').textContent = 0;
+    document.getElementById('profile-elo').textContent = 0;
+}
+
+
+// function loadStats() {
+//     fetchWithRefreshAuth('/api/player/me/stats')
+//         .then(r => r.json())
+//         .then(data => {
+//             const wins = document.getElementById('profile-wins');
+//             const losses = document.getElementById('profile-losses');
+//             const elo = document.getElementById('profile-elo');
+//             if (wins) wins.textContent = data.total_wins ?? 0;
+//             if (losses) losses.textContent = data.total_losses ?? 0;
+//             if (elo) elo.textContent = data.elo_rating ?? 0;
+//         })
+//         .catch(() => {});
+// }
+
+
 
 function addFriend(){
 
@@ -98,7 +120,7 @@ async function renderFriendList(){
     const {offlineFriends, onlineFriends} = await fetchFriendsList();
     const allFriends = [...onlineFriends, ...offlineFriends];
     const template = document.getElementById("friend-template");
-    
+
     container.innerHTML = "";
 
     if(allFriends.length === 0)
