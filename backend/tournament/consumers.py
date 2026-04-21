@@ -42,10 +42,16 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({'type': 'pong'}))
 
     async def time_update(self, event):
+        player_left = event.get('player_left')
+        player_right = event.get('player_right')
         await self.send(text_data=json.dumps({
             'type': 'timeUpdate',
             'remaining_time': event.get('remaining_time'),
-            'game_id': event.get('game_id')
+            'game_id': event.get('game_id'),
+            'player_left': getattr(player_left, 'username', player_left),
+            'player_right': getattr(player_right, 'username', player_right),
+            'player_left_id': event.get('player_left_id') or getattr(player_left, 'id', None),
+            'player_right_id': event.get('player_right_id') or getattr(player_right, 'id', None)
         }))
 
     async def tournament_event(self, event):
