@@ -1,0 +1,56 @@
+<div class="absolute inset-0 flex items-center justify-center bg-gray-950">
+
+  <!-- Vertical layout: opponent (far side) → board → turn → you (near side), chess.com-style -->
+  <div class="flex w-full max-w-[36rem] flex-col items-stretch px-3">
+    <div class="mb-2 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500">
+      Online Chess
+    </div>
+
+    <div class="overflow-hidden rounded-lg border border-zinc-700/80 bg-zinc-900/50 shadow-2xl shadow-black/50 ring-1 ring-zinc-800/80">
+      <!-- Opponent: always top of card = opposite side of board from you -->
+      <div class="flex items-center justify-between gap-3 border-b border-zinc-700/60 bg-zinc-900/95 px-3 py-2.5">
+        <div class="min-w-0 flex-1">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Opponent</div>
+          <div id="player-opponent-name" class="truncate text-sm font-semibold text-zinc-100">—</div>
+          <div id="player-opponent-elo" class="text-xs tabular-nums text-zinc-500">—</div>
+        </div>
+      </div>
+
+      <!-- Board: JS assigns grid classes to #chess-board -->
+      <div class="border-b border-zinc-700/60 bg-zinc-950">
+        <div id="chess-board"></div>
+      </div>
+
+      <!-- Turn line -->
+      <div id="game-status" class="border-b border-zinc-700/60 bg-zinc-900/80 px-3 py-1.5 text-center text-xs font-medium text-amber-100/95">
+        Connecting...
+      </div>
+
+      <!-- You: always bottom of card = your side -->
+      <div class="flex items-center justify-between gap-3 bg-zinc-900/95 px-3 py-2.5">
+        <div class="min-w-0 flex-1">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-emerald-600/90">You</div>
+          <div id="player-self-name" class="truncate text-sm font-semibold text-zinc-100">—</div>
+          <div id="player-self-elo" class="text-xs tabular-nums text-zinc-500">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- same promotion row as the local chess page -->
+  <div id="promotion-picker" class="hidden absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+    <div class="flex gap-4 rounded-xl bg-gray-800 p-4 text-5xl">
+      <span data-piece="q" class="cursor-pointer transition-transform hover:scale-125">♕</span>
+      <span data-piece="r" class="cursor-pointer transition-transform hover:scale-125">♖</span>
+      <span data-piece="b" class="cursor-pointer transition-transform hover:scale-125">♗</span>
+      <span data-piece="n" class="cursor-pointer transition-transform hover:scale-125">♘</span>
+    </div>
+  </div>
+
+  <!-- blocks the board until the other player arrives -->
+  <div id="waiting-overlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-950/90">
+    <div class="mb-3 text-xl font-semibold text-white">Waiting for opponent...</div>
+    <div class="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+  </div>
+
+</div>

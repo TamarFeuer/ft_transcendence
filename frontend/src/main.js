@@ -4,7 +4,8 @@ import { getCurrentUser as fetchCurrentUser } from './users_friends/usermanageme
 import { initChatUI } from './chat/chat-ui.js';
 import { closeGameConnection } from './pong/game/game.js';
 import { handleRoute } from './routes/route_helpers.js';
-import { isGameActive } from './pong/game/game.js'
+import { isGameActive } from './pong/game/game.js';
+import { closeChessConnection } from './chess/chess-online.js';
 
 // --- Game Variables ---
 let ws = null;
@@ -21,6 +22,8 @@ window.addEventListener('popstate', () => {
 		closeGameConnection();
 		sessionStorage.removeItem('activeGameId');
 	}
+	closeChessConnection();
+	window.dispatchEvent(new CustomEvent("chessGameLeft"));
 	handleRoute(window.location.pathname);
 });
 
@@ -39,10 +42,11 @@ window.addEventListener('load', async () => {
 
 setupRoutes();
 
-window.addEventListener("DOMContentLoaded", async () => {
-	
+window.addEventListener("load", async () => {
+	const langBtn = document.getElementById("langBtn");
 	const currentUser = await fetchCurrentUser(); // wait for token refresh, ignore the result
 	if (currentUser.authenticated) {
+		langBtn.style.display = "block";
 		initChat();
 		initChatUI();
 	}

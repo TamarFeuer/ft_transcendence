@@ -17,6 +17,18 @@ import { Engine, Scene } from "@babylonjs/core";
 import { showMessage } from "../../utils/utils.js"
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
 
+function showAchievements(achievements) {
+    if (!achievements || achievements.length === 0) return;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;color:#fff;padding:16px 20px;border-radius:10px;z-index:9999;max-width:320px;box-shadow:0 4px 16px rgba(0,0,0,0.5);';
+    const title = achievements.length === 1 ? '🏆 Achievement Unlocked!' : `🏆 ${achievements.length} Achievements Unlocked!`;
+    overlay.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;">${title}</div><ul style="margin:0;padding-left:20px;">` +
+        achievements.map(a => `<li style="margin-bottom:4px;"><b>${a.name}</b>: ${a.description}</li>`).join('') +
+        '</ul>';
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 6000);
+}
+
 // --- Game Variables ---
 let ws = null;
 let currentGameId = null;
@@ -260,6 +272,9 @@ export function joinOnlineGame(gameId, IsTournament) {
         }
 
         showMessage(`${data.winner} wins!`)
+        const userId = String(window.CURRENT_USER?.user_id ?? '');
+        const myAchievements = (data.new_achievements || {})[userId] || [];
+        showAchievements(myAchievements);
         console.log("after yes");
         // Clean up event listeners and intervals
         clearInterval(keyboardInterval);

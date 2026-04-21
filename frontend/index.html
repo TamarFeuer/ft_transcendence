@@ -14,7 +14,7 @@
 	<div id="app-root"></div>
 
 	<!-- Language selector -->
-	<div id="languageSelectorBtn" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
+	<div id="langBtn" style="display: none;" class="fixed bottom-4 left-4 z-50 bg-black/80 p-3 rounded-lg">
 		<label data-i18n="LABEL_LANGUAGE">Language:</label>
 		<select id="languageSelect">
 			<option value="en">English</option>
@@ -95,6 +95,13 @@
 			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Chat</button>
 		<button data-action="block"
 			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Block User</button>
+	</div>
+	<!-- Game picker submenu — appears below the context menu when "Invite to Game" is clicked -->
+	<div id="gamePickerMenu" style="display:none;"
+		class="fixed z-[9999] bg-gray-900 border border-pink-600/40 rounded-lg shadow-xl py-1 min-w-[160px]">
+		<div class="px-4 py-2 text-xs text-pink-300 font-bold border-b border-pink-600/20">Choose a game</div>
+		<button data-game="chess"
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Chess</button>
 	</div>
 	<script type="module" src="src/main.js"></script>
 

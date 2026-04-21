@@ -27,5 +27,21 @@ export function initLoginPage(){
 		createAccountBtn.addEventListener("click", () => {
 		navigate("/register");
 	})
-	}	       
+	}
+
+    const termsLink = document.getElementById("login-terms-link");
+    if (termsLink) {
+        termsLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            navigate("/terms-of-service");
+        });
+    }
+
+    const privacyLink = document.getElementById("login-privacy-link");
+    if (privacyLink) {
+        privacyLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            navigate("/privacy-policy");
+        });
+    }
 }

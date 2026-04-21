@@ -1,4 +1,4 @@
-
+# from audioop import reverse
 from json.encoder import JSONEncoder
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -69,11 +69,24 @@ def send_friend_request(request):
 		to_user = get_recipient(request)
 		if from_user == to_user:
 			return JsonResponse({'error': 'Cannot make a friend request to yourself'}, status=400)
-		if FriendRequest.objects.filter(from_user=from_user, to_user=to_user, status='accepted').exists():
+		if FriendRequest.objects.filter(
+			Q(from_user=from_user, to_user=to_user) | Q(from_user=to_user, to_user = from_user),
+			status='accepted').exists():
 			return JsonResponse({'error': 'You are already friends'}, status=400);
 		existing = FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exclude(status='declined').exists()
 		if existing:
 			return JsonResponse({'error': 'Friend request pending'}, status=400)
+		
+		#check if there is a friend request from the other user already pending
+		reverse_request = FriendRequest.objects.filter(from_user=to_user, to_user=from_user, status = 'pending').first()
+		if reverse_request:
+			#if it exists auto-accept request
+			reverse_request.status = 'accepted'
+			reverse_request.save()
+			return JsonResponse({
+				'success': True,
+				'message': f'You are now friends with {to_user.username}'
+			})
 		FriendRequest.objects.create(from_user=from_user, to_user=to_user)
 		return JsonResponse({
 			'success': True,

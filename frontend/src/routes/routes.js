@@ -6,7 +6,7 @@ import { initOfflineGame } from '../pong/game/local_game.js';
 import { startLocalTournament } from '../pong/tournament/local_tournament.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "../pong/game/game.js";
-import { checkAuthRequired } from '../users_friends/usermanagement.js';
+import { checkAuthRequired, fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 import { updatePageTranslations } from '../i18n/index.js';
 import { verifiedUserId } from '../chat/chat.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
@@ -20,6 +20,7 @@ import { initProfilePage } from "../users_friends/profilePage.js"
 import { initLoginPage } from "../users_friends/loginPage.js"
 import { registerPage } from "../users_friends/register.js"
 import { initHome } from "../home/home.js"
+import { initLegalPage } from "../legal/legal.js";
 
 // Global engine management to prevent multiple render loops
 export let currentEngine = null;
@@ -79,10 +80,17 @@ async function loadTemplate(name) {
 	const html = await res.text();
 	const appRoot = document.getElementById("app-root");
 	appRoot.innerHTML = html;
-	
+
 	// Sync translations with current app language
 	updatePageTranslations();
 }
+
+//only allow chess-online when the user navigated here intentionally from the hub
+let chessOnlineIntended = false;
+
+  export function setChessOnlineIntended(){
+      chessOnlineIntended = true;
+  }
 
 export function setupRoutes() {
   routes['/'] = async () => {
@@ -102,6 +110,39 @@ export function setupRoutes() {
     await loadTemplate('register');
     registerPage();
   }
+  routes['/terms-of-service'] = async () => {
+    stopTournamentAutoRefresh();
+    await loadTemplate('terms-of-service');
+    initLegalPage();
+  };
+  routes['/privacy-policy'] = async () => {
+    stopTournamentAutoRefresh();
+    await loadTemplate('privacy-policy');
+    initLegalPage();
+  };
+
+  routes['/chess-online'] = async () => {
+    stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+      return;
+    const params = new URLSearchParams(window.location.search);
+    const inviteGameId = params.get('gameId') || null;
+    //redirect to hub on refresh or direct URL access; only run the game when the
+    //user explicitly clicked Online Game from the hub, or followed an invite link
+    if (!chessOnlineIntended && !inviteGameId) {
+      window.history.back();
+      return;
+    }
+    chessOnlineIntended = false;
+    // Strip gameId from URL so a refresh doesn't reconnect to the same game
+    if (inviteGameId) {
+      window.history.replaceState({}, '', '/chess-online');
+    }
+    await loadTemplate('chess-online');
+    const { initOnlineChessGame } = await import('../chess/chess-online.js');
+    initOnlineChessGame(inviteGameId);
+  }
+
   routes['/chess'] = async () => {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())
@@ -111,17 +152,6 @@ export function setupRoutes() {
     initChessGame();
   }
 
-  routes['/pong'] = async () => {
-    stopTournamentAutoRefresh();
-    if(await redirectIfNotLoggedIn())
-			return;
-
-    await loadTemplate('pong');
-    document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
-    document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
-    document.getElementById('onlineBtn')?.addEventListener('click', () => navigate('/online'));
-    document.getElementById('tournamentBtn')?.addEventListener('click', () => navigate('/tournament'));
-  };
 
   routes['/local'] = async () => {
     stopTournamentAutoRefresh();
@@ -227,6 +257,88 @@ export function setupRoutes() {
 
     await loadTemplate('online');
 
+    // Load current user's match history and achievements
+    fetchWithRefreshAuth('/api/auth/me')
+      .then(r => r.json())
+      .then(me => {
+        fetchWithRefreshAuth('/api/match-history')
+          .then(r => r.json())
+          .then(data => {
+            const tbody = document.getElementById('pong-history-table');
+            if (!tbody) return;
+            if (!data.matches || data.matches.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400 pt-1">No games yet.</td></tr>';
+              return;
+            }
+            tbody.innerHTML = data.matches.slice(0, 10)
+              .map(m => {
+                const opponent = m.player1 === me.username ? m.player2 : m.player1;
+                const myScore = m.player1 === me.username ? m.player1_score : m.player2_score;
+                const oppScore = m.player1 === me.username ? m.player2_score : m.player1_score;
+                const won = m.winner === me.username;
+                const result = m.winner
+                  ? (won ? '<span class="text-green-400">Win</span>' : '<span class="text-red-400">Loss</span>')
+                  : '<span class="text-gray-400">-</span>';
+                const date = new Date(m.timestamp).toLocaleDateString();
+                return `<tr class="border-t border-white/10">
+                  <td class="py-1 pr-2">${opponent}</td>
+                  <td class="py-1 pr-2 font-semibold">${myScore}–${oppScore}</td>
+                  <td class="py-1 pr-2">${result}</td>
+                  <td class="py-1 text-gray-400">${date}</td>
+                </tr>`;
+              })
+              .join('');
+          })
+          .catch(() => {
+            const tbody = document.getElementById('pong-history-table');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-gray-400">Could not load.</td></tr>';
+          });
+
+        return fetchWithRefreshAuth(`/api/player/${me.username}/achievements`);
+      })
+      .then(r => r.json())
+      .then(data => {
+        const list = document.getElementById('pong-achievements-list');
+        if (!list) return;
+        if (!data.achievements || data.achievements.length === 0) {
+          list.innerHTML = '<li class="text-gray-400">No achievements yet.</li>';
+          return;
+        }
+        list.innerHTML = data.achievements
+          .map(a => `<li><b>${a.name}</b>: ${a.description}</li>`)
+          .join('');
+      })
+      .catch(() => {
+        const list = document.getElementById('pong-achievements-list');
+        if (list) list.innerHTML = '<li class="text-gray-400">Could not load.</li>';
+      });
+
+    // Bottom table: latest 10 achievements across all players
+    fetchWithRefreshAuth('/api/achievements')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('pong-results-table');
+        if (!tbody) return;
+        if (!data.achievements || data.achievements.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="text-gray-400 pt-1">No achievements yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.achievements
+          .map(a => {
+            const date = new Date(a.timestamp).toLocaleDateString();
+            return `<tr class="border-t border-white/10">
+              <td class="py-1 pr-3 font-semibold">${a.player_name}</td>
+              <td class="py-1 pr-3 text-orange-300">${a.achievement_name}</td>
+              <td class="py-1 text-gray-400">${date}</td>
+            </tr>`;
+          })
+          .join('');
+      })
+      .catch(() => {
+        const tbody = document.getElementById('pong-results-table');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-gray-400">Could not load.</td></tr>';
+      });
+
     document.getElementById('backBtn')?.addEventListener('click', () => navigate('/'));
 
     document.getElementById('refreshGamesBtn')?.addEventListener('click', async () => {
@@ -277,6 +389,110 @@ export function setupRoutes() {
     await loadTemplate('profile');
     await initProfilePage();
 
+  };
+
+  routes['/stats'] = async () => {
+    stopTournamentAutoRefresh();
+    if (await redirectIfNotLoggedIn())
+      return;
+
+    await loadTemplate('stats');
+
+    document.getElementById('stats-back-btn')?.addEventListener('click', () => navigate('/profile'));
+
+    fetchWithRefreshAuth('/api/player/me/stats')
+      .then(r => r.json())
+      .then(data => {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '-'; };
+        set('stats-total-games', data.total_games);
+        set('stats-wins', data.total_wins);
+        set('stats-losses', data.total_losses);
+        set('stats-elo', data.elo_rating);
+      })
+      .catch(() => {});
+
+    fetchWithRefreshAuth('/api/leaderboard')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('stats-leaderboard-table');
+        if (!tbody) return;
+        if (!data.leaderboard || data.leaderboard.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500 pt-2">No data yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.leaderboard
+          .map((p, i) => {
+            const medal = i === 0 ? '#1' : i === 1 ? '#2' : i === 2 ? '#3' : `#${i + 1}`;
+            return `<tr class="border-t border-zinc-700">
+              <td class="py-1 pr-3">${medal}</td>
+              <td class="py-1 pr-3 font-semibold">${p.username}</td>
+              <td class="py-1 pr-3 text-violet-400">${p.elo_rating}</td>
+              <td class="py-1 pr-3 text-green-400">${p.total_wins}</td>
+              <td class="py-1 text-yellow-400">${p.current_win_streak}</td>
+            </tr>`;
+          })
+          .join('');
+      })
+      .catch(() => {
+        const tbody = document.getElementById('stats-leaderboard-table');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500">Could not load.</td></tr>';
+      });
+
+    fetchWithRefreshAuth('/api/auth/me')
+      .then(r => r.json())
+      .then(me => {
+        fetchWithRefreshAuth('/api/match-history')
+          .then(r => r.json())
+          .then(data => {
+            const tbody = document.getElementById('stats-history-table');
+            if (!tbody) return;
+            if (!data.matches || data.matches.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="4" class="text-zinc-500 pt-2">No games yet.</td></tr>';
+              return;
+            }
+            tbody.innerHTML = data.matches.slice(0, 20)
+              .map(m => {
+                const opponent = m.player1 === me.username ? m.player2 : m.player1;
+                const myScore = m.player1 === me.username ? m.player1_score : m.player2_score;
+                const oppScore = m.player1 === me.username ? m.player2_score : m.player1_score;
+                const won = m.winner === me.username;
+                const result = m.winner
+                  ? (won ? '<span class="text-green-400">Win</span>' : '<span class="text-red-400">Loss</span>')
+                  : '<span class="text-zinc-400">-</span>';
+                const date = new Date(m.timestamp).toLocaleDateString();
+                return `<tr class="border-t border-zinc-700">
+                  <td class="py-1 pr-3">${opponent}</td>
+                  <td class="py-1 pr-3 font-semibold">${myScore}-${oppScore}</td>
+                  <td class="py-1 pr-3">${result}</td>
+                  <td class="py-1 text-zinc-400">${date}</td>
+                </tr>`;
+              })
+              .join('');
+          })
+          .catch(() => {
+            const tbody = document.getElementById('stats-history-table');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-zinc-500">Could not load.</td></tr>';
+          });
+
+        fetchWithRefreshAuth(`/api/player/${me.username}/achievements`)
+          .then(r => r.json())
+          .then(data => {
+            const list = document.getElementById('stats-achievements-list');
+            if (!list) return;
+            if (!data.achievements || data.achievements.length === 0) {
+              list.innerHTML = '<li class="text-zinc-500">No achievements yet.</li>';
+              return;
+            }
+            list.innerHTML = data.achievements
+              .map(a => `<li><b>${a.name}</b>: ${a.description}</li>`)
+              .join('');
+          })
+          .catch(() => {
+            const list = document.getElementById('stats-achievements-list');
+            if (list) list.innerHTML = '<li class="text-zinc-500">Could not load.</li>';
+          });
+      })
+      .catch(() => {});
   };
 
   routes['/tournament/:tournamentId'] = async (tournamentId) => {
