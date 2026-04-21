@@ -79,7 +79,7 @@ async function loadTemplate(name) {
 	const html = await res.text();
 	const appRoot = document.getElementById("app-root");
 	appRoot.innerHTML = html;
-	
+
 	// Sync translations with current app language
 	updatePageTranslations();
 }
@@ -151,18 +151,6 @@ export function setupRoutes() {
     initChessGame();
   }
 
-  routes['/pong'] = async () => {
-    stopTournamentAutoRefresh();
-    if(await redirectIfNotLoggedIn())
-			return;
-
-    await loadTemplate('pong');
-    document.getElementById('localBtn')?.addEventListener('click', () => navigate('/local'));
-    document.getElementById('AIBtn')?.addEventListener('click', () => navigate('/ai'));
-    document.getElementById('onlineBtn')?.addEventListener('click', () => navigate('/online'));
-    document.getElementById('tournamentBtn')?.addEventListener('click', () => navigate('/tournament'));
-
-  };
 
   routes['/local'] = async () => {
     stopTournamentAutoRefresh();

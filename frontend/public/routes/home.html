@@ -6,7 +6,7 @@
             <div id="navAvatar" class="w-8 h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm lg:text-base xl:text-lg group-hover:bg-violet-400 transition"></div>
         </button>
     </nav>
-    <div class="flex items-center gap-3 p-5">
+    <div class="absolute top-16 lg:top-20 left-0 flex items-center gap-3 p-5 z-10">
         <div id="pong" class="text-white font-semibold text-xl">Pong</div>
         <button id="toggle-game-mode" type="button" class="w-14 h-8 rounded-full bg-violet-600 relative cursor-pointer">
             <div id="toggle-btn" class="w-6 h-6 bg-white rounded-full absolute top-1 transition-all" style="left: 0.25rem;"></div>
@@ -17,7 +17,7 @@
     <div class="flex-1 flex flex-col items-center justify-center gap-12 lg:gap-16 xl:gap-20 px-6 lg:px-8 xl:px-12">
 
         <div class="text-center">
-            <h1 class="text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-violet-200 to-violet-500 bg-clip-text drop-shadow-[0_0_25px_rgba(139,92,246,0.35)]">
+            <h1 class="cursor-default text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-transparent bg-gradient-to-r from-violet-200 to-violet-500 bg-clip-text drop-shadow-[0_0_25px_rgba(139,92,246,0.35)]">
                 Transcendence
             </h1>
             <div class="mt-4 lg:mt-5 h-px w-32 lg:w-40 xl:w-48 mx-auto bg-gradient-to-r from-transparent via-violet-500/60 to-transparent"></div>
@@ -57,6 +57,23 @@
 
         </div>
 
+    </div>
+
+    <div id="online-backdrop" class="fixed inset-0 bg-black/60 opacity-0 pointer-events-none transition-opacity duration-300 z-20"></div>
+
+    <div id="online-panel" class="fixed top-0 right-0 h-full w-80 bg-zinc-800 border-l border-zinc-700 transform translate-x-full transition-transform duration-300 z-30 p-6 flex flex-col gap-6">
+        <div class="flex justify-between items-center">
+            <h2 class="text-white text-2xl font-bold">Play Online</h2>
+            <button id="online-close-btn" type="button" class="text-zinc-400 hover:text-white text-2xl">✕</button>
+        </div>
+
+        <button id="play-ranked-btn" type="button" class="w-full bg-violet-600 hover:bg-violet-500 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20">
+            Play Ranked
+        </button>
+
+        <button id="play-tournament-btn" type="button" class="w-full bg-violet-600 hover:bg-violet-500 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20">
+            Play Tournament
+        </button>
     </div>
 
 </div>
