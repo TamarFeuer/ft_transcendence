@@ -21,15 +21,8 @@ export async function handleTournamentSocketEvent(data) {
     if (!data || typeof data !== 'object') return;
 
     if (data.type === 'timeUpdate') {
-        var other_player;
         console.log('data handleTournamentSocketEvent: ', data);
-
-        if (data.player_left != null)
-            other_player = data.player_left;
-        else
-            other_player = data.player_right;
-        updateTournamentTimer(data.game_id, data.remaining_time, other_player);
-
+        updateTournamentTimer(data.game_id, data.remaining_time, data.player_left, data.player_right);
         return;
     }
 
@@ -42,7 +35,7 @@ export async function handleTournamentSocketEvent(data) {
     }
 }
 
-function updateTournamentTimer(gameId, remainingTime, safeOtherPlayer) {
+function updateTournamentTimer(gameId, remainingTime, _left_player, _right_player) {
     const section = document.getElementById('tournamentTimerSection');
     if (!section) return;
 
@@ -54,7 +47,8 @@ function updateTournamentTimer(gameId, remainingTime, safeOtherPlayer) {
     } else {
         activeGameTimers.set(safeGameId, {
             remaining: safeRemaining,
-            otherPlayer: safeOtherPlayer,
+            right_player: _right_player,
+            left_player: _left_player,
         });
     }
 
@@ -77,8 +71,7 @@ function renderTournamentTimers() {
         .sort((a, b) => a[1] - b[1])
         .map(([id, timerData]) => `
             <div class="bg-blue-950/50 border border-blue-700 rounded px-3 py-2 text-blue-100 text-sm">
-                Game ${id}: <span class="font-bold text-white">${timerData.remaining}s</span> left to join
-                Player ${timerData.otherPlayer}
+                Game: ${timerData.left_player} vs ${timerData.right_player}: <span class="font-bold text-white">${timerData.remaining}s</span> left to join
             </div>
         `)
         .join('');
