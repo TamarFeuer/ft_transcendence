@@ -20,7 +20,15 @@ export async function handleTournamentSocketEvent(data) {
     if (!data || typeof data !== 'object') return;
 
     if (data.type === 'timeUpdate') {
-        updateTournamentTimer(data.game_id, data.remaining_time);
+        var other_player;
+        console.log('data handleTournamentSocketEvent: ', data);
+
+        if (data.player_left != null)
+            other_player = data.player_left;
+        else
+            other_player = data.player_right;
+        updateTournamentTimer(data.game_id, data.remaining_time, other_player);
+
         return;
     }
 
@@ -33,7 +41,7 @@ export async function handleTournamentSocketEvent(data) {
     }
 }
 
-function updateTournamentTimer(gameId, remainingTime) {
+function updateTournamentTimer(gameId, remainingTime, safeOtherPlayer) {
     const section = document.getElementById('tournamentTimerSection');
     if (!section) return;
 
@@ -43,7 +51,10 @@ function updateTournamentTimer(gameId, remainingTime) {
     if (safeRemaining <= 0) {
         activeGameTimers.delete(safeGameId);
     } else {
-        activeGameTimers.set(safeGameId, safeRemaining);
+        activeGameTimers.set(safeGameId, {
+            remaining: safeRemaining,
+            otherPlayer: safeOtherPlayer,
+        });
     }
 
     renderTournamentTimers();
@@ -63,9 +74,10 @@ function renderTournamentTimers() {
     section.classList.remove('hidden');
     const entries = Array.from(activeGameTimers.entries())
         .sort((a, b) => a[1] - b[1])
-        .map(([id, remaining]) => `
+        .map(([id, timerData]) => `
             <div class="bg-blue-950/50 border border-blue-700 rounded px-3 py-2 text-blue-100 text-sm">
-                Game ${id}: <span class="font-bold text-white">${remaining}s</span> left to join
+                Game ${id}: <span class="font-bold text-white">${timerData.remaining}s</span> left to join
+                Player ${timerData.otherPlayer}
             </div>
         `)
         .join('');

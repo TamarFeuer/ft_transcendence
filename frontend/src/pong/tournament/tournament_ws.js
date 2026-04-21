@@ -43,6 +43,9 @@ export function startTournamentUpdatesSocket(tournamentId, onEvent) {
 		tournamentSocket.onmessage = (event) => {
 			try {
 				const data = JSON.parse(event.data);
+				console.log('data tournementSocket: ', data);
+				console.log("DONE");
+
 				if (onEvent) onEvent(data);
 			} catch (err) {
 				console.error('Failed to parse tournament WS message:', err);

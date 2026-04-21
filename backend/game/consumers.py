@@ -52,6 +52,21 @@ def reset_game_to_ready(game_id):
         logger.debug(f"No tournament game found for game_id {game_id}")
         return False
 
+def get_tournament_game_players(game_id):
+    """Return scheduled tournament players for this game_id as JSON-safe fields."""
+    from tournament.models import TournamentGame
+    try:
+        game = TournamentGame.objects.select_related('player1', 'player2').get(game_id=game_id)
+        return {
+            'player_left': getattr(game.player1, 'username', None),
+            'player_right': getattr(game.player2, 'username', None),
+            'player_left_id': getattr(game.player1, 'id', None),
+            'player_right_id': getattr(game.player2, 'id', None),
+        }
+    except TournamentGame.DoesNotExist:
+        logger.debug(f"No tournament game found for game_id {game_id} when fetching players")
+        return None
+
 def update_game_completed(game_id, winner_id, winner_name):
     """Update tournament game with winner and completion status"""
     from tournament.models import TournamentGame
@@ -435,13 +450,32 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def check_join_timeout(self):
         """Check for join timeout and handle results if expired"""
         try:
+            scheduled_players = await sync_to_async(get_tournament_game_players)(self.game_id)
             while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
                 # Send remaining time update every second.
                 remaining_time = self.game.get_remaining_time()
+                if scheduled_players:
+                    player_left = scheduled_players.get('player_left')
+                    player_right = scheduled_players.get('player_right')
+                    player_left_id = scheduled_players.get('player_left_id')
+                    player_right_id = scheduled_players.get('player_right_id')
+                else:
+                    left_player = self.game.players.get('left')
+                    right_player = self.game.players.get('right')
+                    player_left = getattr(left_player, 'username', None)
+                    player_right = getattr(right_player, 'username', None)
+                    player_left_id = getattr(left_player, 'id', None)
+                    player_right_id = getattr(right_player, 'id', None)
+
                 timer_event = {
                     'type': 'time_update',
                     'remaining_time': remaining_time,
-                    'game_id': self.game_id
+                    'game_id': self.game_id,
+                    # Tournament-scheduled players (fallback: currently connected WS users).
+                    'player_left': player_left,
+                    'player_right': player_right,
+                    'player_left_id': player_left_id,
+                    'player_right_id': player_right_id,
                 }
                 await self.channel_layer.group_send(self.game_group_name, timer_event)
                 await self.channel_layer.group_send(self.tournament_group_name, timer_event)
@@ -516,7 +550,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'timeUpdate',
             'remaining_time': event['remaining_time'],
-            'game_id': event.get('game_id')
+            'game_id': event.get('game_id'),
+            'player_left': event.get('player_left'),
+            'player_right': event.get('player_right'),
+            'player_left_id': event.get('player_left_id'),
+            'player_right_id': event.get('player_right_id')
         }))
 
     async def tournament_event(self, event):
