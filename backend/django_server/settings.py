@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'users',
     'friends',
     'chessgame',
-    'profiles'
+    'profiles',
+    'axes'
 ]
 
 print("Based dir:", BASE_DIR)
@@ -48,6 +49,18 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',
+]
+
+# Axes configuration
+AXES_FAILURE_LIMIT = 5          # lock after 5 failed attempts
+AXES_COOLOFF_TIME = 1           # unlock after 1 hour (or use timedelta)
+AXES_LOCKOUT_PARAMETERS = ["username"]
+AXES_RESET_ON_SUCCESS = True    # reset counter on successful login
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 ROOT_URLCONF = 'django_server.urls'

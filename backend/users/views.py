@@ -96,7 +96,7 @@ def login_view(request):
         data = json.loads(request.body.decode())
         username = data.get('username')
         password = data.get('password')
-        user = authenticate(username=username, password=password)
+        user = authenticate(request, username=username, password=password)
         if user is None:
             return JsonResponse({'error': 'invalid credentials'}, status=401)
         access_token, refresh_token = generate_tokens(user)
