@@ -347,6 +347,7 @@ export function joinOnlineGame(gameId, IsTournament) {
       sessionStorage.removeItem('activeTournamentId');
 
     }
+    canvas.remove();
     if (IsTournament) {
       navigate(`/tournament/${window.currentTournamentId}`);
     } else {

@@ -286,8 +286,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                     self.game.state['score']['p2'] = 0
                 result_data = await database_sync_to_async(match_ends)(
                     self.game,
-                    self.game.players['left'],
-                    self.game.players['right'],
+                    players_before['left'],
+                    players_before['right'],
                 )
                 new_achievements = result_data.get('new_achievements', {})
 
