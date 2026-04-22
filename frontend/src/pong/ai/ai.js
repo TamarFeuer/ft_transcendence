@@ -130,7 +130,7 @@ export function initAIGame(scene, gameObjects, tournament) {
 
             // Check winner
             if (scoreP1int >= 10 || scoreP2int >= 10) {
-                endGame(true);
+                setTimeout(() => endGame(true), 0);
             }
         });
         // cleanup & end logic & evenlisteners
