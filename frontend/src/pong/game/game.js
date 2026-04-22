@@ -181,8 +181,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
           <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
           <p class="text-gray-300 mb-2">Game will start soon</p>
-          <div class="text-4xl font-mono font-bold text-green-400 mb-6" id="countdownTimer">60</div>
-          <p class="text-gray-400 text-sm mb-6">Game will proceed automatically when timer expires</p>
           <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
             Leave Game
           </button>
@@ -277,14 +275,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         const playerNameElem = document.getElementById(`playerName${data.role}`);
         if (playerNameElem) {
           playerNameElem.textContent = currentUsername;
-        }
-      }
-
-      if (data.type === "timeUpdate") {
-        // Update countdown timer
-        const timerElem = document.getElementById("countdownTimer");
-        if (timerElem) {
-          timerElem.textContent = data.remaining_time;
         }
       }
 

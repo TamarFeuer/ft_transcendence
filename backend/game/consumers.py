@@ -248,8 +248,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Start game loop
             asyncio.create_task(self.game_loop())
         else:
-            # Start timeout checker if this is a tournament game in waiting state
-            asyncio.create_task(self.check_join_timeout())
+            if self.game.isTournamentGame:
+                # Start timeout checker if this is a tournament game in waiting state
+                asyncio.create_task(self.check_join_timeout())
 
     async def disconnect(self, close_code):
         logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
@@ -414,6 +415,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
     
     async def check_join_timeout(self):
+        if not self.game or not sef.game.isTournamentGame:
+            return
         """Check for join timeout and handle results if expired"""
         while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
             # Send remaining time update every second
