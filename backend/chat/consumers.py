@@ -157,6 +157,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		elif msg_type == "get_conversations":
 			conversations = await self.get_conversations(self.user_id)
+			logger.info(f"[get_conversations] user={self.username}({self.user_id}) → {conversations}")
 			await self.send(text_data=json.dumps({
 				"type": "conversations",
 				"conversations": conversations
@@ -168,11 +169,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				# Track that this user is now actively viewing this DM tab.
 				# Used in save_dm to skip the unread increment for active viewers.
 				ACTIVE_CONVERSATION[self.user_id] = other_id
+			else:
+				# null target means the user switched away (e.g. to global) — clear so
+				# save_dm doesn't keep skipping the unread increment for their old DM.
+				ACTIVE_CONVERSATION.pop(self.user_id, None)
 
 		elif msg_type == "mark_read":
 			other_id = data.get("target")
 			if not other_id:
 				return
+			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {other_id}")
 			# Reset the unread counter for this conversation in the database.
 			await self.mark_read(self.user_id, other_id)
 
@@ -369,6 +375,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# F('unread_count') + 1 is a database-level increment — avoids race conditions
 		# if two messages arrive at the same time.
 		recipient_is_viewing = ACTIVE_CONVERSATION.get(recipient_id) == self.user_id
+		logger.info(f"[save_dm] sender={self.user_id} → recipient={recipient_id} | ACTIVE_CONVERSATION={dict(ACTIVE_CONVERSATION)} | recipient_is_viewing={recipient_is_viewing}")
 		if not recipient_is_viewing:
 			ConversationParticipant.objects.filter(
 				conversation=conversation,

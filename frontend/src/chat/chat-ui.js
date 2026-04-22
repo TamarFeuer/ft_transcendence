@@ -72,8 +72,8 @@ export function initChatUI() {
 			const name = onlineUsers[channelId]?.name;
 			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
 			markRead(channelId);
-			openConversation(channelId);
 		}
+		openConversation(channelId === "global" ? null : channelId);
 
 		// If this is a DM with no history loaded yet, fetch it now
 		if (channelId !== "global" && (!messageHistory[channelId] || messageHistory[channelId].length === 0)) {
