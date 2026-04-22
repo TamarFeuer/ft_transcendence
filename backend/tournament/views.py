@@ -127,7 +127,7 @@ class TournamentStartView(APIView):
                         round=round_index + 1,
                         player1=p1.user,
                         player2=p2.user,
-                        status='ready'
+                        status='waiting_active_round' if (round_index + 1) == 1 else 'ready'
                     )
                     logger.debug(f"Paired {p1.user.username} vs {p2.user.username} in round {round_index + 1}")
             all_pairings.extend(round_pairings)
@@ -247,7 +247,7 @@ class TournamentUserReadyGamesListView(APIView):
         from django.db.models import Q
         games = TournamentGame.objects.filter(
             tournament_id=tournament_id,
-            status__in=['ready', '1/2 players ready']
+            status__in=['waiting_active_round', '1/2 players ready']
         ).filter(Q(player1=user) | Q(player2=user))
     
         serializer = TournamentGameSerializer(games, many=True)
@@ -305,7 +305,7 @@ class StartTournamentGameView(APIView):
                 'player2': game.player2.username
             }, status=status.HTTP_200_OK)
         
-        if game.status != 'ready' and game.status != '1/2 players ready':
+        if game.status != 'waiting_active_round' and game.status != '1/2 players ready':
             return Response({'error': 'game is not ready'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create GameSession from game app
@@ -387,8 +387,10 @@ class UpdateTournamentGameResultView(APIView):
             # Determine next round number
             next_round = current_round + 1
 
-            # If next-round games are already scheduled (e.g., round-robin), don't auto-generate
-            if TournamentGame.objects.filter(tournament=tournament, round=next_round).exists():
+            # Promote next round to active waiting state once current round is fully completed.
+            next_round_games = TournamentGame.objects.filter(tournament=tournament, round=next_round)
+            if next_round_games.exists():
+                next_round_games.filter(status='ready').update(status='waiting_active_round')
                 logger.debug(f"Next round {next_round} already scheduled; skipping auto-generation.")
                 next_round_response = next_round
 

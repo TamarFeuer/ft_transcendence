@@ -6,6 +6,7 @@ import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
 import { joinOnlineGame } from '../game/game.js';
 
 const activeGameTimers = new Map();
+const ACTIVE_ROUND_TIMEOUT_SECONDS = 25;
 
 export async function loadTournamentGames() {
   
@@ -187,11 +188,14 @@ async function loadAllGamesStatus() {
 
     if (allGamesResult.ok && allGamesResult.data) {
         const ongoingList = document.getElementById('ongoingGamesList');
+        const futureList = document.getElementById('futureGamesList');
         const completedList = document.getElementById('completedGamesList');
         ongoingList.innerHTML = '';
+        futureList.innerHTML = '';
         completedList.innerHTML = '';
         
         const ongoingGames = allGamesResult.data.filter(g => g.status === 'ongoing');
+        const futureGames = allGamesResult.data.filter(g => g.status === 'ready' || g.status === 'pending');
         const completedGames = allGamesResult.data.filter(g => g.status === 'completed');
         
         if (ongoingGames.length === 0) {
@@ -207,6 +211,24 @@ async function loadAllGamesStatus() {
             </div>
             `;
             ongoingList.appendChild(gameDiv);
+        });
+        }
+
+        if (futureGames.length === 0) {
+        futureList.innerHTML = '<p class="text-gray-400">No future round games</p>';
+        } else {
+        futureGames
+            .sort((a, b) => Number(a.round || 0) - Number(b.round || 0))
+            .forEach(game => {
+            const gameDiv = document.createElement('div');
+            gameDiv.className = 'bg-gray-800 rounded-lg p-4 border border-indigo-500';
+            gameDiv.innerHTML = `
+            <div class="text-white">
+                <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
+                <div class="text-indigo-300 text-sm">Round ${game.round} - ${game.status === 'ready' ? 'Scheduled' : 'Pending'}</div>
+            </div>
+            `;
+            futureList.appendChild(gameDiv);
         });
         }
         

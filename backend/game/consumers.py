@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 
 # Helper functions for database operations (synchronous)
 def update_game_to_ready(game_id):
-    """Update tournament game status to ready"""
+    """Update tournament game status to waiting_active_round"""
     from tournament.models import TournamentGame
     try:
         tournament_game = TournamentGame.objects.get(game_id=game_id)
-        tournament_game.status = 'ready'
+        tournament_game.status = 'waiting_active_round'
         tournament_game.save()
-        logger.info(f"Tournament game {game_id} status updated to ready")
+        logger.info(f"Tournament game {game_id} status updated to waiting_active_round")
         return True
     except TournamentGame.DoesNotExist:
         logger.debug(f"No tournament game found for game_id {game_id}")
@@ -40,16 +40,26 @@ def update_game_to_ongoing(game_id):
         return False
 
 def reset_game_to_ready(game_id):
-    """Reset tournament game status to ready after all players disconnect"""
+    """Reset tournament game status to waiting_active_round after all players disconnect"""
     from tournament.models import TournamentGame
     try:
         tournament_game = TournamentGame.objects.get(game_id=game_id)
-        tournament_game.status = 'ready'
+        tournament_game.status = 'waiting_active_round'
         tournament_game.save()
-        logger.info(f"Tournament game {game_id} reset to ready after all players disconnected")
+        logger.info(f"Tournament game {game_id} reset to waiting_active_round after all players disconnected")
         return True
     except TournamentGame.DoesNotExist:
         logger.debug(f"No tournament game found for game_id {game_id}")
+        return False
+
+def can_start_timeout_for_game(game_id):
+    """Timeout is only enabled for games in the currently active round."""
+    from tournament.models import TournamentGame
+    try:
+        tournament_game = TournamentGame.objects.get(game_id=game_id)
+        return tournament_game.status in ('waiting_active_round', '1/2 players ready')
+    except TournamentGame.DoesNotExist:
+        logger.debug(f"No tournament game found for game_id {game_id} when checking timeout eligibility")
         return False
 
 def get_tournament_game_players(game_id):
@@ -107,8 +117,10 @@ def update_game_completed(game_id, winner_id, winner_name):
             # Determine next round number
             next_round = current_round + 1
 
-            # If next-round games are already scheduled (e.g., round-robin), don't auto-generate
-            if TournamentGame.objects.filter(tournament=tournament, round=next_round).exists():
+            # Promote next round to active waiting state once current round is fully completed.
+            next_round_games = TournamentGame.objects.filter(tournament=tournament, round=next_round)
+            if next_round_games.exists():
+                next_round_games.filter(status='ready').update(status='waiting_active_round')
                 logger.debug(f"Next round {next_round} already scheduled; skipping auto-generation.")
                 next_round_response = next_round
 
@@ -153,8 +165,10 @@ def update_game_completed_tie(game_id):
             # Determine next round number
             next_round = current_round + 1
 
-            # If next-round games are already scheduled (e.g., round-robin), don't auto-generate
-            if TournamentGame.objects.filter(tournament=tournament, round=next_round).exists():
+            # Promote next round to active waiting state once current round is fully completed.
+            next_round_games = TournamentGame.objects.filter(tournament=tournament, round=next_round)
+            if next_round_games.exists():
+                next_round_games.filter(status='ready').update(status='waiting_active_round')
                 logger.debug(f"Next round {next_round} already scheduled; skipping auto-generation.")
                 next_round_response = next_round
 
@@ -204,7 +218,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         players = self.game.get_players()
         if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
             logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
-            self.game.status = 'ready'
+            self.game.status = 'waiting'
             # Update tournament game status in database
             await sync_to_async(update_game_to_ready)(self.game_id)
             await self.close(code=4005)
@@ -279,8 +293,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Start game loop
             asyncio.create_task(self.game_loop())
         else:
-            # Start timeout checker if this is a tournament game in waiting state
-            if not getattr(self.game, 'timeout_task_started', False):
+            # Start timeout checker only for active-round tournament games.
+            can_start_timeout = await sync_to_async(can_start_timeout_for_game)(self.game_id)
+            if can_start_timeout and not getattr(self.game, 'timeout_task_started', False):
                 self.game.timeout_task_started = True
                 asyncio.create_task(self.check_join_timeout())
 
