@@ -49,6 +49,7 @@ class TournamentGame(models.Model):
     GAME_STATUS = [
         ('pending', 'Pending'),
         ('ready', 'Ready'),
+        ('waiting_active_round', 'Waiting Active Round'),
         ('0/2 players ready', '0/2 Players Ready'),
         ('1/2 players ready', '1/2 Players Ready'),
         ('ongoing', 'Ongoing'),
