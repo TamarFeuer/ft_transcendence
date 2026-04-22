@@ -29,6 +29,43 @@ function showAchievements(achievements) {
     setTimeout(() => overlay.remove(), 6000);
 }
 
+function showPongResultModal({ winnerId, winnerName, currentUserId }) {
+  const didWin = winnerId != null && Number(winnerId) === currentUserId;
+  const title = didWin ? 'You Won!' : 'You Lost';
+  const accent = didWin ? 'border-green-400 text-green-300' : 'border-red-400 text-red-300';
+  const glow = didWin
+    ? 'shadow-[0_0_30px_rgba(74,222,128,0.35)]'
+    : 'shadow-[0_0_30px_rgba(248,113,113,0.35)]';
+  const overlay = document.createElement('div');
+  overlay.id = 'pongResultModal';
+  overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm';
+  overlay.innerHTML = `
+    <div class="w-[92%] max-w-md rounded-2xl border ${accent} bg-zinc-900/95 p-6 ${glow}">
+      <h2 class="text-3xl font-extrabold tracking-wide ${didWin ? 'text-green-300' : 'text-red-300'}">
+        ${title}
+      </h2>
+      <div class="mt-5 rounded-lg bg-zinc-800/70 p-3">
+        <p class="text-sm text-zinc-400">Result</p>
+        <p class="text-base text-white">
+          ${winnerName ? `${winnerName} wins` : (didWin ? 'Victory' : 'Defeat')}
+        </p>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="pongResultOkBtn"
+          class="rounded-lg bg-violet-600 px-4 py-2 text-white hover:bg-violet-500">
+          Continue
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  document.getElementById('pongResultOkBtn')?.addEventListener('click', close, { once: true });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+}
+
 // --- Game Variables ---
 let ws = null;
 let currentGameId = null;
@@ -95,8 +132,8 @@ export function joinOnlineGame(gameId, IsTournament) {
   if (IsTournament) {
     sessionStorage.setItem('activeTournamentId', window.currentTournamentId);
   }
-  const currentUserId = String(window.CURRENT_USER?.user_id ?? '');
-  const currentUsername = window.CURRENT_USER?.username || 'Player';
+  const currentUsername = localStorage.getItem('username') || window.CURRENT_USER?.username || 'Player';
+  let assignedUserId = null;
   const canvas = createGameCanvas();
 
   const engine = new Engine(canvas, true);
@@ -112,11 +149,11 @@ export function joinOnlineGame(gameId, IsTournament) {
   // Connect to backend on port 3000 (not vite dev server on 5173)
   const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
 
-  console.log("DEV import:", import.meta.env.DEV);
-  console.log("WS Host:", wsHost);
-  console.log("location.host:", location.host);
+  // console.log("DEV import:", import.meta.env.DEV);
+  // console.log("WS Host:", wsHost);
+  // console.log("location.host:", location.host);
 
-  const url = `${proto}//${location.host}/ws/${gameId}`;
+  const url = `${proto}//${wsHost}/ws/${gameId}`;
   ws = new WebSocket(url);
 
   ws.onopen = () => {
@@ -144,8 +181,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
           <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
           <p class="text-gray-300 mb-2">Game will start soon</p>
-          <div class="text-4xl font-mono font-bold text-green-400 mb-6" id="countdownTimer">60</div>
-          <p class="text-gray-400 text-sm mb-6">Game will proceed automatically when timer expires</p>
           <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
             Leave Game
           </button>
@@ -153,6 +188,16 @@ export function joinOnlineGame(gameId, IsTournament) {
       </div>
     </div>
     `;
+
+    document.getElementById('leaveWaitingBtn')?.addEventListener('click', () => {
+        gameEnded = true;
+        ws?.close();
+        ws = null;
+        isGameActive = false;
+        sessionStorage.removeItem('activeGameId');
+        sessionStorage.removeItem('activeTournamentId');
+        navigate('/');
+    })
   };
 
   ws.onerror = (e) => console.error("WS error", e);
@@ -228,6 +273,11 @@ export function joinOnlineGame(gameId, IsTournament) {
 
       if (data.type === "assign") {
         console.log("Assigned role:", data.role);
+        const parsedAssignedId = Number(data.user_id);
+        if (Number.isFinite(parsedAssignedId)) {
+          assignedUserId = parsedAssignedId;
+          localStorage.setItem('user_id', String(parsedAssignedId));
+        }
 
         
 
@@ -235,14 +285,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         const playerNameElem = document.getElementById(`playerName${data.role}`);
         if (playerNameElem) {
           playerNameElem.textContent = currentUsername;
-        }
-      }
-
-      if (data.type === "timeUpdate") {
-        // Update countdown timer
-        const timerElem = document.getElementById("countdownTimer");
-        if (timerElem) {
-          timerElem.textContent = data.remaining_time;
         }
       }
 
@@ -255,21 +297,22 @@ export function joinOnlineGame(gameId, IsTournament) {
           waitingModal.remove();
         }
 
-        showMessage(`${data.winner} wins!`)
-        const userId = String(window.CURRENT_USER?.user_id ?? '');
+        const localUserId = Number(localStorage.getItem('user_id'));
+        const currentUserId = Number.isFinite(assignedUserId) ? assignedUserId : localUserId;
+        showPongResultModal({
+          winnerId: data.winner_id,
+          winnerName: data.winner,
+          currentUserId,
+        });
+        const userId = String(Number.isFinite(currentUserId) ? currentUserId : '');
         const myAchievements = (data.new_achievements || {})[userId] || [];
         showAchievements(myAchievements);
-        console.log("after yes");
         // Clean up event listeners and intervals
         clearInterval(keyboardInterval);
         window.removeEventListener("pointermove", pointerHandler);
         window.removeEventListener("keydown", keyDownHandler);
         window.removeEventListener("keyup", keyUpHandler);
-        console.log("data:", data);
-        console.log("gameId:", gameId);
-        console.log("data.winner.id:", data.winner_id);
-        console.log("window.CURRENT_USER?.user_id:", String(window.CURRENT_USER?.user_id));
-
+       
         if (window.gameObjects) {
           scene.dispose();
           engine.dispose();
@@ -304,11 +347,27 @@ export function joinOnlineGame(gameId, IsTournament) {
       sessionStorage.removeItem('activeTournamentId');
 
     }
+    canvas.remove();
     if (IsTournament) {
       navigate(`/tournament/${window.currentTournamentId}`);
     } else {
       console.log("DIBADIBADIBADOEDOE\n");
-      navigate('/online');
+      navigate('/');
     }
   };
+}
+
+
+export async function joinMatchmaking(){
+  const res = await fetch('/api/game/join', { 
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (!res.ok){
+    const text = await res.text();
+    throw new Error('join failed ${res.status}: ${text}');
+  }
+  const { gameId } = await res.json();
+  joinOnlineGame(gameId, false);
 }
