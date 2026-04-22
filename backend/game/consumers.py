@@ -300,7 +300,16 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'new_achievements': new_achievements,
                     }
                 )
-            
+                await self.channel_layer.group_send(
+                    "global_chat",                                                               
+                    {           
+                        "type": "game_result",
+                        "winner": winner_name,              
+                        "game_type": "pong",        # or "chess"
+                        "is_tournament": self.game.isTournamentGame
+                    }                                                                            
+                )
+
             # If all players are gone, reset game to waiting state
             players = self.game.get_players()
             if players['left'] is None and players['right'] is None and self.game.status != "completed":
@@ -317,6 +326,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'winner': 'Player disconnected',
                         'winner_id': None
                     }
+                )
+                await self.channel_layer.group_send(
+                    "global_chat",                                                               
+                    {           
+                        "type": "game_result",
+                        "winner": None,              
+                        "game_type": "pong",        # or "chess"
+                        "is_tournament": self.game.isTournamentGame
+                    }                                                                            
                 )
         
         if hasattr(self, 'game_group_name'):
@@ -338,7 +356,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """Main game loop running at 60 FPS"""
         while self.game and self.game.status == 'active':
             result = self.game.tick()
-            logger.debug(f"Game tick result: {result}")
+            # logger.debug(f"Game tick result: {result}")
             if result:
                 await self.channel_layer.group_send(
                     self.game_group_name,
@@ -413,7 +431,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             'winner_id': event['winner_id'],
             'new_achievements': event.get('new_achievements', {}),
         }))
-    
+
     async def check_join_timeout(self):
         """Check for join timeout and handle results if expired"""
         while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
