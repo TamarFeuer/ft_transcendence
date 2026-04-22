@@ -29,51 +29,43 @@ export function initAIGame(scene, gameObjects, tournament) {
         // Simulated Annealing
         const keyboardIntervalP1 = setInterval(() => {
             const paddleY = gameObjects.paddleLeft.position.y;
-            const ballY = gameObjects.ball.position.y;
+            const ballX   = gameObjects.ball.position.x;
+            const ballY   = gameObjects.ball.position.y;
+            const paddleX = gameObjects.paddleLeft.position.x; // -4
 
-            // AI tries to move paddle towards ball
-            const difference = ballY - paddleY;
-            const direction = difference > 0 ? 1 : -1;
+            let targetY;
 
-            if (gameObjects.ball.position.x < 0 && Math.abs(difference) > 0.5) {
-                // Current energy (distance from ball)
-                const currentEnergy = Math.abs(difference);
+            if (ballVX < 0) {
+                // Ball is heading toward the AI — predict landing Y
+                const ticksToReach = (ballX - paddleX) / Math.abs(ballVX);
+                let predictedY = ballY + ballVY * ticksToReach;
 
-                // Propose a random move
-                const proposedMove = Math.random() < 0.5 ? 0.8 : -0.8;
-                const newY = paddleY + proposedMove;
-                const newEnergy = Math.abs(ballY - newY);
+                // Simulate wall bounces (walls at y = +5 and y = -5)
+                const topWall = 5, bottomWall = -5;
+                const range = topWall - bottomWall; // 10
+                // Fold predictedY into [bottomWall, topWall] with bounce reflections
+                predictedY = predictedY - bottomWall;       // shift to [0, range]
+                predictedY = ((predictedY % (range * 2)) + range * 2) % (range * 2); // wrap to [0, 2*range]
+                if (predictedY > range) predictedY = range * 2 - predictedY; // reflect
+                predictedY = predictedY + bottomWall;       // shift back
 
-                // Energy difference (negative = improvement)
-                const deltaE = newEnergy - currentEnergy;
-
-                // Acceptance probability: always accept improvements,
-                // sometimes accept worse moves based on temperature
-                const acceptProbability = deltaE < 0 ? 1.0 : Math.exp(-deltaE / gameObjects.temperature);
-
-                // Accept or reject the move
-                if (Math.random() < acceptProbability) {
-                    // Move the paddle if the move makes and improvement, if not wait for the next iteration to try again
-                    if ((newY - paddleY) * direction > 0) {
-                    gameObjects.paddleLeft.position.y = newY;
-                    }
-                }
-
-                // Cool down
-                gameObjects.temperature *= 0.99;
-                if (gameObjects.temperature < 0.5) {
-                    gameObjects.temperature = 0.5;
-                }
+                // Add error: AI aims near the right spot but not perfectly
+                const maxError = 2.5; // higher = more misses (~50/50 at 2.5)
+                targetY = predictedY + (Math.random() * 2 - 1) * maxError;
+            } else {
+                // Ball moving away — drift back to center so AI is ready
+                targetY = 0;
             }
 
-            // Keep paddle within bounds
-            if (gameObjects.paddleRight.position.y > 4.5) {
-                gameObjects.paddleRight.position.y = 4.5;
-            }
-            if (gameObjects.paddleRight.position.y < -4.5) {
-                gameObjects.paddleRight.position.y = -4.5;
+            const difference = targetY - paddleY;
+            const speed = 0.15;
 
+            if (Math.abs(difference) > 0.1) {
+                gameObjects.paddleLeft.position.y += Math.sign(difference) * Math.min(speed, Math.abs(difference));
             }
+
+            // Clamp AI paddle within bounds (fix #2 also applied here)
+            gameObjects.paddleLeft.position.y = Math.max(-4.5, Math.min(4.5, gameObjects.paddleLeft.position.y));
         }, standartSpeed);
 
         // Player 2 controls (Arrow keys)

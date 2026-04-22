@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'users',
     'friends',
     'chessgame',
-    'profiles'
 ]
 
 print("Based dir:", BASE_DIR)
