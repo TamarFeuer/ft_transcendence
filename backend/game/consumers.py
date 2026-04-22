@@ -52,6 +52,21 @@ def reset_game_to_ready(game_id):
         logger.debug(f"No tournament game found for game_id {game_id}")
         return False
 
+def get_tournament_game_players(game_id):
+    """Return scheduled tournament players for this game_id as JSON-safe fields."""
+    from tournament.models import TournamentGame
+    try:
+        game = TournamentGame.objects.select_related('player1', 'player2').get(game_id=game_id)
+        return {
+            'player_left': getattr(game.player1, 'username', None),
+            'player_right': getattr(game.player2, 'username', None),
+            'player_left_id': getattr(game.player1, 'id', None),
+            'player_right_id': getattr(game.player2, 'id', None),
+        }
+    except TournamentGame.DoesNotExist:
+        logger.debug(f"No tournament game found for game_id {game_id} when fetching players")
+        return None
+
 def update_game_completed(game_id, winner_id, winner_name):
     """Update tournament game with winner and completion status"""
     from tournament.models import TournamentGame
@@ -167,6 +182,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         if not self.game:
             await self.close(code=4004)
             return
+        self.tournament_group_name = f'tournament_{self.game.tournament_id}'
+        self.tournament_id = self.game.tournament_id
+        self.all_players_in_tournament = self.game.all_players_in_tournament
+
+
 
         # Check cookies from headers
         headers = dict(self.scope.get('headers', []))
@@ -246,11 +266,23 @@ class GameConsumer(AsyncWebsocketConsumer):
                     'p2_id': getattr(p2, 'id', None)
                 }
             )
+            await self.channel_layer.group_send(
+                self.tournament_group_name,
+                {
+                    'type': 'tournament_event',
+                    'event_name': 'gameStart',
+                    'game_id': self.game_id,
+                    'p1_id': getattr(p1, 'id', None),
+                    'p2_id': getattr(p2, 'id', None)
+                }
+            )
             # Start game loop
             asyncio.create_task(self.game_loop())
         else:
             # Start timeout checker if this is a tournament game in waiting state
-            asyncio.create_task(self.check_join_timeout())
+            if not getattr(self.game, 'timeout_task_started', False):
+                self.game.timeout_task_started = True
+                asyncio.create_task(self.check_join_timeout())
 
     async def disconnect(self, close_code):
         logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
@@ -298,6 +330,16 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'winner': winner_name,
                         'winner_id': winner_id,
                         'new_achievements': new_achievements,
+                    }
+                )
+                await self.channel_layer.group_send(
+                    self.tournament_group_name,
+                    {
+                        'type': 'tournament_event',
+                        'event_name': 'gameOver',
+                        'game_id': self.game_id,
+                        'winner': winner_name,
+                        'winner_id': winner_id
                     }
                 )
             
@@ -383,6 +425,22 @@ class GameConsumer(AsyncWebsocketConsumer):
                             'new_achievements': new_achievements,
                         }
                     )
+                    await self.channel_layer.group_send(
+                        self.tournament_group_name,
+                        {
+                            'type': 'tournament_event',
+                            'event_name': 'gameOver',
+                            'game_id': self.game_id,
+                            'winner': winner_name,
+                            'winner_id': winner_id
+                        }
+                    )
+                    # Run DB work in sync thread; pass users and resolve profiles in service.
+                    await database_sync_to_async(match_ends)(
+                        self.game,
+                        self.game.players['left'],
+                        self.game.players['right'],
+                    )
                     break
             
             await asyncio.sleep(1/60)  # 60 FPS
@@ -416,65 +474,117 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     async def check_join_timeout(self):
         """Check for join timeout and handle results if expired"""
-        while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
-            # Send remaining time update every second
-            remaining_time = self.game.get_remaining_time()
-            await self.channel_layer.group_send(
-                self.game_group_name,
-                {
-                    'type': 'time_update',
-                    'remaining_time': remaining_time
-                }
-            )
-            logger.debug(f"check_join_timeout")
-
-            # Check if timeout has expired
-            if self.game.is_timeout_expired() and not self.game.timeout_handled:
-                self.game.timeout_handled = True
-                winner_role, winner_name, winner_id, is_tie = self.game.get_timeout_result()
-                
-                self.game.status = 'completed'
-                logger.debug(f"self.game.is_timeout_expired() and not self.game.timeout_handled: {is_tie}")
-
-                if is_tie:
-                    # No players joined - it's a tie
-                    await sync_to_async(update_game_completed_tie)(self.game_id)
-                    await self.channel_layer.group_send(
-                        self.game_group_name,
-                        {
-                            'type': 'game_over',
-                            'winner': 'Tie - No players joined',
-                            'winner_id': None
-                        }
-                    )
+        try:
+            scheduled_players = await sync_to_async(get_tournament_game_players)(self.game_id)
+            while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
+                # Send remaining time update every second.
+                remaining_time = self.game.get_remaining_time()
+                if scheduled_players:
+                    player_left = scheduled_players.get('player_left')
+                    player_right = scheduled_players.get('player_right')
+                    player_left_id = scheduled_players.get('player_left_id')
+                    player_right_id = scheduled_players.get('player_right_id')
                 else:
-                    # One player joined - they win by default
-                    await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+                    left_player = self.game.players.get('left')
+                    right_player = self.game.players.get('right')
+                    player_left = getattr(left_player, 'username', None)
+                    player_right = getattr(right_player, 'username', None)
+                    player_left_id = getattr(left_player, 'id', None)
+                    player_right_id = getattr(right_player, 'id', None)
+
+                timer_event = {
+                    'type': 'time_update',
+                    'remaining_time': remaining_time,
+                    'game_id': self.game_id,
+                    # Tournament-scheduled players (fallback: currently connected WS users).
+                    'player_left': player_left,
+                    'player_right': player_right,
+                    'player_left_id': player_left_id,
+                    'player_right_id': player_right_id,
+                }
+                await self.channel_layer.group_send(self.game_group_name, timer_event)
+                await self.channel_layer.group_send(self.tournament_group_name, timer_event)
+                logger.debug(f"check_join_timeout")
+
+                # Check if timeout has expired
+                if self.game.is_timeout_expired() and not self.game.timeout_handled:
+                    self.game.timeout_handled = True
+                    winner_role, winner_name, winner_id, is_tie = self.game.get_timeout_result()
+
+                    self.game.status = 'completed'
+                    logger.debug(f"self.game.is_timeout_expired() and not self.game.timeout_handled: {is_tie}")
+
+                    if is_tie:
+                        # No players joined - it's a tie
+                        await sync_to_async(update_game_completed_tie)(self.game_id)
+                        await self.channel_layer.group_send(
+                            self.game_group_name,
+                            {
+                                'type': 'game_over',
+                                'winner': 'Tie - No players joined',
+                                'winner_id': None
+                            }
+                        )
+                        await self.channel_layer.group_send(
+                            self.tournament_group_name,
+                            {
+                                'type': 'tournament_event',
+                                'event_name': 'gameOver',
+                                'game_id': self.game_id,
+                                'winner': 'Tie - No players joined',
+                                'winner_id': None
+                            }
+                        )
+                    else:
+                        # One player joined - they win by default
+                        await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+                        await self.channel_layer.group_send(
+                            self.game_group_name,
+                            {
+                                'type': 'game_over',
+                                'winner': winner_name,
+                                'winner_id': winner_id
+                            }
+                        )
+                        await self.channel_layer.group_send(
+                            self.tournament_group_name,
+                            {
+                                'type': 'tournament_event',
+                                'event_name': 'gameOver',
+                                'game_id': self.game_id,
+                                'winner': winner_name,
+                                'winner_id': winner_id
+                            }
+                        )
+                    # Close all client connections
                     await self.channel_layer.group_send(
                         self.game_group_name,
                         {
-                            'type': 'game_over',
-                            'winner': winner_name,
-                            'winner_id': winner_id
+                            'type': 'close_connection'
                         }
                     )
-                # Close all client connections
-                await self.channel_layer.group_send(
-                    self.game_group_name,
-                    {
-                        'type': 'close_connection'
-                    }
-                )
-                break
-            
-            await asyncio.sleep(1)  # Check every second
+                    break
+
+                await asyncio.sleep(1)  # Check every second
+        finally:
+            if self.game:
+                self.game.timeout_task_started = False
     
     async def time_update(self, event):
         """Send remaining time to client"""
         await self.send(text_data=json.dumps({
             'type': 'timeUpdate',
-            'remaining_time': event['remaining_time']
+            'remaining_time': event['remaining_time'],
+            'game_id': event.get('game_id'),
+            'player_left': event.get('player_left'),
+            'player_right': event.get('player_right'),
+            'player_left_id': event.get('player_left_id'),
+            'player_right_id': event.get('player_right_id')
         }))
+
+    async def tournament_event(self, event):
+        """Ignore tournament-only broadcasts in per-game consumer."""
+        return
     
     async def close_connection(self, event):
         """Close the websocket connection"""

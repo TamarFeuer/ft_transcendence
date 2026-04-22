@@ -312,7 +312,16 @@ class StartTournamentGameView(APIView):
         from game.models import GameSession
         game_session = GameSession.create_game()
         game_session.isTournamentGame = True
-        
+
+        # We already resolved TournamentGame by integer id above.
+        tournament_id = game.tournament.id
+        game_session.tournament_id = tournament_id
+
+        participants = TournamentParticipant.objects.filter(
+            tournament_id=tournament_id
+        ).order_by('-score', 'joined_at')
+
+        game_session.all_players_in_tournament = participants
         # Link tournament game to game session
         game.game_id = game_session.id
         # game.status = 'ongoing'

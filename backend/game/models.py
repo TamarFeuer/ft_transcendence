@@ -23,6 +23,8 @@ class GameSession:
             'score': {'p1': 0, 'p2': 0},
             'winningScore': 5
         }
+        self.all_players_in_tournament = None
+        self.tournament_id = None
         self.isTournamentGame = False
         self.players = {'left': None, 'right': None}
         self.players_ids = {'left': None, 'right': None}

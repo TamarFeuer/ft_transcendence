@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite';
 
+const backendTarget = process.env.VITE_BACKEND_URL || 'http://127.0.0.1:3000';
+
 export default defineConfig({
   root: '.',
   build: {
@@ -11,11 +13,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://backend:3000',
+        target: backendTarget,
         changeOrigin: true
       },
       '/ws': {
-        target: 'ws://backend:3000',
+        target: backendTarget,
         ws: true,
         changeOrigin: true
       },

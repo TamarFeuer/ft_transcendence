@@ -5,6 +5,8 @@ import { checkAuthRequired } from '../../users_friends/usermanagement.js';
 import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
 import { joinOnlineGame } from '../game/game.js';
 
+const activeGameTimers = new Map();
+
 export async function loadTournamentGames() {
   
     loadLeaderBoard();
@@ -12,6 +14,73 @@ export async function loadTournamentGames() {
     loadReadyGames();
 
     loadAllGamesStatus();
+}
+
+export async function handleTournamentSocketEvent(data) {
+    if (!data || typeof data !== 'object') return;
+
+    if (data.type === 'timeUpdate') {
+        console.log('data handleTournamentSocketEvent: ', data);
+        updateTournamentTimer(data.game_id, data.remaining_time, data.player_left, data.player_right);
+        return;
+    }
+
+    if (data.type === 'gameOver' || data.type === 'gameStart' || data.type === 'tournamentEvent') {
+        if (data.game_id) {
+            activeGameTimers.delete(String(data.game_id));
+            renderTournamentTimers();
+        }
+        await loadTournamentGames();
+    }
+}
+
+function updateTournamentTimer(gameId, remainingTime, _left_player, _right_player) {
+    const section = document.getElementById('tournamentTimerSection');
+    if (!section) return;
+
+    const safeGameId = String(gameId || 'unknown');
+    const safeRemaining = Number.isFinite(Number(remainingTime)) ? Number(remainingTime) : 0;
+
+    if (safeRemaining <= 0) {
+        activeGameTimers.delete(safeGameId);
+    } else {
+        activeGameTimers.set(safeGameId, {
+            remaining: safeRemaining,
+            right_player: _right_player,
+            left_player: _left_player,
+        });
+    }
+
+    renderTournamentTimers();
+}
+
+function renderTournamentTimers() {
+    const section = document.getElementById('tournamentTimerSection');
+    const list = document.getElementById('tournamentTimerList');
+    if (!section || !list) return;
+
+    if (activeGameTimers.size === 0) {
+        section.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+    }
+
+    section.classList.remove('hidden');
+    const entries = Array.from(activeGameTimers.entries())
+        .sort((a, b) => a[1] - b[1])
+        .map(([id, timerData]) => `
+            <div class="bg-blue-950/50 border border-blue-700 rounded px-3 py-2 text-blue-100 text-sm">
+                Game: ${timerData.left_player} vs ${timerData.right_player}: <span class="font-bold text-white">${timerData.remaining}s</span> left to join
+            </div>
+        `)
+        .join('');
+
+    list.innerHTML = entries;
+}
+
+export function resetTournamentTimers() {
+    activeGameTimers.clear();
+    renderTournamentTimers();
 }
 
 // Tournament Util functions

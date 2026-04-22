@@ -3,18 +3,24 @@ import * as tournamentAPI from './tournament_api.js';
 import { showMessage } from "../../utils/utils.js"
 import { getCurrentUser } from '../../users_friends/usermanagement.js';
 import { navigate } from '../../routes/route_helpers.js';
+import { stopTournamentUpdatesSocket } from './tournament_ws.js';
 
 let tournamentAutoRefreshInterval = null;
 
-export function stopTournamentAutoRefresh() {
-  if (tournamentAutoRefreshInterval) {
-    clearInterval(tournamentAutoRefreshInterval);
-    tournamentAutoRefreshInterval = null;
-  }
+function stopOnlyTournamentAutoRefreshInterval() {
+    if (tournamentAutoRefreshInterval) {
+        clearInterval(tournamentAutoRefreshInterval);
+        tournamentAutoRefreshInterval = null;
+    }
 }
 
-export function startTournamentAutoRefresh(callback, intervalMs = 5000) {
-  stopTournamentAutoRefresh();
+export function stopTournamentAutoRefresh() {
+    stopTournamentUpdatesSocket();
+    stopOnlyTournamentAutoRefreshInterval();
+}
+
+export function startTournamentAutoRefresh(callback, intervalMs = 500) {
+    stopOnlyTournamentAutoRefreshInterval();
   tournamentAutoRefreshInterval = setInterval(callback, intervalMs);
 }
 
