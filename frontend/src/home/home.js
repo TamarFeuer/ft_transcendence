@@ -1,6 +1,8 @@
 import { navigate } from "../routes/route_helpers.js";
 import { setChessOnlineIntended } from "../routes/routes.js";
 
+let _keydownHandler = null;
+
 export function initHome() {
     const username = localStorage.getItem('username');
     
@@ -82,11 +84,15 @@ export function initHome() {
         else
             navigate('/chess');
     });
-
-    document.addEventListener('keydown', (e) => {
+    if (_keydownHandler){
+        document.removeEventListener('keydown', _keydownHandler);
+    }
+    _keydownHandler = (e) => {
         if(e.key === 'Escape')
             closeOnlinePanel();
-    })
+
+    }
+    document.addEventListener('keydown', _keydownHandler);
 }
 
 function updateAiBtnForMode(mode){

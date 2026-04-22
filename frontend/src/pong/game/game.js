@@ -105,6 +105,7 @@ export function joinOnlineGame(gameId, IsTournament) {
   let keyboardInterval = null;
   let keyDownHandler = null;
   let keyUpHandler = null;
+  let resizeHandler = null;
   let gameEnded = false;
 
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
@@ -184,7 +185,9 @@ export function joinOnlineGame(gameId, IsTournament) {
         window.gameObjects = initGameScene(scene, canvas, 2);
 
         engine.runRenderLoop(() => scene.render());
-        window.addEventListener("resize", () => engine.resize());
+
+        resizeHandler = () => engine.resize();
+        window.addEventListener("resize", resizeHandler);
 
         // Paddle movement with mouse
         pointerHandler = (e) => {
@@ -265,10 +268,7 @@ export function joinOnlineGame(gameId, IsTournament) {
         window.removeEventListener("pointermove", pointerHandler);
         window.removeEventListener("keydown", keyDownHandler);
         window.removeEventListener("keyup", keyUpHandler);
-        console.log("data:", data);
-        console.log("gameId:", gameId);
-        console.log("data.winner.id:", data.winner_id);
-        console.log("window.CURRENT_USER?.user_id:", String(window.CURRENT_USER?.user_id));
+        window.removeEventListener("resize", resizeHandler);
 
         if (window.gameObjects) {
           scene.dispose();
@@ -297,6 +297,7 @@ export function joinOnlineGame(gameId, IsTournament) {
       window.removeEventListener("pointermove", pointerHandler);
       window.removeEventListener("keydown", keyDownHandler);
       window.removeEventListener("keyup", keyUpHandler);
+      window.removeEventListener("resize", resizeHandler);
       scene.dispose();
       engine.dispose();
       // Clear session storage
