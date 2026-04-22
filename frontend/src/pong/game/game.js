@@ -188,6 +188,16 @@ export function joinOnlineGame(gameId, IsTournament) {
       </div>
     </div>
     `;
+
+    document.getElementById('leaveWaitingBtn')?.addEventListener('click', () => {
+        gameEnded = true;
+        ws?.close();
+        ws = null;
+        isGameActive = false;
+        sessionStorage.removeItem('activeGameId');
+        sessionStorage.removeItem('activeTournamentId');
+        navigate('/');
+    })
   };
 
   ws.onerror = (e) => console.error("WS error", e);
