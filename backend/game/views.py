@@ -8,14 +8,9 @@ import jwt
 from .models import GameSession, Player, Match, PlayerAchievement
 from .services import get_match_history
 import logging
-<<<<<<< HEAD
 from users.token_auth import get_user_from_token
-import jwt
-from django.conf import settings
 from asgiref.sync import async_to_sync
-=======
 import random
->>>>>>> main
 
 logger = logging.getLogger(__name__)
 
