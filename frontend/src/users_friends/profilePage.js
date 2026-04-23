@@ -1,5 +1,5 @@
 import { navigate } from "../routes/route_helpers.js";
-import { getCurrentUser, logoutUser, fetchWithRefreshAuth } from "./usermanagement.js";
+import { logoutUser, fetchWithRefreshAuth } from "./usermanagement.js";
 import { fetchFriendsList, removeFriend, sendFriendRequest } from "./friends.js";
 import { fetchPendingRequests, handleAccept, handleDelete } from "./friends.js";
 
@@ -13,34 +13,23 @@ export async function initProfilePage(username){
         isSelf = true;
     }
 
-    const res = await fetchWithRefreshAuth(`/api/player/${username}/profile`);
-    if (res.status === 404) {
-        navigate('/');
-        return;
-    }
-    const profile = await res.json();
+    const profile = await fetchProfile(username);
+    if (!profile) return;
 
     renderUser(profile);
     renderStats(profile);
 
-    if (isSelf){
-        const logoutBtn = document.getElementById("profile-logout");
+    if (isSelf) setupOwnProfile();
+    else hideOwnProfileSections();
+}
 
-        logoutBtn.addEventListener("click", async () =>{
-            await logoutUser();
-            navigate("/login");
-        })
-
-        document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
-        addFriend();
-        renderPendingRequests();
-        renderFriendList();
+async function fetchProfile(username){
+    const res = await fetchWithRefreshAuth(`/api/player/${username}/profile`);
+    if (res.status === 404){
+        navigate('/');
+        return;
     }
-
-    else{
-        document.getElementById("friends-section")?.remove();
-        document.getElementById("logout-section")?.remove();
-    }
+    return res.json();
 }
 
 function renderUser(profile){
@@ -48,35 +37,40 @@ function renderUser(profile){
     document.getElementById("profile-username").textContent = profile.username;
 }
 
-function renderStats(profile) {
+function renderStats(profile){
     document.getElementById('profile-wins').textContent = profile.pong.wins;
     document.getElementById('profile-losses').textContent = profile.pong.losses;
     document.getElementById('profile-elo').textContent = profile.pong.elo;
 }
 
+function setupOwnProfile(){
+    setupLogoutButton();
+    setupStatsNavButton();
+    setupAddFriend();
+    renderPendingRequests();
+    renderFriendList();
+}
 
-// function loadStats() {
-//     fetchWithRefreshAuth('/api/player/me/stats')
-//         .then(r => r.json())
-//         .then(data => {
-//             const wins = document.getElementById('profile-wins');
-//             const losses = document.getElementById('profile-losses');
-//             const elo = document.getElementById('profile-elo');
-//             if (wins) wins.textContent = data.total_wins ?? 0;
-//             if (losses) losses.textContent = data.total_losses ?? 0;
-//             if (elo) elo.textContent = data.elo_rating ?? 0;
-//         })
-//         .catch(() => {});
-// }
+function hideOwnProfileSections(){
+    document.getElementById('own-profile-sections')?.remove();
+}
 
+function setupLogoutButton(){
+    const logoutBtn = document.getElementById("profile-logout");
+    logoutBtn.addEventListener("click", async () => {
+        await logoutUser();
+        navigate("/login");
+    });
+}
 
+function setupStatsNavButton(){
+    document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
+}
 
-function addFriend(){
-
+function setupAddFriend(){
     const addFriendBtn = document.getElementById("friend-add-btn");
 
     addFriendBtn.addEventListener("click", () => {
-
         const friendInput = document.getElementById("friend-input");
         if (!friendInput)
         {
@@ -85,9 +79,9 @@ function addFriend(){
         }
         const friendInputStr = friendInput.value;
         const status = document.getElementById("friend-status");
-    
+
         sendFriendRequest(friendInputStr, status);
-    })
+    });
 }
 
 async function renderPendingRequests(){
