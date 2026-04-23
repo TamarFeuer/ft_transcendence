@@ -292,7 +292,7 @@ def player_profile(request, username):
             'total_games': pong.total_games,
         }
     except Player.DoesNotExist:
-        pong_data = {'wins': 0, 'losses': 0, 'elo': 0, 'total_games': 0}
+        pong_data = {'wins': 0, 'losses': 0, 'elo': 1000, 'total_games': 0}
 
     try:
         chess = ChessPlayer.objects.get(user=user)
@@ -303,7 +303,7 @@ def player_profile(request, username):
             'total_games': chess.total_games,
         }
     except ChessPlayer.DoesNotExist:
-        chess_data = {'wins': 0, 'losses': 0, 'elo': 0, 'total_games': 0}
+        chess_data = {'wins': 0, 'losses': 0, 'elo': 1200, 'total_games': 0}
 
     return JsonResponse({
         'username': user.username,
