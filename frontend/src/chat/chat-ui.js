@@ -72,8 +72,8 @@ export function initChatUI() {
 			const name = onlineUsers[channelId]?.name;
 			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
 			markRead(channelId);
-			openConversation(channelId);
 		}
+		openConversation(channelId === "global" ? null : channelId);
 
 		// If this is a DM with no history loaded yet, fetch it now
 		if (channelId !== "global" && (!messageHistory[channelId] || messageHistory[channelId].length === 0)) {
@@ -147,8 +147,8 @@ export function initChatUI() {
 		if (channelId === activeChannel) {
 			// User is already viewing this channel, render immediately
 			renderMessages(channelId);
-		} else {
-			// User is elsewhere — increment unread badge on the tab
+		} else if (message.senderId !== verifiedUserId) {
+			// Only badge for messages from others — own messages echoed to other tabs shouldn't count as unread
 			const tab = document.querySelector(`[data-channel="${channelId}"]`);
 			if (tab && !tab.querySelector(".unread-badge")) {
 				const badge = document.createElement("span");

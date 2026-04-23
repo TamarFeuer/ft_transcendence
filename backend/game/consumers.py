@@ -182,8 +182,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
         logger.debug(f"Current players: {self.game.get_players()}")
 
-        players = self.game.get_players()
-        if players['left'] == self.scope['user'] or players['right'] == self.scope['user']:
+        if self.scope['user'] in self.game.clients:
             logger.warning(f"Duplicate connection attempt by {self.scope['user']}")
             self.game.status = 'ready'
             # Update tournament game status in database
@@ -318,12 +317,27 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game.status = 'completed'
                 await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
 
+                # Force winner's score so match_ends can determine winner correctly
+                if departing_role == 'left':
+                    self.game.state['score']['p1'] = 0
+                    self.game.state['score']['p2'] = 1
+                else:
+                    self.game.state['score']['p1'] = 1
+                    self.game.state['score']['p2'] = 0
+                result_data = await database_sync_to_async(match_ends)(
+                    self.game,
+                    players_before['left'],
+                    players_before['right'],
+                )
+                new_achievements = result_data.get('new_achievements', {})
+
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
                         'type': 'game_over',
                         'winner': winner_name,
-                        'winner_id': winner_id
+                        'winner_id': winner_id,
+                        'new_achievements': new_achievements,
                     }
                 )
             # If all players are gone, reset game to waiting state
@@ -342,6 +356,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'winner': 'Player disconnected',
                         'winner_id': None
                     }
+                )
+                await self.channel_layer.group_send(
+                    "global_chat",                                                               
+                    {           
+                        "type": "game_result",
+                        "winner": None,              
+                        "game_type": "pong",        # or "chess"
+                        "is_tournament": self.game.isTournamentGame
+                    }                                                                            
                 )
         
         if hasattr(self, 'game_group_name'):
@@ -363,7 +386,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """Main game loop running at 60 FPS"""
         while self.game and self.game.status == 'active':
             result = self.game.tick()
-            logger.debug(f"Game tick result: {result}")
+            # logger.debug(f"Game tick result: {result}")
             if result:
                 await self.channel_layer.group_send(
                     self.game_group_name,
@@ -390,20 +413,23 @@ class GameConsumer(AsyncWebsocketConsumer):
                     logger.info("FINISH")
                     self.game.status = "completed"
                     await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
-                    
+
+                    # Run DB work in sync thread; pass users and resolve profiles in service.
+                    result_data = await database_sync_to_async(match_ends)(
+                        self.game,
+                        self.game.players['left'],
+                        self.game.players['right'],
+                    )
+                    new_achievements = result_data.get('new_achievements', {})
+
                     await self.channel_layer.group_send(
                         self.game_group_name,
                         {
                             'type': 'game_over',
                             'winner': winner_name,
-                            'winner_id': winner_id
+                            'winner_id': winner_id,
+                            'new_achievements': new_achievements,
                         }
-                    )
-                    # Run DB work in sync thread; pass users and resolve profiles in service.
-                    await database_sync_to_async(match_ends)(
-                        self.game,
-                        self.game.players['left'],
-                        self.game.players['right'],
                     )
                     break
             
@@ -432,10 +458,13 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'gameOver',
             'winner': event['winner'],
-            'winner_id': event['winner_id']
+            'winner_id': event['winner_id'],
+            'new_achievements': event.get('new_achievements', {}),
         }))
-    
+
     async def check_join_timeout(self):
+        if not self.game or not sef.game.isTournamentGame:
+            return
         """Check for join timeout and handle results if expired"""
         while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
             # Send remaining time update every second

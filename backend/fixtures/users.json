@@ -347,5 +347,269 @@
     "loser": 6,
     "timestamp": "2026-03-23T15:50:22.654Z"
   }
+},
+{
+  "model": "game.achievement",
+  "pk": 1,
+  "fields": {
+    "name": "First Game",
+    "description": "You played your first game!",
+    "requirement_type": "total_games",
+    "requirement_value": 1
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 2,
+  "fields": {
+    "name": "Third Game",
+    "description": "You played your third game!",
+    "requirement_type": "total_games",
+    "requirement_value": 3
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 3,
+  "fields": {
+    "name": "Tenth Game",
+    "description": "You played your tenth game!",
+    "requirement_type": "total_games",
+    "requirement_value": 10
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 4,
+  "fields": {
+    "name": "Twentieth Game",
+    "description": "You played your twentieth game!",
+    "requirement_type": "total_games",
+    "requirement_value": 20
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 5,
+  "fields": {
+    "name": "First Win",
+    "description": "You won for the first time! Congratulations!",
+    "requirement_type": "total_wins",
+    "requirement_value": 1
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 6,
+  "fields": {
+    "name": "Winning Streak 1",
+    "description": "You won 3 games in a row!",
+    "requirement_type": "best_win_streak",
+    "requirement_value": 3
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 7,
+  "fields": {
+    "name": "Winning Streak 2",
+    "description": "You won 5 games in a row!",
+    "requirement_type": "best_win_streak",
+    "requirement_value": 5
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 8,
+  "fields": {
+    "name": "Winning Streak 3",
+    "description": "You won 10 games in a row!",
+    "requirement_type": "best_win_streak",
+    "requirement_value": 10
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 9,
+  "fields": {
+    "name": "Winning Streak 4",
+    "description": "You won 20 games in a row!",
+    "requirement_type": "best_win_streak",
+    "requirement_value": 20
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 10,
+  "fields": {
+    "name": "Pong Expert",
+    "description": "Your rating reached 1050!",
+    "requirement_type": "elo_rating",
+    "requirement_value": 1050
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 11,
+  "fields": {
+    "name": "Pong Master",
+    "description": "Your  rating reached 1100!",
+    "requirement_type": "elo_rating",
+    "requirement_value": 1100
+  }
+},
+{
+  "model": "game.achievement",
+  "pk": 12,
+  "fields": {
+    "name": "Pong Guru",
+    "description": "Your rating reached 1150!",
+    "requirement_type": "elo_rating",
+    "requirement_value": 1150
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 1,
+  "fields": {
+    "player": 1,
+    "achievement": 1,
+    "timestamp": "2026-03-22T10:15:34.123Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 2,
+  "fields": {
+    "player": 1,
+    "achievement": 2,
+    "timestamp": "2026-03-22T10:15:34.123Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 3,
+  "fields": {
+    "player": 1,
+    "achievement": 5,
+    "timestamp": "2026-03-23T15:50:22.654Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 4,
+  "fields": {
+    "player": 2,
+    "achievement": 1,
+    "timestamp": "2026-03-17T21:40:59.992Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 5,
+  "fields": {
+    "player": 2,
+    "achievement": 2,
+    "timestamp": "2026-03-21T16:49:11.277Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 6,
+  "fields": {
+    "player": 2,
+    "achievement": 5,
+    "timestamp": "2026-03-17T21:40:59.992Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 7,
+  "fields": {
+    "player": 3,
+    "achievement": 1,
+    "timestamp": "2026-03-17T21:46:27.683Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 8,
+  "fields": {
+    "player": 3,
+    "achievement": 2,
+    "timestamp": "2026-03-21T16:49:11.277Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 9,
+  "fields": {
+    "player": 3,
+    "achievement": 5,
+    "timestamp": "2026-03-21T16:49:11.277Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 10,
+  "fields": {
+    "player": 3,
+    "achievement": 6,
+    "timestamp": "2026-03-28T12:00:00.000Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 11,
+  "fields": {
+    "player": 4,
+    "achievement": 1,
+    "timestamp": "2026-03-22T14:32:12.456Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 12,
+  "fields": {
+    "player": 4,
+    "achievement": 5,
+    "timestamp": "2026-03-23T09:20:45.789Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 13,
+  "fields": {
+    "player": 5,
+    "achievement": 1,
+    "timestamp": "2026-03-22T14:32:12.456Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 14,
+  "fields": {
+    "player": 6,
+    "achievement": 1,
+    "timestamp": "2026-03-22T10:15:34.123Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 15,
+  "fields": {
+    "player": 6,
+    "achievement": 2,
+    "timestamp": "2026-03-23T09:20:45.789Z"
+  }
+},
+{
+  "model": "game.playerachievement",
+  "pk": 16,
+  "fields": {
+    "player": 6,
+    "achievement": 5,
+    "timestamp": "2026-03-22T10:15:34.123Z"
+  }
 }
 ]
