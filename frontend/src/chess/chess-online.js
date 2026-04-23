@@ -3,6 +3,15 @@ import { renderBoard } from './chess.js'
 import { showChessResultModal } from './chess-modal.js'
 import { navigate } from '../routes/route_helpers.js'
 
+let _chessWs = null;
+
+export function closeChessConnection(){
+	if (_chessWs && (_chessWs.readyState === WebSocket.OPEN || _chessWs.readyState === WebSocket.CONNECTING)){
+		_chessWs.close();
+	}
+	_chessWs = null;
+}
+
 function subtitleFromResult(result) {
 	if (!result) return '';
 	const r = String(result).toLowerCase();
@@ -28,7 +37,7 @@ function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
 	picker.classList.remove('hidden');
 
 	picker.addEventListener('click', (e) => {
-		const piece = e.target.dataset.piece;
+		const piece = e.target.closest('[data-piece]')?.dataset.piece;
 		if (!piece) return;
 		picker.classList.add('hidden');
 		ws.send(JSON.stringify({ type: 'move', from: fromSquare, to: toSquare, promotion: piece }));
@@ -36,12 +45,43 @@ function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
 	}, { once: true });
 }
 
+function populateChessAttributes(data, myColor){
+	const selfEl = document.getElementById('player-self-name')
+	const oppEl = document.getElementById('player-opponent-name')
+
+	const selfElo = document.getElementById('player-self-elo');
+	const oppElo = document.getElementById('player-opponent-elo')
+
+	if (!oppEl || !selfEl)
+		return;
+
+	const whiteName = data.white ?? '-';
+	const blackName = data.black ?? '-';
+
+	const whiteElo = data.white_elo;
+	const blackElo = data.black_elo;
+
+	if (myColor === 'white'){
+		selfEl.textContent = whiteName;
+		selfElo.textContent = whiteElo;
+		oppEl.textContent = blackName;
+		oppElo.textContent = blackElo;
+	}
+	else{
+		selfEl.textContent = blackName;
+		oppEl.textContent = whiteName;
+		selfElo.textContent = blackElo;
+		oppElo.textContent = whiteElo;
+	}
+}
+
 export async function initOnlineChessGame(gameId = null){
 	const boardEl   = document.getElementById('chess-board');
 	const waitingEl = document.getElementById('waiting-overlay');
 	const statusEl  = document.getElementById('game-status');
 
-	boardEl.className = 'grid grid-cols-8 w-[36rem] h-[36rem] auto-rows-fr';
+	// Keep board square but responsive to container width to avoid right-edge clipping.
+	boardEl.className = 'mx-auto grid w-full max-w-[36rem] grid-cols-8 aspect-square auto-rows-fr';
 
 	const game = new Chess();
 	let myColor   = null;
@@ -79,6 +119,7 @@ export async function initOnlineChessGame(gameId = null){
 
 	const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 	const ws = new WebSocket(`${proto}//${location.host}/ws/chess/${gameId}`);
+	_chessWs = ws;
 
 	ws.onmessage = (event) => {
 		const data = JSON.parse(event.data);
@@ -92,6 +133,7 @@ export async function initOnlineChessGame(gameId = null){
 			gameActive = true;
 			if (waitingEl) waitingEl.classList.add('hidden');
 			game.load(data.fen);
+			populateChessAttributes(data, myColor);
 			myTurn = (myColor === 'white');
 			updateStatus(statusEl, myTurn);
 			renderBoard(game, boardEl, null, myColor === 'black');
@@ -109,6 +151,7 @@ export async function initOnlineChessGame(gameId = null){
 			gameActive = false;
 			myTurn     = false;
 			selected   = null;
+			window.dispatchEvent(new CustomEvent("chessGameLeft"));
 			renderBoard(game, boardEl, null, myColor === 'black');
 
 			const sub = subtitleFromResult(data.result);
@@ -123,9 +166,17 @@ export async function initOnlineChessGame(gameId = null){
 		}
 	};
 
+	const browserExitHandler = () => closeChessConnection();
+	window.addEventListener('beforeunload', browserExitHandler);
+	window.addEventListener('pagehide', browserExitHandler);
+
 	ws.onclose = () => {
 		gameActive = false;
 		myTurn     = false;
+		_chessWs = null;
+		window.dispatchEvent(new CustomEvent("chessGameLeft"));
+		window.removeEventListener('beforeunload', browserExitHandler);
+   		window.removeEventListener('pagehide',     browserExitHandler);
 	};
 
 	boardEl.addEventListener('click', (e) => {

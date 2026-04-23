@@ -4,7 +4,8 @@ import { getCurrentUser as fetchCurrentUser } from './users_friends/usermanageme
 import { initChatUI } from './chat/chat-ui.js';
 import { closeGameConnection } from './pong/game/game.js';
 import { handleRoute } from './routes/route_helpers.js';
-import { isGameActive } from './pong/game/game.js'
+import { isGameActive } from './pong/game/game.js';
+import { closeChessConnection } from './chess/chess-online.js';
 
 // --- Game Variables ---
 let ws = null;
@@ -21,9 +22,19 @@ window.addEventListener('popstate', () => {
 		closeGameConnection();
 		sessionStorage.removeItem('activeGameId');
 	}
+	closeChessConnection();
+	window.dispatchEvent(new CustomEvent("chessGameLeft"));
 	handleRoute(window.location.pathname);
 });
 
+window.addEventListener('beforeunload', () => {
+	// Trigger disconnect when refreshing, closing tab/window, or hard navigation
+	if (isGameActive){
+		closeGameConnection();
+		sessionStorage.removeItem('activeGameId');
+		sessionStorage.removeItem('activeTournamentId');
+	}	
+})
 // Auto-reconnect to game if page was refreshed
 /*
 window.addEventListener('load', async () => {

@@ -92,7 +92,9 @@ export async function loginUser(username, password) {
         credentials: 'include',
         body: JSON.stringify({ username, password })
     });
-    const data = await res.json();
+    const text = await res.text();
+    if (!text) return { error: 'empty response from server' };
+    const data = JSON.parse(text);
     if (res.ok && data.username) {
         localStorage.setItem('username', data.username);
         localStorage.setItem('user_id', data.user_id ?? data.id);

@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
             name='ChessMatch',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('result', models.CharField(max_length=10)),
+                ('result', models.CharField(max_length=20)),  # standard chess notation: 1-0, 0-1, 1/2-1/2; also 'abandonment' (11 chars)
                 ('white_elo_before', models.IntegerField()),
                 ('black_elo_before', models.IntegerField()),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),

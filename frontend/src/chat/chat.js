@@ -120,30 +120,39 @@ export function initChat() {
 				}));
 				break;
 
-			case "gameInviteCreated":
-			case "game.invite.created": {
-				const isInvitee = String(data.invitee_id) === currentUserId;
-				const inviteDetail = {
-					game_id: data.game_id,
-					inviter_id: data.inviter_id,
-					inviter_name: data.inviter_name,
-					invitee_id: data.invitee_id,
-					isInvitee
-				};
-				showMessage(
-					isInvitee
-						? `Game invite from ${data.inviter_name || data.inviter_id}`
-						: `Game invite created for ${data.invitee_id}`,
-					'info'
-				);
-				window.dispatchEvent(new CustomEvent("gameInviteCreated", { detail: inviteDetail }));
+			case "game_invite":
+				window.dispatchEvent(new CustomEvent("gameInviteReceived", {
+					detail: {
+						senderId: data.sender,
+						senderName: data.name,
+						gameType: data.game_type,
+						gameId: data.game_id,
+					}
+				}));
 				break;
-			}
 
-			case "gameInviteExpired":
-			case "game.invite.expired":
-				showMessage('Game invite expired', 'error');
-				window.dispatchEvent(new CustomEvent("gameInviteExpired", { detail: data }));
+			case "game_invite_expired":
+				window.dispatchEvent(new CustomEvent("gameInviteExpired", {
+					detail: { gameId: data.game_id }
+				}));
+				break;
+
+			case "game_invite_blocked":
+				window.dispatchEvent(new CustomEvent("gameInviteBlocked", {
+					detail: { gameId: data.game_id }
+				}));
+				break;
+
+			case "game_invite_rejected":
+				window.dispatchEvent(new CustomEvent("gameInviteRejected", {
+					detail: { reason: data.reason }
+				}));
+				break;
+
+			case "game_invite_accepted":
+				window.dispatchEvent(new CustomEvent("gameInviteAccepted", {
+					detail: { gameId: data.game_id }
+				}));
 				break;
 
 			// Another user started typing — show indicator (TODO in UI)
@@ -287,9 +296,40 @@ export function closeConversation(targetId) {
 	}));
 }
 
-export function notifyBlocked() {
+export function notifyBlocked(targetId = null) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "user_blocked" }));
+	chatSocket.send(JSON.stringify({ type: "user_blocked", target: targetId }));
+}
+
+export function sendGameInvite(targetId, gameType, gameId) {
+	console.log('[invite] sendGameInvite — WS state:', chatSocket?.readyState, '(1=OPEN), gameId:', gameId, 'target:', targetId);
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+		console.warn('[invite] DROPPED — WS not open');
+		return;
+	}
+	chatSocket.send(JSON.stringify({
+		type: "game_invite",
+		target: targetId,
+		game_type: gameType,
+		game_id: gameId,
+	}));
+}
+
+export function sendGameInviteExpired(targetId, gameId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "game_invite_expired",
+		target: targetId,
+		game_id: gameId,
+	}));
+}
+
+export function sendDeleteInvite(gameId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "delete_invite",
+		game_id: gameId,
+	}));
 }
 
 export function openConversation(targetId) {

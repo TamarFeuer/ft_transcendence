@@ -13,6 +13,7 @@ class ChessSession:
 		self.board = chess.Board()
 		self.players = {'white': None, 'black': None}
 		self.status = 'waiting'
+		self.invitee_id = None
 
 	@classmethod
 	def create_game(cls):
@@ -29,6 +30,14 @@ class ChessSession:
 			return 'white'
 		elif black_id == user.id:
 			return 'black'
+		elif white_id is None and black_id is not None and black_id != user.id:
+			# invite flow: invitor is black, invitee takes white
+			self.players['white'] = user
+			return 'white'
+		elif black_id is None and white_id is not None and white_id != user.id:
+			# invite flow: invitor is white, invitee takes black
+			self.players['black'] = user
+			return 'black'
 		return None
 
 	#returns whether the uci worked, the fen string, and None or a small dict when the game ends
@@ -44,7 +53,7 @@ class ChessSession:
 		self.board.push(move)
 
 		#game might have just ended
-		outcome = self.board.outcome()
+		outcome = self.board.outcome(claim_draw=True)
 		if outcome:
 			self.status = 'finished'
 			if outcome.winner == chess.WHITE:
@@ -98,7 +107,7 @@ class ChessPlayer(models.Model):
 class ChessMatch(models.Model):
 	white = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_white')
 	black = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_black')
-	result = models.CharField(max_length=10) # standard chess notation is 1-0 for white winning, 0-1 for black and 1/2-1/2 for draw
+	result = models.CharField(max_length=20) # standard chess notation: 1-0, 0-1, 1/2-1/2; also 'abandonment' (11 chars)
 	white_elo_before = models.IntegerField()
 	black_elo_before = models.IntegerField()
 	timestamp = models.DateTimeField(auto_now_add=True)

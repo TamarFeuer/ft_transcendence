@@ -51,4 +51,19 @@ class Migration(migrations.Migration):
                 'unique_together': {('conversation', 'user')},
             },
         ),
+        migrations.CreateModel(
+            name='GameInvite',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('game_type', models.CharField(max_length=20)),
+                ('game_id', models.CharField(max_length=100, unique=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('conversation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='game_invites', to='chat.conversation')),
+                ('sender', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='sent_game_invites', to=settings.AUTH_USER_MODEL)),
+                ('recipient', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='received_game_invites', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'db_table': 'chat_game_invite',
+            },
+        ),
     ]

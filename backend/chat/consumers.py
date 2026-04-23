@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 # on restart. Online status is naturally ephemeral so in-memory is the right
 # place for it — there's no point persisting "was online before the server restarted".
 ONLINE_USERS = {}          # user_id -> username
-CONNECTED_USERS = {}       # user_id -> set of channel_names
+USER_CONNECTION_COUNT = {}  # user_id -> number of open tabs; reaches 0 when last tab closes
 ACTIVE_CONVERSATION = {}   # user_id -> other_user_id they currently have open
+IN_GAME_USERS = set()      # user_ids currently in an active game (any game type)
 # unread_count and is_closed are stored in ConversationParticipant in the database.
 # ACTIVE_CONVERSATION stays in-memory: it reflects the live UI state and resets
 # naturally when the user reconnects.
@@ -44,7 +45,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			return
 
 		# Every user joins the global group so they receive global messages.
-		# DMs are handled separately via CONNECTED_USERS, not through groups.
+		# DMs and invites are delivered via the personal user_{id} group joined below.
 		self.group_name = "global_chat"
 
 		# get_user_from_token returns Django's proper User model object,
@@ -59,10 +60,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.channel_layer.group_add(self.user_group_name, self.channel_name)
 		await self.accept()
 
-		# Track channel for private messaging.
-		# We use a set because the same user can have multiple tabs open,
-		# each with its own channel_name. DMs need to reach all of them.
-		CONNECTED_USERS.setdefault(self.user_id, set()).add(self.channel_name)
+		# Count open connections so we know when the user goes fully offline.
+		USER_CONNECTION_COUNT[self.user_id] = USER_CONNECTION_COUNT.get(self.user_id, 0) + 1
 
 		# Register user as online.
 		ONLINE_USERS[self.user_id] = self.username
@@ -83,23 +82,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# If connect() failed early (e.g. invalid token), group_name was never set.
 		if hasattr(self, "group_name"):
 			await self.channel_layer.group_discard(self.group_name, self.channel_name)
-		if hasattr(self, "user_group_name"):
-			await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
+			await self.channel_layer.group_discard(f"user_{self.user_id}", self.channel_name)
 
 		# Only clean up user data if we successfully authenticated in connect().
 		# getattr with default None avoids AttributeError if user_id was never set.
 		user_id = getattr(self, "user_id", None)
-		if user_id and user_id in CONNECTED_USERS:
-			# Remove this specific channel (tab) from the user's set.
-			CONNECTED_USERS[self.user_id].discard(self.channel_name)
-
-			# Only remove from ONLINE_USERS if this was their last tab —
-			# if they still have other tabs open, they're still online.
-			if not CONNECTED_USERS[self.user_id]:
-				del CONNECTED_USERS[self.user_id]
-				ONLINE_USERS.pop(self.user_id, None)
-				# Remove active conversation — user is no longer viewing anything
-				ACTIVE_CONVERSATION.pop(self.user_id, None)
+		if user_id:
+			count = USER_CONNECTION_COUNT.get(user_id, 1) - 1
+			if count <= 0:
+				# Last tab closed — user is fully offline.
+				USER_CONNECTION_COUNT.pop(user_id, None)
+				ONLINE_USERS.pop(user_id, None)
+				ACTIVE_CONVERSATION.pop(user_id, None)
+			else:
+				USER_CONNECTION_COUNT[user_id] = count
 
 		# Only broadcast if group_name exists; if connect() failed early, it was never set.
 		if hasattr(self, "group_name"):
@@ -135,14 +131,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 				# Private message: deliver to all of the recipient's open tabs,
 				# and echo back to all of the sender's own tabs (so other tabs stay in sync).
+				# group_send reaches every connection in the group automatically.
 				payload["private"] = True
 				payload["target"] = target
-				if target in CONNECTED_USERS:
-					for channel_name in CONNECTED_USERS[target]:
-						await self.channel_layer.send(channel_name, payload)
-				if self.user_id in CONNECTED_USERS:
-					for channel_name in CONNECTED_USERS[self.user_id]:
-						await self.channel_layer.send(channel_name, payload)
+				await self.channel_layer.group_send(f"user_{target}", payload)
+				await self.channel_layer.group_send(f"user_{self.user_id}", payload)
 				# Persist the message and update conversation state in the database.
 				await self.save_dm(target, message)
 			else:
@@ -164,6 +157,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		elif msg_type == "get_conversations":
 			conversations = await self.get_conversations(self.user_id)
+			logger.info(f"[get_conversations] user={self.username}({self.user_id}) → {conversations}")
 			await self.send(text_data=json.dumps({
 				"type": "conversations",
 				"conversations": conversations
@@ -175,11 +169,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				# Track that this user is now actively viewing this DM tab.
 				# Used in save_dm to skip the unread increment for active viewers.
 				ACTIVE_CONVERSATION[self.user_id] = other_id
+			else:
+				# null target means the user switched away (e.g. to global) — clear so
+				# save_dm doesn't keep skipping the unread increment for their old DM.
+				ACTIVE_CONVERSATION.pop(self.user_id, None)
 
 		elif msg_type == "mark_read":
 			other_id = data.get("target")
 			if not other_id:
 				return
+			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {other_id}")
 			# Reset the unread counter for this conversation in the database.
 			await self.mark_read(self.user_id, other_id)
 
@@ -190,8 +189,65 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			# Mark this conversation as closed in the database.
 			await self.close_conversation(self.user_id, other_id)
 
+		elif msg_type == "game_invite":
+			target = data.get("target")
+			game_type = data.get("game_type")
+			game_id = data.get("game_id")
+			logger.debug(f"[invite] game_invite from {self.user_id} → target={target} game_id={game_id}")
+			if not target or not game_type or not game_id:
+				logger.warning(f"[invite] missing fields — target={target} game_type={game_type} game_id={game_id}")
+				return
+			if target in IN_GAME_USERS:
+				await self.send(text_data=json.dumps({
+					"type": "game_invite_rejected",
+					"reason": "in_game",
+				}))
+				return
+			payload = {
+				"type": "game.invite",
+				"sender": self.user_id,
+				"name": self.username,
+				"game_type": game_type,
+				"game_id": game_id,
+			}
+			# If the target has no open tabs the group_send is a no-op; the invite is still saved to DB.
+			await self.channel_layer.group_send(f"user_{target}", payload)
+			await self.save_invite(target, game_type, game_id)
+
+		elif msg_type == "game_invite_expired":
+			target = data.get("target")
+			game_id = data.get("game_id")
+			if not target or not game_id:
+				return
+			payload = {
+				"type": "game.invite.expired",
+				"game_id": game_id,
+			}
+			await self.channel_layer.group_send(f"user_{target}", payload)
+
+		elif msg_type == "delete_invite":
+			game_id = data.get("game_id")
+			if game_id:
+				sender_id = await self.delete_invite(game_id)
+				if sender_id:
+					await self.channel_layer.group_send(f"user_{sender_id}", {
+						"type": "game.invite.accepted",
+						"game_id": game_id,
+					})
+
 		elif msg_type == "user_blocked":
-			# Re-broadcast online users so blocked users disappear from each other's list immediately.
+			target = data.get("target")
+			if target:
+				invite_ids = await self.get_invite_ids_with(target)
+				for gid in invite_ids:
+					await self.channel_layer.group_send(
+						f'user_{self.user_id}',
+						{'type': 'game.invite.blocked', 'game_id': gid}
+					)
+					await self.channel_layer.group_send(
+						f'user_{target}',
+						{'type': 'game.invite.expired', 'game_id': gid}
+					)
 			await self.broadcast_online_users()
 
 		elif msg_type in ["typing", "stop_typing"]:
@@ -219,6 +275,44 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"name": event.get("name"),
 			"private": event.get("private", False),  # True for DMs, False for global
 			"target": event.get("target")             # user_id of DM recipient, or None for global
+		}))
+
+	async def game_invite(self, event):
+		await self.send(text_data=json.dumps({
+			"type": "game_invite",
+			"sender": event["sender"],
+			"name": event["name"],
+			"game_type": event["game_type"],
+			"game_id": event["game_id"],
+		}))
+
+	async def game_result(self, event):
+		pass
+
+	async def trigger_online_users_broadcast(self, event):
+		logger.debug(f"[broadcast] IN_GAME_USERS at broadcast time: {IN_GAME_USERS}")
+		await self.broadcast_online_users()
+
+	async def game_invite_accepted(self, event):
+		await self.send(text_data=json.dumps({
+			"type": "game_invite_accepted",
+			"game_id": event["game_id"],
+		}))
+
+	async def game_invite_blocked(self, event):
+		game_id = event["game_id"]
+		await self.delete_invite(game_id)
+		await self.send(text_data=json.dumps({
+			"type": "game_invite_blocked",
+			"game_id": game_id,
+		}))
+
+	async def game_invite_expired(self, event):
+		game_id = event["game_id"]
+		await self.delete_invite(game_id)
+		await self.send(text_data=json.dumps({
+			"type": "game_invite_expired",
+			"game_id": game_id,
 		}))
 
 	async def typing_notification(self, event):
@@ -253,26 +347,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		}))
 
 	async def broadcast_online_users(self):
-		# Send each connected user a personalized online users list.
-		# Users who blocked this user are hidden entirely.
-		# Users this user has blocked appear with blocked_by_me: True so the frontend can show an unblock button.
-		for user_id, channels in CONNECTED_USERS.items():
+		# Send each online user a personalized online users list.
+		# Each user sees a different list: users who blocked them are hidden,
+		# and users they blocked appear with blocked_by_me: True for the unblock button.
+		# group_send to user_{id} reaches all their open tabs at once.
+		for user_id in list(ONLINE_USERS.keys()):
 			blocked_by_me, blocked_me = await self.get_block_info_for(user_id)
 			users = {}
-			for uid, name in ONLINE_USERS.items():
+			for uid, name in list(ONLINE_USERS.items()):
 				if uid in blocked_me:
-					# This user blocked me — hide them entirely
 					continue
 				users[uid] = {
 					"name": name,
-					"blocked_by_me": uid in blocked_by_me
+					"blocked_by_me": uid in blocked_by_me,
+					"in_game": uid in IN_GAME_USERS,
 				}
-			for channel_name in channels:
-				await self.channel_layer.send(channel_name, {
-					"type": "online.users",
-					"users": users,
-					"blocked_me_ids": list(blocked_me)
-				})
+			await self.channel_layer.group_send(f"user_{user_id}", {
+				"type": "online.users",
+				"users": users,
+				"blocked_me_ids": list(blocked_me)
+			})
 
 	# ─── Database helpers ─────────────────────────────────────────────────────
 	# All database access must be wrapped in database_sync_to_async because
@@ -281,31 +375,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	@database_sync_to_async
 	def save_dm(self, recipient_id, content):
-		from chat.models import Conversation, ConversationParticipant, Message
+		from chat.models import ConversationParticipant, Message
 		from django.db.models import F
 
-		# Find the existing conversation between sender and recipient, if any.
-		# Step 1: get all conversation IDs the sender is part of.
-		# Step 2: check if the recipient is also in one of those conversations.
-		sender_conv_ids = ConversationParticipant.objects.filter(
-			user_id=self.user_id
-		).values_list('conversation_id', flat=True)
-
-		existing = ConversationParticipant.objects.filter(
-			conversation_id__in=sender_conv_ids,
-			user_id=recipient_id
-		).select_related('conversation').first()
-
-		if existing:
-			conversation = existing.conversation
-		else:
-			# First message between these two users — create a new conversation
-			# and add both as participants.
-			conversation = Conversation.objects.create()
-			ConversationParticipant.objects.create(conversation=conversation, user=self.user)
-			ConversationParticipant.objects.create(conversation=conversation, user_id=recipient_id)
-
-		# Save the message.
+		conversation = self._get_or_create_conversation(recipient_id)
 		msg = Message.objects.create(
 			conversation=conversation,
 			sender=self.user,
@@ -317,6 +390,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# F('unread_count') + 1 is a database-level increment — avoids race conditions
 		# if two messages arrive at the same time.
 		recipient_is_viewing = ACTIVE_CONVERSATION.get(recipient_id) == self.user_id
+		logger.info(f"[save_dm] sender={self.user_id} → recipient={recipient_id} | ACTIVE_CONVERSATION={dict(ACTIVE_CONVERSATION)} | recipient_is_viewing={recipient_is_viewing}")
 		if not recipient_is_viewing:
 			ConversationParticipant.objects.filter(
 				conversation=conversation,
@@ -325,7 +399,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	@database_sync_to_async
 	def get_dm_history(self, user_id, other_id):
-		from chat.models import ConversationParticipant, Message
+		from chat.models import ConversationParticipant, Message, GameInvite
 
 		# Find the conversation shared by these two users.
 		my_conv_ids = ConversationParticipant.objects.filter(
@@ -341,12 +415,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			return []
 
 		# Fetch the 50 most recent messages, then reverse so they're oldest-first.
-		# select_related('sender') fetches the sender's user data in the same query.
 		messages = Message.objects.filter(
 			conversation_id=shared_conv_id
 		).select_related('sender').order_by('-created_at')[:50]
 
-		return [
+		result = [
 			{
 				"sender_id": msg.sender_id,
 				"sender_name": msg.sender.username if msg.sender else "deleted user",
@@ -355,6 +428,90 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			}
 			for msg in reversed(list(messages))
 		]
+
+		inv = GameInvite.objects.filter(
+			conversation_id=shared_conv_id
+		).select_related('sender', 'recipient').first()
+		if inv:
+			result.append({
+				"sender_id": inv.sender_id,
+				"sender_name": inv.sender.username if inv.sender else "deleted user",
+				"recipient_name": inv.recipient.username if inv.recipient else "them",
+				"message": "",
+				"invite": {
+					"gameType": inv.game_type,
+					"gameId": inv.game_id,
+				},
+				"created_at": inv.created_at.isoformat()
+			})
+
+		return result
+
+	def _get_or_create_conversation(self, recipient_id):
+		from chat.models import Conversation, ConversationParticipant
+		sender_conv_ids = ConversationParticipant.objects.filter(
+			user_id=self.user_id
+		).values_list('conversation_id', flat=True)
+		existing = ConversationParticipant.objects.filter(
+			conversation_id__in=sender_conv_ids,
+			user_id=recipient_id
+		).select_related('conversation').first()
+		if existing:
+			return existing.conversation
+		conversation = Conversation.objects.create()
+		ConversationParticipant.objects.create(conversation=conversation, user=self.user)
+		ConversationParticipant.objects.create(conversation=conversation, user_id=recipient_id)
+		return conversation
+
+	@database_sync_to_async
+	def save_invite(self, recipient_id, game_type, game_id):
+		from chat.models import GameInvite
+		from django.db.models import F
+
+		conversation = self._get_or_create_conversation(recipient_id)
+		# get_or_create prevents IntegrityError when two players mutually invite each
+		# other before either accepts — both use the same gameId (same chess session).
+		_, created = GameInvite.objects.get_or_create(
+			game_id=game_id,
+			defaults={
+				'conversation': conversation,
+				'sender': self.user,
+				'recipient_id': recipient_id,
+				'game_type': game_type,
+			}
+		)
+		if not created:
+			return
+		recipient_is_viewing = ACTIVE_CONVERSATION.get(str(recipient_id)) == self.user_id
+		if not recipient_is_viewing:
+			from chat.models import ConversationParticipant
+			ConversationParticipant.objects.filter(
+				conversation=conversation,
+				user_id=recipient_id
+			).update(unread_count=F('unread_count') + 1, is_closed=False)
+
+	@database_sync_to_async
+	def get_invite_ids_with(self, other_id):
+		from chat.models import GameInvite, ConversationParticipant
+		my_conv_ids = ConversationParticipant.objects.filter(
+			user_id=self.user_id
+		).values_list('conversation_id', flat=True)
+		shared_conv_id = ConversationParticipant.objects.filter(
+			conversation_id__in=my_conv_ids,
+			user_id=other_id
+		).values_list('conversation_id', flat=True).first()
+		if not shared_conv_id:
+			return []
+		return list(GameInvite.objects.filter(
+			conversation_id=shared_conv_id
+		).values_list('game_id', flat=True))
+
+	@database_sync_to_async
+	def delete_invite(self, game_id):
+		from chat.models import GameInvite
+		sender_id = GameInvite.objects.filter(game_id=game_id).values_list('sender_id', flat=True).first()
+		GameInvite.objects.filter(game_id=game_id).delete()
+		return str(sender_id) if sender_id else None
 
 	@database_sync_to_async
 	def get_conversations(self, user_id):
