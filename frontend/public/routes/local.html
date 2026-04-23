@@ -1,5 +1,5 @@
-<div id="gameContainer" class="relative w-screen h-screen"></div>
-<div id="scoreHud" class="absolute top-2 left-2 text-white text-xl z-10">
-  <div><span data-i18n="PLAYER_1">Player 1</span>: <span id="scoreP1">0</span></div>
-  <div><span data-i18n="PLAYER_2">Player 2</span>: <span id="scoreP2">0</span></div>
+<div class="min-h-screen flex flex-col justify-center items-center bg-zinc-900 gap-4">
+    <h1 class="text-white text-4xl font-bold">Local Pong</h1>
+    <p class="text-zinc-400 text-sm">W / S — left paddle  &middot;  &uarr; / &darr; — right paddle  &middot;  SPACE — start</p>
+    <canvas id="pong-canvas" width="900" height="550" class="rounded-lg border border-zinc-700 max-w-full"></canvas>
 </div>

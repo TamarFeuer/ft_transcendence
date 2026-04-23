@@ -3,6 +3,7 @@ import { initAIGame } from '../pong/ai/ai.js';
 import { navigate } from "./route_helpers.js";
 import { joinOnlineGame } from '../pong/game/game.js';
 import { initOfflineGame } from '../pong/game/local_game.js';
+import { initLocalGame2D } from '../pong/game/local_game_2d.js';
 import { startLocalTournament } from '../pong/tournament/local_tournament.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "../pong/game/game.js";
@@ -158,14 +159,7 @@ export function setupRoutes() {
 			return;
 
     await loadTemplate('local');
-    const canvas = createGameCanvas();
-    currentEngine = new Engine(canvas, true);
-    const scene = new Scene(currentEngine);
-    const gameObjects = initGameScene(scene, canvas, 2);
-    initOfflineGame(scene, gameObjects, false);
-    currentEngine.runRenderLoop(() => scene.render());
-    resizeListener = () => currentEngine.resize();
-    window.addEventListener("resize", resizeListener);
+    initLocalGame2D();
   };
 
   routes['/ai'] = async () => {
