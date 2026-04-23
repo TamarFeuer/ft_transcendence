@@ -18,7 +18,6 @@ export function initLoginPage(){
         if(result.username)
             window.location.href = "/";
         else if (result.error){
-            console.log('DdDDDDDDDDDDDD');
             showError(result.error);
         }
         else
