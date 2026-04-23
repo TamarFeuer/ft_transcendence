@@ -148,6 +148,8 @@ export function joinOnlineGame(gameId, IsTournament) {
   let keyUpHandler = null;
   let resizeHandler = null;
   let gameEnded = false;
+  let gameStarted = false;
+  let waitingModalTimer = null;
 
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
   ws = new WebSocket(`${proto}//${location.host}/ws/${gameId}`);
@@ -183,20 +185,46 @@ export function joinOnlineGame(gameId, IsTournament) {
     </div>
     `;
 
-    const leaveWaitingBtn = document.getElementById('leaveWaitingBtn');
-    if (leaveWaitingBtn) {
-      leaveWaitingBtn.addEventListener('click', () => {
-        suppressOnCloseNavigation = true;
-        closeGameConnection();
-        sessionStorage.removeItem('activeGameId');
-        sessionStorage.removeItem('activeTournamentId');
-        if (IsTournament) {
-          navigate(`/tournament/${window.currentTournamentId}`);
-        } else {
-          navigate('/online');
-        }
-      });
-    }
+    // Delay waiting modal slightly so player 2 does not see a flash when gameStart arrives immediately.
+    waitingModalTimer = setTimeout(() => {
+      if (gameStarted) {
+        return;
+      }
+
+      const gameContainer = document.getElementById('gameContainer');
+      if (!gameContainer || document.getElementById('waitingModal')) {
+        return;
+      }
+
+      gameContainer.insertAdjacentHTML('beforeend', `
+        <div id="waitingModal" class="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 pointer-events-auto">
+          <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
+            <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
+            <p class="text-gray-300 mb-2">Game will start soon</p>
+            <div class="text-4xl font-mono font-bold text-green-400 mb-6" id="countdownTimer"></div>
+            <p class="text-gray-400 text-sm mb-6">Game will proceed automatically when timer expires</p>
+            <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
+              Leave Game
+            </button>
+          </div>
+        </div>
+      `);
+
+      const leaveWaitingBtn = document.getElementById('leaveWaitingBtn');
+      if (leaveWaitingBtn) {
+        leaveWaitingBtn.addEventListener('click', () => {
+          suppressOnCloseNavigation = true;
+          closeGameConnection();
+          sessionStorage.removeItem('activeGameId');
+          sessionStorage.removeItem('activeTournamentId');
+          if (IsTournament) {
+            navigate(`/tournament/${window.currentTournamentId}`);
+          } else {
+            navigate('/online');
+          }
+        });
+      }
+    }, 350);
   };
 
   ws.onerror = (e) => console.error("WS error", e);
@@ -207,6 +235,12 @@ export function joinOnlineGame(gameId, IsTournament) {
       console.log("WS message", data);
 
       if (data.type === "gameStart") {
+        gameStarted = true;
+        if (waitingModalTimer) {
+          clearTimeout(waitingModalTimer);
+          waitingModalTimer = null;
+        }
+
         const appRoot = document.getElementById("app-root");
 
         appRoot.innerHTML = `
@@ -322,12 +356,22 @@ export function joinOnlineGame(gameId, IsTournament) {
         }
 
         // Close websocket
+        suppressOnCloseNavigation = true;
         ws?.close();
         ws = null;
         isGameActive = false;
         // Clear session storage
         sessionStorage.removeItem('activeGameId');
         sessionStorage.removeItem('activeTournamentId');
+        
+        // Navigate back after a short delay to let the user see the win message
+        setTimeout(() => {
+          if (IsTournament) {
+            navigate(`/tournament/${window.currentTournamentId}`);
+          } else {
+            navigate('/online');
+          }
+        }, 2000);
       }
 
     } catch (e) {
@@ -337,6 +381,10 @@ export function joinOnlineGame(gameId, IsTournament) {
 
   ws.onclose = () => {
     console.log("WS disconnected");
+    if (waitingModalTimer) {
+      clearTimeout(waitingModalTimer);
+      waitingModalTimer = null;
+    }
     isGameActive = false;
     if (!gameEnded) {
       clearInterval(keyboardInterval);
