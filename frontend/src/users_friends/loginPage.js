@@ -17,6 +17,10 @@ export function initLoginPage(){
         const result = await loginUser(username, password);
         if(result.username)
             window.location.href = "/";
+        else if (result.error){
+            console.log('DdDDDDDDDDDDDD');
+            showError(result.error);
+        }
         else
             showError("Invalid username or password, please try again.");
     })
