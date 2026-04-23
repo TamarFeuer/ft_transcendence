@@ -96,10 +96,13 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				await self.save_chess_result(self.game, winner, 'abandonment')
 
 				#announce result to global chat
+				loser_color = 'black' if winner == 'white' else 'white'
 				winner_name = getattr(self.game.players[winner], 'username', winner)
+				loser_name = getattr(self.game.players[loser_color], 'username', None)
 				await self.channel_layer.group_send('global_chat', {
-					'type': 'game.result',
+					'type': 'game_result',
 					'winner': winner_name,
+					'loser': loser_name,
 					'game_type': 'chess',
 					'is_tournament': False
 				})
@@ -164,11 +167,15 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			winner_color = over['winner']
 			if winner_color:
 				winner_name = getattr(self.game.players[winner_color], 'username', winner_color)
+				loser_color = 'black' if winner_color == 'white' else 'white'
+				loser_name = getattr(self.game.players[loser_color], 'username', None)
 			else:
 				winner_name = None
+				loser_name = None
 			await self.channel_layer.group_send('global_chat', {
-				'type': 'game.result',
+				'type': 'game_result',
 				'winner': winner_name,
+				'loser': loser_name,
 				'game_type': 'chess',
 				'is_tournament': False
 			})

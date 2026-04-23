@@ -193,7 +193,7 @@ export function initChatUI() {
 							handleRoute('/chess-online');
 						} else {
 							window.history.pushState({}, '', `/online?gameId=${msg.invite.gameId}`);
-							navigate('/online');
+							handleRoute('/online');
 						}
 					});
 					msgDiv.appendChild(acceptBtn);
@@ -494,6 +494,30 @@ export function initChatUI() {
 			// pendingInvite stays true until A leaves /chess-online
 			window.history.pushState({}, '', `/chess-online?gameId=${gameId}`);
 			handleRoute('/chess-online');
+		} else if (gameType === "pong") {
+			const res = await fetchWithRefreshAuth('/api/game/create', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ invitee_id: targetId })
+			});
+			if (!res.ok) {
+				pendingInvite = false;
+				showMessage("Could not create game. Please try again.", "error");
+				return;
+			}
+			const data = await res.json();
+			const gameId = data.gameId;
+			sendGameInvite(targetId, "pong", gameId);
+			openDMChannel(targetId, targetName, true, false);
+			addMessage(targetId, {
+				senderId: verifiedUserId,
+				senderName: null,
+				recipientName: targetName,
+				invite: { gameType: "pong", gameId }
+			});
+			// pendingInvite stays true until pong game ends
+			window.history.pushState({}, '', `/online?gameId=${gameId}`);
+			handleRoute('/online');
 		}
 	});
 
@@ -516,6 +540,10 @@ export function initChatUI() {
 	});
 
 	window.addEventListener("chessGameLeft", () => {
+		pendingInvite = false;
+	});
+
+	window.addEventListener("pongGameLeft", () => {
 		pendingInvite = false;
 	});
 

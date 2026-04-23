@@ -6,3 +6,4 @@ psycopg2-binary>=2.9.0
 djangorestframework>=3.14.0
 dotenv>=0.9.9
 python-chess
+django-axes>=6.0.0
