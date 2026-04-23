@@ -1,4 +1,5 @@
 import { createGameCanvas } from "../../routes/routes.js";
+import { fetchWithRefreshAuth } from "../../users_friends/usermanagement.js";
 
 import {
   ArcRotateCamera,
@@ -360,14 +361,13 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 
 export async function joinMatchmaking(){
-  const res = await fetch('/api/game/join', {
+  const res = await fetchWithRefreshAuth('/api/game/join', {
     method: 'POST',
-    credentials: 'include',
   });
 
   if (!res.ok){
     const text = await res.text();
-    throw new Error('join failed ${res.status}: ${text}');
+    throw new Error(`join failed ${res.status}: ${text}`);
   }
   const { gameId } = await res.json();
   joinOnlineGame(gameId, false);
