@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 import json
 import jwt
 from .models import GameSession, Player, Match, PlayerAchievement
+from chessgame.models import ChessPlayer
 from .services import get_match_history
 import logging
 import random
@@ -211,6 +212,27 @@ def match_history(request):
     })
     
 @require_http_methods(["GET"])
+def player_match_history(request, username):
+    try:
+        player = Player.objects.get(user__username=username)
+    except Player.DoesNotExist:
+        return JsonResponse({'error': 'Player not found'}, status=404)
+    matches = get_match_history(player)
+    return JsonResponse({
+        'matches': [
+            {
+                'timestamp': m.timestamp.isoformat(),
+                'player1': m.player1.user.username,
+                'player2': m.player2.user.username,
+                'player1_score': m.player1_score,
+                'player2_score': m.player2_score,
+                'winner': m.winner.user.username if m.winner else None,
+            }
+            for m in matches
+        ]
+    })
+
+@require_http_methods(["GET"])
 def player_achievements(request, username):
     try:
         player = Player.objects.get(user__username=username)
@@ -264,4 +286,40 @@ def my_stats(request):
         'total_games': player.total_games,
         'elo_rating': player.elo_rating,
         'current_win_streak': player.current_win_streak,
+    })
+
+@require_http_methods(["GET"])
+def player_profile(request, username):
+    User = get_user_model()
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+
+    try:
+        pong = Player.objects.get(user=user)
+        pong_data = {
+            'wins': pong.total_wins,
+            'losses': pong.total_losses,
+            'elo': pong.elo_rating,
+            'total_games': pong.total_games,
+        }
+    except Player.DoesNotExist:
+        pong_data = {'wins': 0, 'losses': 0, 'elo': 1000, 'total_games': 0}
+
+    try:
+        chess = ChessPlayer.objects.get(user=user)
+        chess_data = {
+            'wins': chess.total_wins,
+            'losses': chess.total_losses,
+            'elo': chess.elo_rating,
+            'total_games': chess.total_games,
+        }
+    except ChessPlayer.DoesNotExist:
+        chess_data = {'wins': 0, 'losses': 0, 'elo': 1200, 'total_games': 0}
+
+    return JsonResponse({
+        'username': user.username,
+        'pong': pong_data,
+        'chess': chess_data,
     })

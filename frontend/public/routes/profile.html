@@ -9,75 +9,111 @@
         </div>
         <p id="profile-username" class="text-white text-xl font-semibold text-center">Username</p>
 
-        <div class="bg-zinc-700 rounded-lg p-4 flex justify-around">
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">Wins</p>
-                <p id="profile-wins" class="text-white text-2xl font-bold">0</p>
+        <div class="bg-zinc-700 rounded-lg p-4 flex items-center">
+            <p class="text-white text-lg font-semibold">Pong</p>
+            <div class="flex-1 flex justify-around">
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Wins</p>
+                    <p id="pong-wins" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Losses</p>
+                    <p id="pong-losses" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">ELO</p>
+                    <p id="pong-elo" class="text-white text-2xl font-bold">0</p>
+                </div>
             </div>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">Losses</p>
-                <p id="profile-losses" class="text-white text-2xl font-bold">0</p>
-            </div>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">ELO</p>
-                <p id="profile-elo" class="text-white text-2xl font-bold">0</p>
+        </div>
+
+        <div class="bg-zinc-700 rounded-lg p-4 flex items-center">
+            <p class="text-white text-lg font-semibold">Chess</p>
+            <div class="flex-1 flex justify-around">
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Wins</p>
+                    <p id="chess-wins" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Losses</p>
+                    <p id="chess-losses" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">ELO</p>
+                    <p id="chess-elo" class="text-white text-2xl font-bold">0</p>
+                </div>
             </div>
         </div>
 
         <div class="bg-zinc-700 rounded-lg p-4">
-            <p class="text-white font-semibold mb-3">Add Friend</p>
-            <div class="flex gap-2">
-                <input id="friend-input" type="text" placeholder="Username"
-                    class="flex-1 p-2 rounded bg-zinc-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
-                <button id="friend-add-btn"
-                    class="px-4 py-2 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition transform hover:scale-105">
-                    Add
-                </button>
-            </div>
-            <p id="friend-status" class="text-sm mt-2"></p>
-        </div>
-
-        <div class="bg-zinc-700 rounded-lg p-4">
-            <p class="text-white font-semibold mb-3">Pending Requests</p>
-            <template id="pending-request-template">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center text-white font-bold pending-avatar"></div>
-                        <p class="text-white pending-username"></p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="accept-btn px-3 py-1 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition">Accept</button>
-                        <button class="decline-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-zinc-500 transition">Decline</button>
-                    </div>
+            <p class="text-white font-semibold mb-3">Match History</p>
+            <template id="match-template">
+                <div class="flex items-center justify-between border-t border-zinc-600 py-2">
+                    <p class="text-white match-opponent flex-1"></p>
+                    <p class="text-white match-score flex-1 text-center"></p>
+                    <p class="match-result flex-1 text-center"></p>
+                    <p class="text-zinc-400 text-sm match-date flex-1 text-right"></p>
                 </div>
             </template>
-            <div id="pending-list" class="flex flex-col gap-2" style="max-height: 240px; overflow-y: auto;"></div>
+            <div id="match-list" class="flex flex-col" style="max-height: 240px; overflow-y: auto;"></div>
         </div>
 
-        <div class="bg-zinc-700 rounded-lg p-4">
-            <p class="text-white font-semibold mb-3">Friends</p>
-            <template id="friend-template">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center text-white font-bold friend-avatar"></div>
-                        <p class="text-white friend-username"></p>
-                    </div>
-                    <button class="remove-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-red-500 transition">Remove</button>
+        <div id="own-profile-sections" class="flex flex-col gap-6">
+            <div class="bg-zinc-700 rounded-lg p-4">
+                <p class="text-white font-semibold mb-3">Add Friend</p>
+                <div class="flex gap-2">
+                    <input id="friend-input" type="text" placeholder="Username"
+                        class="flex-1 p-2 rounded bg-zinc-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <button id="friend-add-btn"
+                        class="px-4 py-2 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition transform hover:scale-105">
+                        Add
+                    </button>
                 </div>
-            </template>
-            <div id="friends-list" class="flex flex-col gap-2" style="max-height: 240px; overflow-y: auto;"></div>
+                <p id="friend-status" class="text-sm mt-2"></p>
+            </div>
+
+            <div class="bg-zinc-700 rounded-lg p-4">
+                <p class="text-white font-semibold mb-3">Pending Requests</p>
+                <template id="pending-request-template">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center text-white font-bold pending-avatar"></div>
+                            <p class="text-white pending-username"></p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="accept-btn px-3 py-1 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition">Accept</button>
+                            <button class="decline-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-zinc-500 transition">Decline</button>
+                        </div>
+                    </div>
+                </template>
+                <div id="pending-list" class="flex flex-col gap-2" style="max-height: 240px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="bg-zinc-700 rounded-lg p-4">
+                <p class="text-white font-semibold mb-3">Friends</p>
+                <template id="friend-template">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center text-white font-bold friend-avatar"></div>
+                            <p class="text-white friend-username"></p>
+                        </div>
+                        <button class="remove-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-red-500 transition">Remove</button>
+                    </div>
+                </template>
+                <div id="friends-list" class="flex flex-col gap-2" style="max-height: 240px; overflow-y: auto;"></div>
+            </div>
+
+
+            <button id="profile-stats"
+                class="w-full py-2 text-violet-400 font-semibold hover:text-white transition transform hover:scale-105">
+                Statistics
+            </button>
+
+            <button id="profile-logout"
+                class="w-full py-2 text-zinc-400 font-semibold hover:text-white transition transform hover:scale-105">
+                Logout
+            </button>
         </div>
-
-
-        <button id="profile-stats"
-            class="w-full py-2 text-violet-400 font-semibold hover:text-white transition transform hover:scale-105">
-            Statistics
-        </button>
-
-        <button id="profile-logout"
-            class="w-full py-2 text-zinc-400 font-semibold hover:text-white transition transform hover:scale-105">
-            Logout
-        </button>
 
     </div>
 </div>

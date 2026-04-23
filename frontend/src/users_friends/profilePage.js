@@ -1,53 +1,81 @@
 import { navigate } from "../routes/route_helpers.js";
-import { getCurrentUser, logoutUser, fetchWithRefreshAuth } from "./usermanagement.js";
+import { logoutUser, fetchWithRefreshAuth } from "./usermanagement.js";
 import { fetchFriendsList, removeFriend, sendFriendRequest } from "./friends.js";
 import { fetchPendingRequests, handleAccept, handleDelete } from "./friends.js";
 
 
-export async function initProfilePage(){
-    const user = await getCurrentUser();
-    
-    document.getElementById("profile-avatar").textContent = user.username.charAt(0).toUpperCase();
-    document.getElementById("profile-username").textContent = user.username;
+export async function initProfilePage(username){
+    let isSelf = false;
 
-    const logoutBtn = document.getElementById("profile-logout");
+    if (!username)
+    {
+        username = localStorage.getItem('username');
+        isSelf = true;
+    }
 
-    logoutBtn.addEventListener("click", async () =>{
-        await logoutUser();
-        navigate("/login");
-    })
+    const profile = await fetchProfile(username);
+    if (!profile) return;
 
-    document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
-    addFriend();
+    renderUser(profile);
+    renderStats(profile);
+    renderMatchHistory(profile.username);
+
+    if (isSelf) setupOwnProfile();
+    else hideOwnProfileSections();
+}
+
+async function fetchProfile(username){
+    const res = await fetchWithRefreshAuth(`/api/player/${username}/profile`);
+    if (res.status === 404){
+        navigate('/');
+        return;
+    }
+    return res.json();
+}
+
+function renderUser(profile){
+    document.getElementById("profile-avatar").textContent = profile.username.charAt(0).toUpperCase();
+    document.getElementById("profile-username").textContent = profile.username;
+}
+
+function renderStats(profile){
+    document.getElementById('pong-wins').textContent = profile.pong.wins;
+    document.getElementById('pong-losses').textContent = profile.pong.losses;
+    document.getElementById('pong-elo').textContent = profile.pong.elo;
+
+    document.getElementById('chess-wins').textContent = profile.chess.wins;
+    document.getElementById('chess-losses').textContent = profile.chess.losses;
+    document.getElementById('chess-elo').textContent = profile.chess.elo;
+}
+
+function setupOwnProfile(){
+    setupLogoutButton();
+    setupStatsNavButton();
+    setupAddFriend();
     renderPendingRequests();
     renderFriendList();
-    loadStats();
-
-    // setInterval(() => {
-    // renderPendingRequests();
-    // }, 3000);
 }
 
-function loadStats() {
-    fetchWithRefreshAuth('/api/player/me/stats')
-        .then(r => r.json())
-        .then(data => {
-            const wins = document.getElementById('profile-wins');
-            const losses = document.getElementById('profile-losses');
-            const elo = document.getElementById('profile-elo');
-            if (wins) wins.textContent = data.total_wins ?? 0;
-            if (losses) losses.textContent = data.total_losses ?? 0;
-            if (elo) elo.textContent = data.elo_rating ?? 0;
-        })
-        .catch(() => {});
+function hideOwnProfileSections(){
+    document.getElementById('own-profile-sections')?.remove();
 }
 
-function addFriend(){
+function setupLogoutButton(){
+    const logoutBtn = document.getElementById("profile-logout");
+    logoutBtn.addEventListener("click", async () => {
+        await logoutUser();
+        navigate("/login");
+    });
+}
 
+function setupStatsNavButton(){
+    document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
+}
+
+function setupAddFriend(){
     const addFriendBtn = document.getElementById("friend-add-btn");
 
     addFriendBtn.addEventListener("click", () => {
-
         const friendInput = document.getElementById("friend-input");
         if (!friendInput)
         {
@@ -56,8 +84,39 @@ function addFriend(){
         }
         const friendInputStr = friendInput.value;
         const status = document.getElementById("friend-status");
-    
+
         sendFriendRequest(friendInputStr, status);
+    });
+}
+
+async function renderMatchHistory(username){
+    const res = await fetchWithRefreshAuth(`/api/match-history/${username}`);
+    const data = await res.json();
+    const container = document.getElementById("match-list");
+    const template = document.getElementById("match-template");
+
+    container.innerHTML = "";
+    if (!data.matches || data.matches.length === 0)
+        return;
+
+    data.matches.slice(0, 10).forEach(m => {
+        const wrapDiv = document.createElement("div");
+        wrapDiv.innerHTML = template.innerHTML;
+        const row = wrapDiv.firstElementChild;
+
+        const isPlayer1 = m.player1 === username;
+        const opponent = isPlayer1 ? m.player2 : m.player1;
+        const myScore = isPlayer1 ? m.player1_score : m.player2_score;
+        const oppScore = isPlayer1 ? m.player2_score : m.player1_score;
+        const won = m.winner === username;
+
+        row.querySelector(".match-opponent").textContent = opponent;
+        row.querySelector(".match-score").textContent = `${myScore}-${oppScore}`;
+        row.querySelector(".match-result").textContent = won ? "Win" : "Loss";
+        row.querySelector(".match-result").classList.add(won ? "text-green-400" : "text-red-400");
+        row.querySelector(".match-date").textContent = new Date(m.timestamp).toLocaleDateString();
+
+        container.appendChild(row);
     })
 }
 
@@ -98,7 +157,7 @@ async function renderFriendList(){
     const {offlineFriends, onlineFriends} = await fetchFriendsList();
     const allFriends = [...onlineFriends, ...offlineFriends];
     const template = document.getElementById("friend-template");
-    
+
     container.innerHTML = "";
 
     if(allFriends.length === 0)
