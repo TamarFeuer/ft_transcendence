@@ -15,11 +15,24 @@ logger = logging.getLogger(__name__)
 @csrf_exempt
 @require_http_methods(["POST"])
 def create_game(request):
+    user, error = get_authenticated_user(request)
+    if error:
+        return error
+
+    invitee_id = None
+    try:
+        if request.body:
+            payload = json.loads(request.body.decode('utf-8'))
+            invitee_id = payload.get('invitee_id')
+    except Exception:
+        pass
+
     game = GameSession.create_game()
     game.isTournamentGame = False
+    if invitee_id is not None:
+        game.invitee_id = str(invitee_id)
 
-    # Use logging so output is captured by gunicorn/daphne/docker logs
-    logger.info(f"Created game with ID: {game.id}")
+    logger.info(f"Created game with ID: {game.id}, invitee_id={invitee_id}")
     return JsonResponse({
         'gameId': game.id,
         'status': 'waiting',

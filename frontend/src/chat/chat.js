@@ -151,6 +151,19 @@ export function initChat() {
 				}));
 				break;
 
+			case "game_result":
+				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
+					detail: {
+						channelId: "global",
+						message: {
+							senderId: null,
+							senderName: "🏆 Game Result",
+							message: data.message
+						}
+					}
+				}));
+				break;
+
 			// Another user started typing — show indicator (TODO in UI)
 			case "typing":
 				console.log(`${data.name || data.user} is typing...`);

@@ -287,7 +287,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		}))
 
 	async def game_result(self, event):
-		pass
+		winner = event.get("winner")
+		loser = event.get("loser")
+		game_type = event.get("game_type", "game")
+		if winner and loser:
+			msg = f"{winner} beat {loser} in a game of {game_type}!"
+		elif winner:
+			msg = f"{winner} won a game of {game_type}!"
+		else:
+			msg = f"A game of {game_type} ended in a draw."
+		await self.send(text_data=json.dumps({
+			"type": "game_result",
+			"message": msg,
+		}))
 
 	async def trigger_online_users_broadcast(self, event):
 		logger.debug(f"[broadcast] IN_GAME_USERS at broadcast time: {IN_GAME_USERS}")
