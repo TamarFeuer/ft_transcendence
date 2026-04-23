@@ -6,15 +6,22 @@ import { fetchPendingRequests, handleAccept, handleDelete } from "./friends.js";
 
 export async function initProfilePage(username){
     let isSelf = false;
-    
+
     if (!username)
     {
         username = localStorage.getItem('username');
         isSelf = true;
     }
 
-    renderUser(username);
-    renderStats(username);
+    const res = await fetchWithRefreshAuth(`/api/player/${username}/profile`);
+    if (res.status === 404) {
+        navigate('/');
+        return;
+    }
+    const profile = await res.json();
+
+    renderUser(profile);
+    renderStats(profile);
 
     if (isSelf){
         const logoutBtn = document.getElementById("profile-logout");
@@ -36,15 +43,15 @@ export async function initProfilePage(username){
     }
 }
 
-function renderUser(username){
-    document.getElementById("profile-avatar").textContent = username.charAt(0).toUpperCase();
-    document.getElementById("profile-username").textContent = username;
+function renderUser(profile){
+    document.getElementById("profile-avatar").textContent = profile.username.charAt(0).toUpperCase();
+    document.getElementById("profile-username").textContent = profile.username;
 }
 
-function renderStats(username) {
-    document.getElementById('profile-wins').textContent = 0;
-    document.getElementById('profile-losses').textContent = 0;
-    document.getElementById('profile-elo').textContent = 0;
+function renderStats(profile) {
+    document.getElementById('profile-wins').textContent = profile.pong.wins;
+    document.getElementById('profile-losses').textContent = profile.pong.losses;
+    document.getElementById('profile-elo').textContent = profile.pong.elo;
 }
 
 
