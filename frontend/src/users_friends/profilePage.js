@@ -38,9 +38,13 @@ function renderUser(profile){
 }
 
 function renderStats(profile){
-    document.getElementById('profile-wins').textContent = profile.pong.wins;
-    document.getElementById('profile-losses').textContent = profile.pong.losses;
-    document.getElementById('profile-elo').textContent = profile.pong.elo;
+    document.getElementById('pong-wins').textContent = profile.pong.wins;
+    document.getElementById('pong-losses').textContent = profile.pong.losses;
+    document.getElementById('pong-elo').textContent = profile.pong.elo;
+
+    document.getElementById('chess-wins').textContent = profile.chess.wins;
+    document.getElementById('chess-losses').textContent = profile.chess.losses;
+    document.getElementById('chess-elo').textContent = profile.chess.elo;
 }
 
 function setupOwnProfile(){
