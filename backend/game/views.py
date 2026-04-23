@@ -7,6 +7,7 @@ import logging
 from users.token_auth import get_user_from_token
 import jwt
 from django.conf import settings
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def create_game(request):
 
     creator_id = request.user.id
     token = request.COOKIES.get('access_token')
-    user = await get_user_from_token(token)
+    user = async_to_sync(get_user_from_token)(token)
 
     if user.id == None:
         return JsonResponse({
