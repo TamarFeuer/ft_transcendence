@@ -196,6 +196,7 @@ export function joinOnlineGame(gameId, IsTournament) {
         isGameActive = false;
         sessionStorage.removeItem('activeGameId');
         sessionStorage.removeItem('activeTournamentId');
+        window.dispatchEvent(new CustomEvent("pongGameLeft"));
         navigate('/');
     })
   };
@@ -351,7 +352,7 @@ export function joinOnlineGame(gameId, IsTournament) {
     if (IsTournament) {
       navigate(`/tournament/${window.currentTournamentId}`);
     } else {
-      console.log("DIBADIBADIBADOEDOE\n");
+      window.dispatchEvent(new CustomEvent("pongGameLeft"));
       navigate('/');
     }
   };
@@ -359,7 +360,7 @@ export function joinOnlineGame(gameId, IsTournament) {
 
 
 export async function joinMatchmaking(){
-  const res = await fetch('/api/game/join', { 
+  const res = await fetch('/api/game/join', {
     method: 'POST',
     credentials: 'include',
   });

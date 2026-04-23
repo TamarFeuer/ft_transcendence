@@ -8,6 +8,7 @@ from channels.db import database_sync_to_async
 from .models import GameSession, Player
 from .services import match_ends
 import logging
+from chat.consumers import IN_GAME_USERS
 
 logger = logging.getLogger(__name__)
 
@@ -226,11 +227,30 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
         logger.debug(f"Start game?: {self.game.can_start()}")
 
+        # Mark this player unavailable for invites as soon as they enter any pong session.
+        IN_GAME_USERS.add(str(user_id))
+
         # Start game if both players connected
         if self.game.can_start():
             self.game.start_game()
             # Update tournament game status to ongoing
             await sync_to_async(update_game_to_ongoing)(self.game_id)
+
+            player_ids = [str(pid) for pid in self.game.players_ids.values() if pid]
+            for pid in player_ids:
+                IN_GAME_USERS.add(pid)
+            await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+
+            # Expire any pending invites between these two players
+            if len(player_ids) == 2:
+                invite_ids = await self.get_invite_ids_between(player_ids[0], player_ids[1])
+                for gid in invite_ids:
+                    for uid in player_ids:
+                        await self.channel_layer.group_send(
+                            f'user_{uid}',
+                            {'type': 'game.invite.expired', 'game_id': gid}
+                        )
+
             # Refresh players after start
             players = self.game.get_players()
             p1 = players.get('left')
@@ -248,6 +268,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Start game loop
             asyncio.create_task(self.game_loop())
         else:
+            await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
             if self.game.isTournamentGame:
                 # Start timeout checker if this is a tournament game in waiting state
                 asyncio.create_task(self.check_join_timeout())
@@ -300,15 +321,25 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'new_achievements': new_achievements,
                     }
                 )
+                loser_name = getattr(departing_user, 'username', None)
                 await self.channel_layer.group_send(
-                    "global_chat",                                                               
-                    {           
+                    "global_chat",
+                    {
                         "type": "game_result",
-                        "winner": winner_name,              
-                        "game_type": "pong",        # or "chess"
+                        "winner": winner_name,
+                        "loser": loser_name,
+                        "game_type": "pong",
                         "is_tournament": self.game.isTournamentGame
-                    }                                                                            
+                    }
                 )
+
+            elif status_before == 'waiting' and getattr(self.game, 'invitee_id', None) is not None:
+                invitor_id = str(getattr(departing_user, 'id', None))
+                for uid in [self.game.invitee_id, invitor_id]:
+                    await self.channel_layer.group_send(
+                        f'user_{uid}',
+                        {'type': 'game.invite.expired', 'game_id': self.game_id}
+                    )
 
             # If all players are gone, reset game to waiting state
             players = self.game.get_players()
@@ -317,7 +348,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.game.status = 'waiting'
                 # Update tournament game status in database
                 await sync_to_async(reset_game_to_ready)(self.game_id)
-            
+
             if self.game.status == 'completed' and status_before != 'active':
                 await self.channel_layer.group_send(
                     self.game_group_name,
@@ -328,15 +359,21 @@ class GameConsumer(AsyncWebsocketConsumer):
                     }
                 )
                 await self.channel_layer.group_send(
-                    "global_chat",                                                               
-                    {           
+                    "global_chat",
+                    {
                         "type": "game_result",
-                        "winner": None,              
-                        "game_type": "pong",        # or "chess"
+                        "winner": None,
+                        "game_type": "pong",
                         "is_tournament": self.game.isTournamentGame
-                    }                                                                            
+                    }
                 )
-        
+
+            # Remove all players from in-game tracking
+            for player_id in self.game.players_ids.values():
+                if player_id:
+                    IN_GAME_USERS.discard(str(player_id))
+            await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+
         if hasattr(self, 'game_group_name'):
             await self.channel_layer.group_discard(
                 self.game_group_name,
@@ -384,6 +421,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                     self.game.status = "completed"
                     await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
 
+                    loser_user = players['right'] if result.get('winner') == 'left' else players['left']
+                    loser_name = getattr(loser_user, 'username', None)
+
                     # Run DB work in sync thread; pass users and resolve profiles in service.
                     result_data = await database_sync_to_async(match_ends)(
                         self.game,
@@ -399,6 +439,16 @@ class GameConsumer(AsyncWebsocketConsumer):
                             'winner': winner_name,
                             'winner_id': winner_id,
                             'new_achievements': new_achievements,
+                        }
+                    )
+                    await self.channel_layer.group_send(
+                        'global_chat',
+                        {
+                            'type': 'game_result',
+                            'winner': winner_name,
+                            'loser': loser_name,
+                            'game_type': 'pong',
+                            'is_tournament': self.game.isTournamentGame,
                         }
                     )
                     break
@@ -499,3 +549,19 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def close_connection(self, event):
         """Close the websocket connection"""
         await self.close(code=1008)
+
+    @sync_to_async
+    def get_invite_ids_between(self, user1_id, user2_id):
+        from chat.models import GameInvite, ConversationParticipant
+        conv_ids = ConversationParticipant.objects.filter(
+            user_id=user1_id
+        ).values_list('conversation_id', flat=True)
+        shared_conv_id = ConversationParticipant.objects.filter(
+            conversation_id__in=conv_ids,
+            user_id=user2_id
+        ).values_list('conversation_id', flat=True).first()
+        if not shared_conv_id:
+            return []
+        return list(GameInvite.objects.filter(
+            conversation_id=shared_conv_id
+        ).values_list('game_id', flat=True))
