@@ -9,36 +9,53 @@
         </div>
         <p id="profile-username" class="text-white text-xl font-semibold text-center">Username</p>
 
-        <div class="bg-zinc-700 rounded-lg p-4 flex items-center justify-around">
+        <div class="bg-zinc-700 rounded-lg p-4 flex items-center">
             <p class="text-white text-lg font-semibold">Pong</p>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">Wins</p>
-                <p id="pong-wins" class="text-white text-2xl font-bold">0</p>
-            </div>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">Losses</p>
-                <p id="pong-losses" class="text-white text-2xl font-bold">0</p>
-            </div>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">ELO</p>
-                <p id="pong-elo" class="text-white text-2xl font-bold">0</p>
+            <div class="flex-1 flex justify-around">
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Wins</p>
+                    <p id="pong-wins" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Losses</p>
+                    <p id="pong-losses" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">ELO</p>
+                    <p id="pong-elo" class="text-white text-2xl font-bold">0</p>
+                </div>
             </div>
         </div>
 
-        <div class="bg-zinc-700 rounded-lg p-4 flex items-center justify-around">
+        <div class="bg-zinc-700 rounded-lg p-4 flex items-center">
             <p class="text-white text-lg font-semibold">Chess</p>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">Wins</p>
-                <p id="chess-wins" class="text-white text-2xl font-bold">0</p>
+            <div class="flex-1 flex justify-around">
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Wins</p>
+                    <p id="chess-wins" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">Losses</p>
+                    <p id="chess-losses" class="text-white text-2xl font-bold">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-zinc-400 text-sm">ELO</p>
+                    <p id="chess-elo" class="text-white text-2xl font-bold">0</p>
+                </div>
             </div>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">Losses</p>
-                <p id="chess-losses" class="text-white text-2xl font-bold">0</p>
-            </div>
-            <div class="text-center">
-                <p class="text-zinc-400 text-sm">ELO</p>
-                <p id="chess-elo" class="text-white text-2xl font-bold">0</p>
-            </div>
+        </div>
+
+        <div class="bg-zinc-700 rounded-lg p-4">
+            <p class="text-white font-semibold mb-3">Match History</p>
+            <template id="match-template">
+                <div class="flex items-center justify-between border-t border-zinc-600 py-2">
+                    <p class="text-white match-opponent flex-1"></p>
+                    <p class="text-white match-score flex-1 text-center"></p>
+                    <p class="match-result flex-1 text-center"></p>
+                    <p class="text-zinc-400 text-sm match-date flex-1 text-right"></p>
+                </div>
+            </template>
+            <div id="match-list" class="flex flex-col" style="max-height: 240px; overflow-y: auto;"></div>
         </div>
 
         <div id="own-profile-sections" class="flex flex-col gap-6">

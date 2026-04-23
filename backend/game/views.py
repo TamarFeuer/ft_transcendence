@@ -199,6 +199,27 @@ def match_history(request):
     })
     
 @require_http_methods(["GET"])
+def player_match_history(request, username):
+    try:
+        player = Player.objects.get(user__username=username)
+    except Player.DoesNotExist:
+        return JsonResponse({'error': 'Player not found'}, status=404)
+    matches = get_match_history(player)
+    return JsonResponse({
+        'matches': [
+            {
+                'timestamp': m.timestamp.isoformat(),
+                'player1': m.player1.user.username,
+                'player2': m.player2.user.username,
+                'player1_score': m.player1_score,
+                'player2_score': m.player2_score,
+                'winner': m.winner.user.username if m.winner else None,
+            }
+            for m in matches
+        ]
+    })
+
+@require_http_methods(["GET"])
 def player_achievements(request, username):
     try:
         player = Player.objects.get(user__username=username)

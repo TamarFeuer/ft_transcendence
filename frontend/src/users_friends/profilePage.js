@@ -18,6 +18,7 @@ export async function initProfilePage(username){
 
     renderUser(profile);
     renderStats(profile);
+    renderMatchHistory(profile.username);
 
     if (isSelf) setupOwnProfile();
     else hideOwnProfileSections();
@@ -86,6 +87,37 @@ function setupAddFriend(){
 
         sendFriendRequest(friendInputStr, status);
     });
+}
+
+async function renderMatchHistory(username){
+    const res = await fetchWithRefreshAuth(`/api/match-history/${username}`);
+    const data = await res.json();
+    const container = document.getElementById("match-list");
+    const template = document.getElementById("match-template");
+
+    container.innerHTML = "";
+    if (!data.matches || data.matches.length === 0)
+        return;
+
+    data.matches.slice(0, 10).forEach(m => {
+        const wrapDiv = document.createElement("div");
+        wrapDiv.innerHTML = template.innerHTML;
+        const row = wrapDiv.firstElementChild;
+
+        const isPlayer1 = m.player1 === username;
+        const opponent = isPlayer1 ? m.player2 : m.player1;
+        const myScore = isPlayer1 ? m.player1_score : m.player2_score;
+        const oppScore = isPlayer1 ? m.player2_score : m.player1_score;
+        const won = m.winner === username;
+
+        row.querySelector(".match-opponent").textContent = opponent;
+        row.querySelector(".match-score").textContent = `${myScore}-${oppScore}`;
+        row.querySelector(".match-result").textContent = won ? "Win" : "Loss";
+        row.querySelector(".match-result").classList.add(won ? "text-green-400" : "text-red-400");
+        row.querySelector(".match-date").textContent = new Date(m.timestamp).toLocaleDateString();
+
+        container.appendChild(row);
+    })
 }
 
 async function renderPendingRequests(){
