@@ -13,7 +13,7 @@ class GameSession:
     _games = {}
     _lock = Lock()
     
-    JOIN_TIMEOUT = 10  # Maximum time in seconds to wait for both players to join
+    JOIN_TIMEOUT = 25  # Maximum time in seconds to wait for both players to join
     
     def __init__(self, game_id=None):
         self.id = game_id or str(uuid.uuid4())

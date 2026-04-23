@@ -300,7 +300,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 asyncio.create_task(self.check_join_timeout())
 
     async def disconnect(self, close_code):
-        logger.debug(f"Disconnecting from game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
+        logger.info(f"DISCONNECT: Player {self.scope['user']} disconnecting from game {self.game_id}, close_code={close_code}")
         if hasattr(self, 'game') and self.game:
             players_before = self.game.get_players()
             departing_user = self.scope.get('user')
@@ -311,33 +311,54 @@ class GameConsumer(AsyncWebsocketConsumer):
                 departing_role = 'right'
 
             status_before = self.game.status
+            logger.info(f"DISCONNECT: status_before={status_before}, departing_role={departing_role}, players_before={players_before}")
             self.game.remove_player(self.scope['user'])
 
             # If a participant disconnects during an active game, finish the game
             # and award win to the remaining player to avoid freeze on opponent side.
-            if departing_role in ('left', 'right') and status_before == 'active':
-                players_after = self.game.get_players()
-                winner_user = players_after.get('right') if departing_role == 'left' else players_after.get('left')
+            players_after = self.game.get_players()
+            logger.info(f"DISCONNECT: players_after={players_after}, checking if status={status_before} is active and has remaining players")
+            if status_before == 'active' and (players_after.get('left') or players_after.get('right')):
+                # Determine winner: whoever is still connected
+                winner_user = players_after.get('left') or players_after.get('right')
                 winner_id = getattr(winner_user, 'id', None)
-                winner_name = getattr(winner_user, 'username', 'Player disconnected')
+                winner_name = getattr(winner_user, 'username', 'Player')
 
                 self.game.status = 'completed'
-                await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+                logger.info(f"DISCONNECT: Sending game_over for game {self.game_id}, winner={winner_name}")
+                try:
+                    await sync_to_async(update_game_completed)(self.game_id, winner_id, winner_name)
+                except Exception as e:
+                    logger.exception(f"DISCONNECT: update_game_completed failed for game {self.game_id}: {e}")
 
                 # Force winner's score so match_ends can determine winner correctly
-                if departing_role == 'left':
-                    self.game.state['score']['p1'] = 0
-                    self.game.state['score']['p2'] = 1
-                else:
+                if players_after.get('left'):
                     self.game.state['score']['p1'] = 1
                     self.game.state['score']['p2'] = 0
-                result_data = await database_sync_to_async(match_ends)(
-                    self.game,
-                    self.game.players['left'],
-                    self.game.players['right'],
-                )
-                new_achievements = result_data.get('new_achievements', {})
+                else:
+                    self.game.state['score']['p1'] = 0
+                    self.game.state['score']['p2'] = 1
+                new_achievements = {}
+                left_player = self.game.players.get('left')
+                right_player = self.game.players.get('right')
+                # One side is disconnected here; protect stats update so game_over is always sent.
+                if left_player is not None and right_player is not None:
+                    try:
+                        result_data = await database_sync_to_async(match_ends)(
+                            self.game,
+                            left_player,
+                            right_player,
+                        )
+                        new_achievements = result_data.get('new_achievements', {})
+                    except Exception as e:
+                        logger.exception(f"DISCONNECT: match_ends failed for game {self.game_id}: {e}")
+                else:
+                    logger.info(
+                        f"DISCONNECT: skipping match_ends for game {self.game_id} because a player is missing "
+                        f"(left={left_player is not None}, right={right_player is not None})"
+                    )
 
+                logger.info(f"Player {departing_user} disconnected during active game {self.game_id}. Winner: {winner_name}")
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
@@ -357,6 +378,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'winner_id': winner_id
                     }
                 )
+                # Force all in-room clients back to lobby even if UI misses gameOver.
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        'type': 'close_connection'
+                    }
+                )
+            else:
+                logger.info(f"DISCONNECT: Condition not met - status was {status_before}, players_after={players_after}")
             
             # If all players are gone, reset game to waiting state
             players = self.game.get_players()
