@@ -2,6 +2,7 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR.parent / '.env')
@@ -38,7 +39,8 @@ INSTALLED_APPS = [
     'users',
     'friends',
     'chessgame',
-    'profiles'
+    'profiles',
+    'axes'
 ]
 
 print("Based dir:", BASE_DIR)
@@ -48,6 +50,18 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',
+]
+
+# Axes configuration
+AXES_FAILURE_LIMIT = 5          # lock after 5 failed attempts
+AXES_COOLOFF_TIME = timedelta(minutes=3)          # unlock after 3 minutes
+AXES_LOCKOUT_PARAMETERS = [["username", "user_agent"]]
+AXES_RESET_ON_SUCCESS = True    # reset counter on successful login
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 ROOT_URLCONF = 'django_server.urls'

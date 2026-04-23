@@ -94,6 +94,9 @@ export async function loginUser(username, password) {
     });
     const text = await res.text();
     if (!text) return { error: 'empty response from server' };
+
+    if (res.status === 429)
+        return {error: 'Too many failed attempts. Try again in 3 minutes'};
     const data = JSON.parse(text);
     if (res.ok && data.username) {
         localStorage.setItem('username', data.username);
