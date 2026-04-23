@@ -407,8 +407,7 @@ export function initChatUI() {
 		if (!action || !chatMenuUser) return;
 
 		if (action === "profile") {
-			// TODO: show user profile
-			console.log("View profile:", chatMenuUser);
+			navigate(`/profile/${chatMenuUser.name}`);
 		} else if (action === "invite") {
 			// Show game picker below the context menu — keep chatMenuUser alive for when picker is clicked
 			e.stopPropagation();
