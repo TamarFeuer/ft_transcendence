@@ -8,6 +8,7 @@ import jwt
 from .models import GameSession, Player, Match, PlayerAchievement
 from .services import get_match_history
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 def create_game(request):
     game = GameSession.create_game()
     game.isTournamentGame = False
+
     # Use logging so output is captured by gunicorn/daphne/docker logs
     logger.info(f"Created game with ID: {game.id}")
     return JsonResponse({
@@ -88,6 +90,35 @@ def get_authenticated_user(request):
         return user, None
     except (jwt.ExpiredSignatureError, jwt.DecodeError, User.DoesNotExist):
         return None, JsonResponse({'error': 'Invalid or expired token'}, status=401)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def join_pong(request):
+    user,error = get_authenticated_user(request)
+    if error:
+        return error
+    with GameSession._lock:
+        for game in GameSession._games.values():
+            if game.status == 'waiting' and not game.isTournamentGame:
+                left_id = getattr(game.players['left'], 'id', None)
+                right_id = getattr(game.players['right'], 'id', None)
+                #if exactly one slot is filled
+                if (left_id is None) != (right_id is None):
+                    if (user.id not in (left_id, right_id)):
+                        if game.players['left'] is None:
+                            game.players['left'] = user
+                        else:
+                            game.players['right'] = user
+                    return JsonResponse({'gameId': game.id})
+    
+    #if no game with empty slot exists, create a new one and allocate a random left or right position to the player
+    game = GameSession.create_game()
+    game.isTournamentGame = False
+    side = random.choice(['left', 'right'])
+    game.players[side] = user
+    return JsonResponse({'gameId': game.id})    
+
+
 
 # Cross-Site Request Forgery token is exempted because
 # Auth is handled via JWT in cookies, not Django's session system

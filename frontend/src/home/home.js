@@ -1,5 +1,6 @@
 import { navigate } from "../routes/route_helpers.js";
 import { setChessOnlineIntended } from "../routes/routes.js";
+import { joinMatchmaking } from "../pong/game/game.js";
 
 export function initHome() {
     const username = localStorage.getItem('username');
@@ -71,7 +72,7 @@ export function initHome() {
     document.getElementById('online-close-btn')?.addEventListener('click', () => closeOnlinePanel());
     document.getElementById('online-backdrop')?.addEventListener('click', () => closeOnlinePanel());
 
-    document.getElementById('play-ranked-btn')?.addEventListener('click', () => navigate('/online'));
+    document.getElementById('play-ranked-btn')?.addEventListener('click', () => joinMatchmaking());
     document.getElementById('play-tournament-btn')?.addEventListener('click', () => navigate('/tournament'));
 
     document.getElementById('localBtn')?.addEventListener('click', () => {
