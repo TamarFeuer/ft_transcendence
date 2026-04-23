@@ -1,7 +1,7 @@
 
 import { routes } from "../main.js";
 import { updatePageTranslations } from '../i18n/index.js';
-import { handleTournamentRoute } from './routes.js';
+import { handleTournamentRoute, handleProfileRoute } from './routes.js';
 import { closeChessConnection } from "../chess/chess-online.js";
 
 export function navigate(path) {
@@ -18,7 +18,13 @@ export function handleRoute(path) {
         handleTournamentRoute(path);
         return;
     }
-    
+
+    // Check for profile/:username route
+    if (path.match(/^\/profile\/[^\/]+$/)) {
+        handleProfileRoute(path);
+        return;
+    }
+
     const handler = routes[path];
     if (handler) {
         handler();

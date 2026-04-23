@@ -390,6 +390,14 @@ export function setupRoutes() {
 
   };
 
+  routes['/profile/:username'] = async (username) => {
+    stopTournamentAutoRefresh();
+    if(await redirectIfNotLoggedIn())
+      return;
+    await loadTemplate('profile');
+    await initProfilePage(username);
+  };
+
   routes['/stats'] = async () => {
     stopTournamentAutoRefresh();
     if (await redirectIfNotLoggedIn())
@@ -532,6 +540,17 @@ export function handleTournamentRoute(path) {
     const handler = routes['/tournament/:tournamentId'];
     if (handler) {
       handler(tournamentId);
+    }
+  }
+}
+
+export function handleProfileRoute(path) {
+  const match = path.match(/^\/profile\/([^\/]+)$/);
+  if (match) {
+    const username = match[1];
+    const handler = routes['/profile/:username'];
+    if (handler) {
+      handler(username);
     }
   }
 }
