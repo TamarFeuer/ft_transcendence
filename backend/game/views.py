@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 import json
 import jwt
 from .models import GameSession, Player, Match, PlayerAchievement
+from chessgame.models import ChessPlayer
 from .services import get_match_history
 import logging
 
@@ -220,4 +221,40 @@ def my_stats(request):
         'total_games': player.total_games,
         'elo_rating': player.elo_rating,
         'current_win_streak': player.current_win_streak,
+    })
+
+@require_http_methods(["GET"])
+def player_profile(request, username):
+    User = get_user_model()
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+
+    try:
+        pong = Player.objects.get(user=user)
+        pong_data = {
+            'wins': pong.total_wins,
+            'losses': pong.total_losses,
+            'elo': pong.elo_rating,
+            'total_games': pong.total_games,
+        }
+    except Player.DoesNotExist:
+        pong_data = {'wins': 0, 'losses': 0, 'elo': 0, 'total_games': 0}
+
+    try:
+        chess = ChessPlayer.objects.get(user=user)
+        chess_data = {
+            'wins': chess.total_wins,
+            'losses': chess.total_losses,
+            'elo': chess.elo_rating,
+            'total_games': chess.total_games,
+        }
+    except ChessPlayer.DoesNotExist:
+        chess_data = {'wins': 0, 'losses': 0, 'elo': 0, 'total_games': 0}
+
+    return JsonResponse({
+        'username': user.username,
+        'pong': pong_data,
+        'chess': chess_data,
     })
