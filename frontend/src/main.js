@@ -27,6 +27,14 @@ window.addEventListener('popstate', () => {
 	handleRoute(window.location.pathname);
 });
 
+window.addEventListener('beforeunload', () => {
+	// Trigger disconnect when refreshing, closing tab/window, or hard navigation
+	if (isGameActive){
+		closeGameConnection();
+		sessionStorage.removeItem('activeGameId');
+		sessionStorage.removeItem('activeTournamentId');
+	}	
+})
 // Auto-reconnect to game if page was refreshed
 /*
 window.addEventListener('load', async () => {

@@ -139,4 +139,12 @@ LOGGING = {
         'handlers': ['console'],
         'level': 'DEBUG',
     },
+    # Suppress noisy Daphne websocket debug logs by raising its logger level
+    'loggers': {
+        'daphne.ws_protocol': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
 }
