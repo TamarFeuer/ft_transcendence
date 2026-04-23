@@ -3,10 +3,21 @@ import { routes } from "../main.js";
 import { updatePageTranslations } from '../i18n/index.js';
 import { handleTournamentRoute, handleProfileRoute } from './routes.js';
 import { closeChessConnection } from "../chess/chess-online.js";
+import { isGameActive } from "../pong/game/game.js";
+import { closeGameConnection } from "../pong/game/game.js";
 
 export function navigate(path) {
-    if (window.location.pathname === '/chess-online' && path !== '/chess-online'){
+    const currentPath = window.location.pathname;
+    //close chess socket when leaving chess online path
+    if (currentPath === '/chess-online' && path !== '/chess-online'){
         closeChessConnection();
+    }
+
+    //close pong socket when user navgates away from the game
+    if (isGameActive && currentPath !== path){
+        closeGameConnection();
+        sessionStorage.removeItem('activeGameId');
+        sessionStorage.removeItem('activeTournamentId');
     }
     window.history.pushState({}, path, window.location.origin + path);
     handleRoute(path);
