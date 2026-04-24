@@ -1,4 +1,4 @@
-
+import { navigate } from "../routes/route_helpers.js";
 
 export function showMessage(message, type = 'info', duration = 2500) {
   const containerId = 'Message-container';
@@ -39,3 +39,9 @@ export function showError(message){
         errorPopup.classList.add("hidden")
     }, 4000);
 }
+
+export function arrowHomeButton(){
+  document.getElementById("back-btn")?.remove();   // "if there's already one, kill it"
+  
+  const btn = document.getElementById("back-button");
+} 
