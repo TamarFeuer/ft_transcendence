@@ -205,7 +205,6 @@ class GameSession:
                 if abs(state['ball']['vx']) < self.SPEED_LIMIT:
                     state['ball']['vx'] *= 1.1
                 # logger.info(f"1 state['ball']['vx']: {state['ball']['vx']}")
-
         
         # Scoring
         winner = None
