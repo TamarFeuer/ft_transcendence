@@ -1,6 +1,16 @@
 <div class="min-h-screen bg-zinc-900 flex flex-col">
 
-    <nav class="w-full h-16 lg:h-20 bg-zinc-800 border-b border-zinc-700 px-6 lg:px-8 xl:px-12 flex items-center justify-end shrink-0 z-10 relative">
+    <nav class="w-full h-16 lg:h-20 bg-zinc-800 border-b border-zinc-700 pl-3 lg:pl-4 xl:pl-6 pr-6 lg:pr-8 xl:pr-12 flex items-center justify-between shrink-0 z-10 relative">
+        <div class="flex items-center gap-1">
+            <input id="profile-search-input" type="text" placeholder="Search user..."
+                class="px-4 py-2 rounded-full bg-zinc-900 text-white text-sm placeholder:text-zinc-500 border border-zinc-700 focus:border-violet-400 focus:outline-none w-48 transition">
+            <button id="profile-search-btn" class="text-violet-400 hover:text-white transition p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </button>
+        </div>
         <button type="button" id="profileNavBtn" class="flex items-center gap-3 lg:gap-4 cursor-pointer group bg-transparent border-none outline-none">
             <span id="navUsername" class="text-zinc-300 font-semibold text-sm lg:text-base xl:text-lg group-hover:text-white transition"></span>
             <div id="navAvatar" class="w-8 h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm lg:text-base xl:text-lg group-hover:bg-violet-400 transition"></div>
