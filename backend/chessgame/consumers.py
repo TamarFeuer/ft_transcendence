@@ -236,14 +236,24 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 			if winner == 'white':
 				white_result, black_result = 1, 0
+				result_str = '1-0'
+				white_cp.total_wins += 1
+				black_cp.total_losses += 1
 			elif winner == 'black':
 				white_result, black_result = 0, 1
+				result_str = '0-1'
+				white_cp.total_losses += 1
+				black_cp.total_wins += 1
 			else:
 				white_result, black_result = 0.5, 0.5
+				result_str = '1/2-1/2'
 			
 			#update players' elo
 			white_cp.update_elo(black_elo_before, white_result)
 			black_cp.update_elo(white_elo_before, black_result)
+
+			white_cp.total_games += 1
+			black_cp.total_games += 1
 
 			ChessMatch.objects.create(
 				white=white_cp,

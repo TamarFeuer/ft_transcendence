@@ -70,6 +70,7 @@ function setupLogoutButton(){
 
 function setupStatsNavButton(){
     document.getElementById("profile-stats")?.addEventListener("click", () => navigate("/stats"));
+    document.getElementById("profile-chess-stats")?.addEventListener("click", () => navigate("/chess-stats"));
 }
 
 function setupAddFriend(){

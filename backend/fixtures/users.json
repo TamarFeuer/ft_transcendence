@@ -611,5 +611,191 @@
     "achievement": 5,
     "timestamp": "2026-03-22T10:15:34.123Z"
   }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "elo_rating": 1240,
+    "total_games": 5,
+    "total_wins": 3,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "elo_rating": 1185,
+    "total_games": 4,
+    "total_wins": 2,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "elo_rating": 1310,
+    "total_games": 7,
+    "total_wins": 5,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 4,
+  "fields": {
+    "user": 4,
+    "elo_rating": 1160,
+    "total_games": 3,
+    "total_wins": 1,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 5,
+  "fields": {
+    "user": 5,
+    "elo_rating": 1275,
+    "total_games": 4,
+    "total_wins": 3,
+    "total_losses": 1
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 6,
+  "fields": {
+    "user": 6,
+    "elo_rating": 1200,
+    "total_games": 5,
+    "total_wins": 2,
+    "total_losses": 3
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 1,
+  "fields": {
+    "white": 3,
+    "black": 2,
+    "result": "1-0",
+    "white_elo_before": 1280,
+    "black_elo_before": 1200,
+    "timestamp": "2026-03-18T10:00:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 2,
+  "fields": {
+    "white": 1,
+    "black": 4,
+    "result": "1-0",
+    "white_elo_before": 1200,
+    "black_elo_before": 1200,
+    "timestamp": "2026-03-19T14:30:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 3,
+  "fields": {
+    "white": 2,
+    "black": 5,
+    "result": "0-1",
+    "white_elo_before": 1215,
+    "black_elo_before": 1200,
+    "timestamp": "2026-03-20T09:15:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 4,
+  "fields": {
+    "white": 6,
+    "black": 3,
+    "result": "0-1",
+    "white_elo_before": 1200,
+    "black_elo_before": 1295,
+    "timestamp": "2026-03-21T16:00:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 5,
+  "fields": {
+    "white": 5,
+    "black": 1,
+    "result": "1-0",
+    "white_elo_before": 1220,
+    "black_elo_before": 1220,
+    "timestamp": "2026-03-22T11:45:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 6,
+  "fields": {
+    "white": 4,
+    "black": 6,
+    "result": "1/2-1/2",
+    "white_elo_before": 1185,
+    "black_elo_before": 1210,
+    "timestamp": "2026-03-23T08:30:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 7,
+  "fields": {
+    "white": 3,
+    "black": 5,
+    "result": "1-0",
+    "white_elo_before": 1300,
+    "black_elo_before": 1240,
+    "timestamp": "2026-03-24T15:20:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 8,
+  "fields": {
+    "white": 1,
+    "black": 6,
+    "result": "0-1",
+    "white_elo_before": 1230,
+    "black_elo_before": 1195,
+    "timestamp": "2026-03-25T13:00:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 9,
+  "fields": {
+    "white": 2,
+    "black": 4,
+    "result": "1-0",
+    "white_elo_before": 1175,
+    "black_elo_before": 1175,
+    "timestamp": "2026-03-26T10:10:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 10,
+  "fields": {
+    "white": 5,
+    "black": 6,
+    "result": "1-0",
+    "white_elo_before": 1255,
+    "black_elo_before": 1205,
+    "timestamp": "2026-03-27T17:45:00.000Z"
+  }
 }
 ]
