@@ -41,7 +41,16 @@ export function showError(message){
 }
 
 export function arrowHomeButton(){
-  document.getElementById("back-btn")?.remove();   // "if there's already one, kill it"
+  document.getElementById("back-btn")?.remove();
   
-  const btn = document.getElementById("back-button");
+  const btn = document.createElement("button");
+  btn.id = "back-btn";
+  btn.innerHTML = "&larr;";
+  btn.className = "fixed top-6 left-6 z-50 text-3xl font-black text-violet-400 hover:text-white transition duration-200 hover:scale-110";
+  btn.style.webkitTextStroke = "2px currentColor";
+  btn.addEventListener("click", () => {
+    navigate("/");
+  })
+
+  document.body.appendChild(btn);
 } 

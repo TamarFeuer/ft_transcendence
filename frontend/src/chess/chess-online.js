@@ -2,6 +2,7 @@ import { Chess } from 'chess.js'
 import { renderBoard } from './chess.js'
 import { showChessResultModal } from './chess-modal.js'
 import { navigate } from '../routes/route_helpers.js'
+import { arrowHomeButton } from '../utils/utils.js'
 
 let _chessWs = null;
 
@@ -80,6 +81,8 @@ export async function initOnlineChessGame(gameId = null){
 	const waitingEl = document.getElementById('waiting-overlay');
 	const statusEl  = document.getElementById('game-status');
 
+	arrowHomeButton();
+
 	// Keep board square but responsive to container width to avoid right-edge clipping.
 	boardEl.className = 'mx-auto grid w-full max-w-[36rem] grid-cols-8 aspect-square auto-rows-fr';
 
@@ -132,6 +135,7 @@ export async function initOnlineChessGame(gameId = null){
 		else if (data.type === 'gameStart') {
 			gameActive = true;
 			if (waitingEl) waitingEl.classList.add('hidden');
+			document.getElementById("back-btn")?.remove();
 			game.load(data.fen);
 			populateChessAttributes(data, myColor);
 			myTurn = (myColor === 'white');
