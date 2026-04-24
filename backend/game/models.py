@@ -6,6 +6,9 @@ from django.db import models
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import logging
+
+logger = logging.getLogger(__name__)
 
 class GameSession:
     """In-memory game session management"""
@@ -13,6 +16,7 @@ class GameSession:
     _games = {}
     _lock = Lock()
     
+    SPEED_LIMIT = 20
     JOIN_TIMEOUT = 10  # Maximum time in seconds to wait for both players to join
     
     def __init__(self, game_id=None):
@@ -182,18 +186,26 @@ class GameSession:
         # Top/bottom bounce
         if state['ball']['y'] > 4 or state['ball']['y'] < -4:
             state['ball']['vy'] *= -1
-        
+        logger.info(f"state['ball']['x']: {state['ball']['x']}")
+
         # Left paddle collision
         if state['ball']['x'] < -3.5:
             if abs(state['ball']['y'] - state['paddles']['left']) < 1.2:
                 state['ball']['vx'] = abs(state['ball']['vx'])
-                state['ball']['vx'] *= 1.1
+                logger.info(f"0 state['ball']['vx']: {state['ball']['vx']}")
+                if abs(state['ball']['vx']) < self.SPEED_LIMIT:
+                    state['ball']['vx'] *= 1.1
+                logger.info(f"1 state['ball']['vx']: {state['ball']['vx']}")
         
         # Right paddle collision
         if state['ball']['x'] > 3.5:
             if abs(state['ball']['y'] - state['paddles']['right']) < 1.2:
                 state['ball']['vx'] = -abs(state['ball']['vx'])
-                state['ball']['vx'] *= 1.1
+                logger.info(f"0 state['ball']['vx']: {state['ball']['vx']}")
+                if abs(state['ball']['vx']) < self.SPEED_LIMIT:
+                    state['ball']['vx'] *= 1.1
+                logger.info(f"1 state['ball']['vx']: {state['ball']['vx']}")
+
         
         # Scoring
         winner = None
