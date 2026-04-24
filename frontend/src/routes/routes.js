@@ -366,6 +366,93 @@ export function setupRoutes() {
       .catch(() => {});
   };
 
+  routes['/chess-stats'] = async () => {
+    stopTournamentAutoRefresh();
+    if (await redirectIfNotLoggedIn())
+      return;
+
+    await loadTemplate('stats_chess');
+
+    document.getElementById('stats-back-btn')?.addEventListener('click', () => navigate('/profile'));
+
+    fetchWithRefreshAuth('/api/chess/stats/')
+      .then(r => r.json())
+      .then(data => {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '-'; };
+        set('stats-total-games', data.total_games);
+        set('stats-wins', data.total_wins);
+        set('stats-losses', data.total_losses);
+        set('stats-elo', data.elo_rating);
+      })
+      .catch(() => {});
+
+    fetchWithRefreshAuth('/api/chess/leaderboard/')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('stats-leaderboard-table');
+        if (!tbody) return;
+        if (!data.leaderboard || data.leaderboard.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500 pt-2">No data yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.leaderboard
+          .map((p, i) => {
+            const medal = i === 0 ? '#1' : i === 1 ? '#2' : i === 2 ? '#3' : `#${i + 1}`;
+            return `<tr class="border-t border-zinc-700">
+              <td class="py-1 pr-3">${medal}</td>
+              <td class="py-1 pr-3 font-semibold">${p.username}</td>
+              <td class="py-1 pr-3 text-violet-400">${p.elo_rating}</td>
+              <td class="py-1 pr-3 text-green-400">${p.total_wins}</td>
+              <td class="py-1 text-yellow-400">${p.total_games}</td>
+            </tr>`;
+          })
+          .join('');
+      })
+      .catch(() => {
+        const tbody = document.getElementById('stats-leaderboard-table');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500">Could not load.</td></tr>';
+      });
+
+    fetchWithRefreshAuth('/api/chess/match-history/')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('stats-history-table');
+        if (!tbody) return;
+        if (!data.matches || data.matches.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-zinc-500 pt-2">No games yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.matches
+          .map(m => {
+            const resultLabel = m.result === '1/2-1/2'
+              ? '<span class="text-zinc-400">Draw</span>'
+              : m.winner
+                ? (m.winner === m.opponent
+                    ? '<span class="text-red-400">Loss</span>'
+                    : '<span class="text-green-400">Win</span>')
+                : '<span class="text-zinc-400">-</span>';
+            const colorDot = (color) => color === 'White'
+              ? '<span class="inline-block w-4 h-4 rounded-sm bg-white border border-zinc-400"></span>'
+              : '<span class="inline-block w-4 h-4 rounded-sm bg-zinc-900 border border-zinc-500"></span>';
+            const yourColor = m.white === m.opponent ? 'Black' : 'White';
+            const opponentColor = m.white === m.opponent ? 'White' : 'Black';
+            const date = new Date(m.timestamp).toLocaleDateString();
+            return `<tr class="border-t border-zinc-700">
+              <td class="py-1 pr-3">${colorDot(yourColor)}</td>
+              <td class="py-1 pr-3 flex items-center gap-2">${colorDot(opponentColor)} ${m.opponent}</td>
+              <td class="py-1 pr-3 font-semibold">${m.result}</td>
+              <td class="py-1 pr-3">${resultLabel}</td>
+              <td class="py-1 text-zinc-400">${date}</td>
+            </tr>`;
+          })
+          .join('');
+      })
+      .catch(() => {
+        const tbody = document.getElementById('stats-history-table');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500">Could not load.</td></tr>';
+      });
+  };
+
   routes['/tournament/:tournamentId'] = async (tournamentId) => {
     stopTournamentAutoRefresh();
     if(await redirectIfNotLoggedIn())

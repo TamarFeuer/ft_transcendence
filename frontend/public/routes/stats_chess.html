@@ -1,0 +1,71 @@
+<div class="min-h-screen flex justify-center items-start bg-zinc-900 py-12 px-4">
+  <div class="w-full max-w-3xl flex flex-col gap-6">
+
+    <div class="flex items-center gap-4">
+      <button id="stats-back-btn" class="text-zinc-400 hover:text-white transition text-sm">← Back</button>
+      <h1 class="text-white text-4xl font-bold">Statistics</h1>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="bg-zinc-800 rounded-lg p-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+      <div>
+        <p class="text-zinc-400 text-sm mb-1">Total Games</p>
+        <p id="stats-total-games" class="text-white text-3xl font-bold">—</p>
+      </div>
+      <div>
+        <p class="text-zinc-400 text-sm mb-1">Wins</p>
+        <p id="stats-wins" class="text-green-400 text-3xl font-bold">—</p>
+      </div>
+      <div>
+        <p class="text-zinc-400 text-sm mb-1">Losses</p>
+        <p id="stats-losses" class="text-red-400 text-3xl font-bold">—</p>
+      </div>
+      <div>
+        <p class="text-zinc-400 text-sm mb-1">ELO</p>
+        <p id="stats-elo" class="text-violet-400 text-3xl font-bold">—</p>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="bg-zinc-800 rounded-lg p-6">
+      <p class="text-white font-semibold text-lg mb-3">🥇 Leaderboard</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-orange-400 text-xs uppercase border-b border-zinc-700">
+              <th class="text-left pb-2 pr-3">#</th>
+              <th class="text-left pb-2 pr-3">Player</th>
+              <th class="text-left pb-2 pr-3">ELO</th>
+              <th class="text-left pb-2 pr-3">Wins</th>
+              <th class="text-left pb-2">Games</th>
+            </tr>
+          </thead>
+          <tbody id="stats-leaderboard-table">
+            <tr><td colspan="5" class="text-zinc-500 pt-2">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Match history -->
+    <div class="bg-zinc-800 rounded-lg p-6">
+      <p class="text-white font-semibold text-lg mb-3">🕹️ Match History</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-orange-400 text-xs uppercase border-b border-zinc-700">
+              <th class="text-left pb-2 pr-3">You</th>
+              <th class="text-left pb-2 pr-3">Opponent</th>
+              <th class="text-left pb-2 pr-3">Score</th>
+              <th class="text-left pb-2 pr-3">Result</th>
+              <th class="text-left pb-2">Date</th>
+            </tr>
+          </thead>
+          <tbody id="stats-history-table">
+            <tr><td colspan="4" class="text-zinc-500 pt-2">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
