@@ -194,7 +194,9 @@ class GameSession:
                 state['ball']['vx'] = abs(state['ball']['vx'])
                 # logger.info(f"0 state['ball']['vx']: {state['ball']['vx']}")
                 if abs(state['ball']['vx']) < self.SPEED_LIMIT:
-                    state['ball']['vx'] *= 1.1
+                    state['ball']['vx'] *= 1.105
+                    state['ball']['vy'] *= 1.105
+
                 # logger.info(f"1 state['ball']['vx']: {state['ball']['vx']}")
         
         # Right paddle collision
@@ -203,7 +205,8 @@ class GameSession:
                 state['ball']['vx'] = -abs(state['ball']['vx'])
                 # logger.info(f"0 state['ball']['vx']: {state['ball']['vx']}")
                 if abs(state['ball']['vx']) < self.SPEED_LIMIT:
-                    state['ball']['vx'] *= 1.1
+                    state['ball']['vx'] *= 1.105
+                    state['ball']['vy'] *= 1.105
                 # logger.info(f"1 state['ball']['vx']: {state['ball']['vx']}")
         
         # Scoring
