@@ -2,11 +2,13 @@ import { navigate } from "../routes/route_helpers.js";
 import { logoutUser, fetchWithRefreshAuth } from "./usermanagement.js";
 import { fetchFriendsList, removeFriend, sendFriendRequest } from "./friends.js";
 import { fetchPendingRequests, handleAccept, handleDelete } from "./friends.js";
+import { arrowHomeButton } from "../utils/utils.js";
 
 
 export async function initProfilePage(username){
+    arrowHomeButton();
+    
     let isSelf = false;
-
     if (!username)
     {
         username = localStorage.getItem('username');
