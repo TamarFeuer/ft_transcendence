@@ -156,8 +156,6 @@ class GameSession:
     
     def tick(self):
         """Update game state"""
-        import random
-        
         if self.status != 'active':
             return None
         
@@ -174,18 +172,28 @@ class GameSession:
         # Top/bottom bounce
         if state['ball']['y'] > 4 or state['ball']['y'] < -4:
             state['ball']['vy'] *= -1
+
+        paddle_radius = 1.2
+        max_speed = 8
         
         # Left paddle collision
         if state['ball']['x'] < -3.5:
-            if abs(state['ball']['y'] - state['paddles']['left']) < 1.2:
-                state['ball']['vx'] = abs(state['ball']['vx'])
-                state['ball']['vx'] *= 1.1
-        
+            impact = (state['ball']['y'] - state['paddles']['left']) / paddle_radius
+            if abs(impact) <= 1:
+                speed = min((state['ball']['vx'] ** 2 + state['ball']['vy'] ** 2) ** 0.5 * 1.05, max_speed)
+                state['ball']['vx'] = abs(speed * (1 - impact * impact) ** 0.5)
+                state['ball']['vy'] = speed * impact
+                state['ball']['x'] = -3.5
+
+
         # Right paddle collision
         if state['ball']['x'] > 3.5:
-            if abs(state['ball']['y'] - state['paddles']['right']) < 1.2:
-                state['ball']['vx'] = -abs(state['ball']['vx'])
-                state['ball']['vx'] *= 1.1
+            impact = (state['ball']['y'] - state['paddles']['right']) / paddle_radius
+            if abs(impact) <= 1:
+                speed = min((state['ball']['vx'] ** 2 + state['ball']['vy'] ** 2) ** 0.5 * 1.05, max_speed)
+                state['ball']['vx'] = -abs(speed * (1 - impact * impact) ** 0.5)
+                state['ball']['vy'] = speed * impact
+                state['ball']['x'] = 3.5
         
         # Scoring
         winner = None

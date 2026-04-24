@@ -74,11 +74,11 @@ export function initGameScene(scene, canvas, playerCount) {
   dynamicTexture.update();
   ballMat.diffuseTexture = dynamicTexture;
 
-  const paddleLeft = MeshBuilder.CreateBox("paddleLeft", { height: 1.5, width: 0.25, depth: 0.2 }, scene);
+  const paddleLeft = MeshBuilder.CreateSphere("paddleLeft", { diameter: 1.5 }, scene);
   paddleLeft.material = paddleMat;
   paddleLeft.position = new Vector3(-4, 0, 0);
 
-  const paddleRight = MeshBuilder.CreateBox("paddleRight", { height: 1.5, width: 0.25, depth: 0.2 }, scene);
+  const paddleRight = MeshBuilder.CreateSphere("paddleRight", { diameter: 1.5 }, scene);
   paddleRight.material = paddleMat;
   paddleRight.position = new Vector3(4, 0, 0);
 
