@@ -104,6 +104,10 @@ class ChessPlayer(models.Model):
 			self.total_losses += 1
 		self.save()
 
+	@classmethod
+	def get_leaderboard(cls):
+		return cls.objects.select_related('user').order_by('-elo_rating')[:10]
+
 class ChessMatch(models.Model):
 	white = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_white')
 	black = models.ForeignKey(ChessPlayer, on_delete=models.SET_NULL, null = True, related_name='games_as_black')
