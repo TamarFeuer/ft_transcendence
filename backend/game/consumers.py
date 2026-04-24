@@ -483,7 +483,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
 
     async def check_join_timeout(self):
-        if not self.game or not sef.game.isTournamentGame:
+        if not self.game or not self.game.isTournamentGame:
             return
         """Check for join timeout and handle results if expired"""
         while self.game and self.game.status == 'waiting' and not self.game.timeout_handled:
