@@ -146,17 +146,17 @@ export function joinOnlineGame(gameId, IsTournament) {
   let resizeHandler = null;
   let gameEnded = false;
 
-  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  // const proto = location.protocol === "https:" ? "wss:" : "ws:";
   // Cookies are automatically sent with WebSocket connections
   // Connect to backend on port 3000 (not vite dev server on 5173)
-  const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
+  // const wsHost = import.meta.env.DEV ? 'localhost:3000' : location.host;
 
   // console.log("DEV import:", import.meta.env.DEV);
   // console.log("WS Host:", wsHost);
   // console.log("location.host:", location.host);
 
-  const url = `${proto}//${wsHost}/ws/${gameId}`;
-  ws = new WebSocket(url);
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  ws = new WebSocket(`${proto}//${location.host}/ws/${gameId}`);
 
   ws.onopen = () => {
     console.log("WS connected to game:", gameId);
