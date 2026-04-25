@@ -145,10 +145,9 @@ export function joinOnlineGame(gameId, IsTournament) {
   let keyUpHandler = null;
   let resizeHandler = null;
   let gameEnded = false;
-  
+
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
   ws = new WebSocket(`${proto}//${location.host}/ws/${gameId}`);
-
   ws.onopen = () => {
     console.log("WS connected to game:", gameId);
     isGameActive = true;
@@ -189,7 +188,6 @@ export function joinOnlineGame(gameId, IsTournament) {
         isGameActive = false;
         sessionStorage.removeItem('activeGameId');
         sessionStorage.removeItem('activeTournamentId');
-        window.dispatchEvent(new CustomEvent("pongGameLeft"));
         navigate('/');
     })
   };
@@ -286,7 +284,8 @@ export function joinOnlineGame(gameId, IsTournament) {
 
       if (data.type === "gameOver") {
         gameEnded = true;
-        
+        window.dispatchEvent(new CustomEvent("pongGameLeft"));
+
         // Remove waiting modal if it still exists
         const waitingModal = document.getElementById("waitingModal");
         if (waitingModal) {
