@@ -224,11 +224,13 @@ export function initChatUI() {
 		// Scroll to bottom so latest message is always visible
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 
-		// Clear unread badge when switching to this channel
-		const tab = document.querySelector(`[data-channel="${channelId}"]`);
-		if (tab) {
-			const badge = tab.querySelector(".unread-badge");
-			if (badge) badge.remove();
+		// Clear unread badge only when the user is actively viewing this channel
+		if (channelId === activeChannel) {
+			const tab = document.querySelector(`[data-channel="${channelId}"]`);
+			if (tab) {
+				const badge = tab.querySelector(".unread-badge");
+				if (badge) badge.remove();
+			}
 		}
 	}
 
@@ -559,8 +561,24 @@ export function initChatUI() {
 	function removeInviteFromHistory(gameId) {
 		for (const channelId in messageHistory) {
 			const before = messageHistory[channelId].length;
+			const removedFromOther = messageHistory[channelId].filter(
+				m => m.invite?.gameId === gameId && m.senderId !== verifiedUserId
+			).length;
 			messageHistory[channelId] = messageHistory[channelId].filter(m => m.invite?.gameId !== gameId);
-			if (messageHistory[channelId].length < before) renderMessages(channelId);
+			if (messageHistory[channelId].length < before) {
+				renderMessages(channelId);
+				if (channelId !== activeChannel && removedFromOther > 0) {
+					const tab = document.querySelector(`[data-channel="${channelId}"]`);
+					if (tab) {
+						const badge = tab.querySelector(".unread-badge");
+						if (badge) {
+							const newCount = parseInt(badge.textContent) - removedFromOther;
+							if (newCount <= 0) badge.remove();
+							else badge.textContent = newCount;
+						}
+					}
+				}
+			}
 		}
 	}
 

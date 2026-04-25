@@ -14,6 +14,7 @@ ONLINE_USERS = {}          # user_id -> username
 USER_CONNECTION_COUNT = {}  # user_id -> number of open tabs; reaches 0 when last tab closes
 ACTIVE_CONVERSATION = {}   # user_id -> other_user_id they currently have open
 IN_GAME_USERS = set()      # user_ids currently in an active game (any game type)
+PENDING_GAME_RESULTS = {}  # user_id -> game result message to deliver on next reconnect
 # unread_count and is_closed are stored in ConversationParticipant in the database.
 # ACTIVE_CONVERSATION stays in-memory: it reflects the live UI state and resets
 # naturally when the user reconnects.
@@ -73,6 +74,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"user_id": self.user_id,
 			"name": self.username
 		}))
+
+		# Deliver any game result the user missed while their chat WS was down.
+		pending = PENDING_GAME_RESULTS.pop(self.user_id, None)
+		if pending:
+			await self.send(text_data=json.dumps(pending))
 
 		# Broadcast updated online users list to everyone.
 		await self.broadcast_online_users()
