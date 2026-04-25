@@ -73,7 +73,8 @@ export function initChatUI() {
 		if (channelId === "global") {
 			channelTitle.textContent = "# Global Chat";
 		} else {
-			const name = onlineUsers[channelId]?.name;
+			const name = onlineUsers[channelId]?.name
+				|| activeTab?.querySelector("span:nth-child(2)")?.textContent;
 			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
 			markRead(channelId);
 		}
