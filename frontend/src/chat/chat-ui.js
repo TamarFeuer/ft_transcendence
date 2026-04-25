@@ -153,8 +153,9 @@ export function initChatUI() {
 		if (channelId === activeChannel) {
 			// User is already viewing this channel, render immediately
 			renderMessages(channelId);
-			// If it's a DM from someone else, mark it read immediately since we're already here
-			if (channelId !== "global" && message.senderId !== verifiedUserId) {
+			// If it's a DM from someone else, mark it read — but only if the chat window is actually visible
+			if (channelId !== "global" && message.senderId !== verifiedUserId
+					&& chatContainer?.style.display !== "none") {
 				markRead(channelId);
 			}
 		} else if (message.senderId !== verifiedUserId) {
