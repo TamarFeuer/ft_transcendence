@@ -263,13 +263,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			await self.broadcast_online_users()
 
 		elif msg_type in ["typing", "stop_typing"]:
+			target = data.get("target")
+			group = f"user_{target}" if target else self.group_name
 			await self.channel_layer.group_send(
-				self.group_name,
+				group,
 				{
 					"type": "typing.notification",
 					"action": msg_type,
 					"user": self.user_id,
 					"name": self.username,
+					"target": target,
 				}
 			)
 
@@ -350,7 +353,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": event["action"],  # "typing" or "stop_typing"
 			"user": event["user"],
-			"name": event.get("name")
+			"name": event.get("name"),
+			"target": event.get("target"),
 		}))
 
 	async def online_users(self, event):
