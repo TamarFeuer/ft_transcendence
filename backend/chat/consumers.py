@@ -154,11 +154,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			other_id = data.get("target")
 			if not other_id:
 				return
-			messages = await self.get_dm_history(self.user_id, other_id)
+			messages, seen = await self.get_dm_history(self.user_id, other_id)
 			await self.send(text_data=json.dumps({
 				"type": "dm_history",
 				"target": other_id,
-				"messages": messages
+				"messages": messages,
+				"seen": seen,
 			}))
 
 		elif msg_type == "get_conversations":
@@ -187,6 +188,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {other_id}")
 			# Reset the unread counter for this conversation in the database.
 			await self.mark_read(self.user_id, other_id)
+			# Notify the other user that their messages were read.
+			await self.channel_layer.group_send(
+				f"user_{other_id}",
+				{"type": "messages.read", "by": self.user_id}
+			)
 
 		elif msg_type == "close_conversation":
 			other_id = data.get("target")
@@ -281,6 +287,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"name": event.get("name"),
 			"private": event.get("private", False),  # True for DMs, False for global
 			"target": event.get("target")             # user_id of DM recipient, or None for global
+		}))
+
+	async def messages_read(self, event):
+		await self.send(text_data=json.dumps({
+			"type": "messages_read",
+			"by": event["by"],
 		}))
 
 	async def game_invite(self, event):
@@ -415,7 +427,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		).values_list('conversation_id', flat=True).first()
 
 		if not shared_conv_id:
-			return []
+			return [], False
 
 		# Fetch the 50 most recent messages, then reverse so they're oldest-first.
 		messages = Message.objects.filter(
@@ -448,7 +460,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"created_at": inv.created_at.isoformat()
 			})
 
-		return result
+		# "Seen" = the other participant has read at or after the last message's timestamp.
+		seen = False
+		last_msg_ts = None
+		if result:
+			for item in reversed(result):
+				if item.get("sender_id") == user_id:
+					last_msg_ts = item.get("created_at")
+					break
+		if last_msg_ts:
+			other_part = ConversationParticipant.objects.filter(
+				conversation_id=shared_conv_id,
+				user_id=other_id
+			).values_list('last_read_at', flat=True).first()
+			from django.utils.dateparse import parse_datetime
+			ts = parse_datetime(last_msg_ts)
+			if other_part and ts and other_part >= ts:
+				seen = True
+
+		return result, seen
 
 	def _get_or_create_conversation(self, recipient_id):
 		from chat.models import Conversation, ConversationParticipant
@@ -538,9 +568,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			).exclude(user_id=user_id).select_related('user').first()
 
 			if other_part:
+				# "Seen" = the other participant has read at or after our last sent message.
+				# We need the last message sent by user_id in this conversation.
+				from chat.models import Message
+				last_sent = Message.objects.filter(
+					conversation=my_part.conversation,
+					sender_id=user_id
+				).order_by('-created_at').values_list('created_at', flat=True).first()
+				seen = False
+				if last_sent and other_part.last_read_at and other_part.last_read_at >= last_sent:
+					seen = True
 				result[str(other_part.user_id)] = {
 					"name": other_part.user.username,
-					"unread": my_part.unread_count
+					"unread": my_part.unread_count,
+					"seen": seen,
 				}
 
 		return result
@@ -560,10 +601,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		).values_list('conversation_id', flat=True).first()
 
 		if shared_conv_id:
+			from django.utils import timezone
 			ConversationParticipant.objects.filter(
 				conversation_id=shared_conv_id,
 				user_id=user_id
-			).update(unread_count=0)
+			).update(unread_count=0, last_read_at=timezone.now())
 
 	@database_sync_to_async
 	def close_conversation(self, user_id, other_id):

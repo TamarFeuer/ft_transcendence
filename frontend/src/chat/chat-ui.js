@@ -25,8 +25,9 @@ export function initChatUI() {
 	// activeChannel is either "global" or a user ID for DMs
 	let activeChannel = "global";
 	// messageHistory stores messages per channel — keyed by "global" or user ID
-	// Messages are lost on refresh since there's no database yet
 	const messageHistory = { global: [] };
+	// tracks which DM channels have been read by the other person
+	const seenBy = {}; // channelId -> true/false
 
 	// ── Channel management ────────────────────────────────────────────────────
 
@@ -147,6 +148,10 @@ export function initChatUI() {
 		if (channelId === activeChannel) {
 			// User is already viewing this channel, render immediately
 			renderMessages(channelId);
+			// If it's a DM from someone else, mark it read immediately since we're already here
+			if (channelId !== "global" && message.senderId !== verifiedUserId) {
+				markRead(channelId);
+			}
 		} else if (message.senderId !== verifiedUserId) {
 			// Only badge for messages from others — own messages echoed to other tabs shouldn't count as unread
 			const tab = document.querySelector(`[data-channel="${channelId}"]`);
@@ -220,6 +225,15 @@ export function initChatUI() {
 			msgDiv.appendChild(messageSpan);
 			chatMessages.appendChild(msgDiv);
 		});
+
+		// Show "Seen" only if the other person read AND the last message is ours
+		const lastMsg = messages[messages.length - 1];
+		if (channelId !== "global" && seenBy[channelId] && lastMsg?.senderId === verifiedUserId) {
+			const seenDiv = document.createElement("div");
+			seenDiv.className = "text-right text-xs text-gray-400 pr-1 mt-1 font-medium";
+			seenDiv.textContent = "✓ Seen";
+			chatMessages.appendChild(seenDiv);
+		}
 
 		// Scroll to bottom so latest message is always visible
 		chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -317,7 +331,7 @@ export function initChatUI() {
 
 	// chat.js dispatches this when DM history is fetched from the database
 	window.addEventListener("dmHistoryReceived", (e) => {
-		const { channelId, messages } = e.detail;
+		const { channelId, messages, seen } = e.detail;
 		if (!messageHistory[channelId]) messageHistory[channelId] = [];
 		messageHistory[channelId] = messages.map(msg => {
 			const entry = {
@@ -331,6 +345,7 @@ export function initChatUI() {
 			}
 			return entry;
 		});
+		if (seen) seenBy[channelId] = true;
 		if (channelId === activeChannel) renderMessages(channelId);
 	});
 	
@@ -348,6 +363,7 @@ export function initChatUI() {
 					tab.appendChild(badge);
 				}
 			}
+			if (data.seen) seenBy[userId] = true;
 		});
 	});
 	
@@ -582,6 +598,12 @@ export function initChatUI() {
 		}
 	}
 
+	window.addEventListener("messagesRead", (e) => {
+		const channelId = e.detail.by;
+		seenBy[channelId] = true;
+		if (activeChannel === channelId) renderMessages(channelId);
+	});
+
 	window.addEventListener("gameInviteAccepted", (e) => removeInviteFromHistory(e.detail.gameId));
 	window.addEventListener("gameInviteExpired", (e) => removeInviteFromHistory(e.detail.gameId));
 	window.addEventListener("gameInviteBlocked", (e) => {
@@ -626,6 +648,8 @@ export function initChatUI() {
 
 			// null target means global chat, otherwise it's a DM to that user ID
 			const target = activeChannel === "global" ? null : activeChannel;
+			// Clear "Seen" when we send a new message — it's no longer valid
+			if (target) seenBy[target] = false;
 			sendChatMessage(message, target);
 
 			chatInput.value = "";
