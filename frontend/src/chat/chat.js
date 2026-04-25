@@ -104,7 +104,8 @@ export function initChat() {
 				window.dispatchEvent(new CustomEvent("dmHistoryReceived", {
 					detail: {
 						channelId: data.target,
-						messages: data.messages
+						messages: data.messages,
+						seen: data.seen,
 					}
 				}));
 				break;
@@ -113,6 +114,12 @@ export function initChat() {
 				console.log("conversations received:", data.conversations);
 				window.dispatchEvent(new CustomEvent("conversationsReceived", {
 					detail: { conversations: data.conversations }
+				}));
+				break;
+
+			case "messages_read":
+				window.dispatchEvent(new CustomEvent("messagesRead", {
+					detail: { by: data.by }
 				}));
 				break;
 
