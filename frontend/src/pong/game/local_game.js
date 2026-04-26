@@ -23,6 +23,9 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             tableTopY: 0,
             tableHalfLength: 5.3,
             tableHalfWidth: 2.95,
+            // Table is slightly higher at center and lower toward each end.
+            tableInclinePerUnitX: 0.01,
+            tableDownhillAcceleration: 0.0016,
             tableBounceRestitution: 0.9,
             tableBounceFriction: 0.985,
             sideWallRestitution: 0.92,
@@ -38,6 +41,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             paddleCollisionDepth: 0.2,
             paddleCollisionHeight: 0.9,
             paddleCollisionWidth: 0.45,
+            // Sideways paddle motion feeds these spin/trajectory values on contact.
             spinTransferCoefficient: 1.5,
             velocityTransfer: 0.11,
             paddleBounceBoost: 1.02,
@@ -45,6 +49,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             paddleBoundsZ: 2.5,
             paddleRotationStep: 0.06,
             paddleRotationLimit: 0.65,
+            // Tilt and rotation speed can add vertical lift to the outgoing ball.
             paddleTiltToVerticalVelocity: 0.12,
             paddleApproachBoost: 0.14,
             paddleRetreatDampingStrength: 0.2,
@@ -63,7 +68,9 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         let ballVX = physics.initialSpeedX;
         let ballVY = physics.initialUpwardSpeedY;
         let ballVZ = physics.initialLateralSpeedZ;
-        let ballSpin = 0;
+        // Side-spin around Y axis (up/down axis). This is the main spin created by
+        // sliding the paddle across the ball on Z at impact.
+        let ballSpinY = 0;
         let scoreP1int = 0;
         let scoreP2int = 0;
         let paddleLeftRotationZ = 0;
@@ -115,7 +122,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             gameObjects.ball.position.x = 4; // forward - backward axes
             gameObjects.ball.position.y = physics.tableTopY + 2; // up axes
             gameObjects.ball.position.z = 0; // left - right axes
-            ballSpin = 0;
+            ballSpinY = 0;
             ballVX = physics.initialSpeedX * serveDirection * 1.2;
             ballVY = physics.initialUpwardSpeedY * 0.5;
             ballVZ = physics.initialLateralSpeedZ * randomSign();
@@ -217,6 +224,8 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             { key: "spinDecay", label: "Spin Decay", min: 0.9, max: 1.0, step: 0.0001 },
             { key: "visualSpinFactor", label: "Spin Visual", min: 0, max: 250, step: 1 },
             // Surface, net, and wall bounce tuning.
+            { key: "tableInclinePerUnitX", label: "Table Incline", min: 0, max: 0.05, step: 0.001 },
+            { key: "tableDownhillAcceleration", label: "Table Downhill Accel", min: 0, max: 0.01, step: 0.0001 },
             { key: "tableBounceRestitution", label: "Table Restitution", min: 0, max: 1.3, step: 0.01 },
             { key: "tableBounceFriction", label: "Table Friction", min: 0.8, max: 1, step: 0.001 },
             { key: "sideWallRestitution", label: "Side Wall Restitution", min: 0, max: 1.3, step: 0.01 },
@@ -246,6 +255,39 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             const stepString = String(step);
             const decimals = stepString.includes(".") ? stepString.split(".")[1].length : 0;
             return (value) => Number(value).toFixed(decimals);
+        };
+
+        // These are the main variables that create the "slide + spin + high arc" behavior.
+        const highImpactKeys = new Set([
+            "tableInclinePerUnitX",
+            "tableDownhillAcceleration",
+            "spinTransferCoefficient",
+            "velocityTransfer",
+            "magnusCoefficient",
+            "magnusExtraFactor",
+            "paddleTiltToVerticalVelocity",
+            "paddleRotationLiftFromSpeed",
+            "paddleApproachBoost",
+            "paddleRetreatDampingStrength",
+            "paddleRetreatDampingMin",
+            "gravity",
+            "paddleStepZ",
+        ]);
+
+        const highImpactHints = {
+            tableInclinePerUnitX: "How steeply table drops toward each end",
+            tableDownhillAcceleration: "How strongly ball is pulled downhill on table",
+            spinTransferCoefficient: "How much sideways paddle motion becomes Y-axis side-spin",
+            velocityTransfer: "How much sideways paddle motion becomes sideways ball speed",
+            magnusCoefficient: "How strongly side-spin bends flight in Z",
+            magnusExtraFactor: "Extra magnus multiplier",
+            paddleTiltToVerticalVelocity: "Tilt contribution to upward/downward kick",
+            paddleRotationLiftFromSpeed: "Extra lift from fast paddle rotation",
+            paddleApproachBoost: "Boost when paddle moves toward contact point",
+            paddleRetreatDampingStrength: "Power loss when paddle moves away",
+            paddleRetreatDampingMin: "Minimum retained power when retreating",
+            gravity: "Higher gravity keeps arcs lower",
+            paddleStepZ: "How fast paddle slides sideways",
         };
 
         const createPhysicsPanel = () => {
@@ -279,6 +321,13 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             title.style.marginBottom = "8px";
             title.style.letterSpacing = "0.04em";
             panel.appendChild(title);
+
+            const focusHint = document.createElement("div");
+            focusHint.textContent = "Highlighted rows strongly affect side-spin and high arcs";
+            focusHint.style.fontSize = "11px";
+            focusHint.style.color = "#fde68a";
+            focusHint.style.marginBottom = "8px";
+            panel.appendChild(focusHint);
 
             const dragBar = document.createElement("div");
             dragBar.textContent = "Drag";
@@ -321,6 +370,13 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             sliderConfigs.forEach((config) => {
                 const row = document.createElement("div");
                 row.style.marginBottom = "8px";
+                const isHighImpact = highImpactKeys.has(config.key);
+                if (isHighImpact) {
+                    row.style.padding = "6px";
+                    row.style.borderRadius = "8px";
+                    row.style.border = "1px solid rgba(251, 191, 36, 0.6)";
+                    row.style.background = "rgba(120, 53, 15, 0.22)";
+                }
 
                 const topLine = document.createElement("div");
                 topLine.style.display = "flex";
@@ -328,12 +384,23 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 topLine.style.alignItems = "center";
 
                 const label = document.createElement("label");
-                label.textContent = config.label;
-                label.style.color = "#93c5fd";
+                label.textContent = isHighImpact ? `${config.label} *` : config.label;
+                label.style.color = isHighImpact ? "#fde68a" : "#93c5fd";
+                label.style.fontWeight = isHighImpact ? "700" : "400";
 
                 const value = document.createElement("span");
                 const format = makeValueFormatter(config.step);
                 value.textContent = format(physics[config.key]);
+
+                if (isHighImpact) {
+                    const hint = document.createElement("div");
+                    hint.textContent = highImpactHints[config.key] || "High-impact control";
+                    hint.style.fontSize = "10px";
+                    hint.style.color = "#fde68a";
+                    hint.style.opacity = "0.85";
+                    hint.style.marginBottom = "4px";
+                    row.appendChild(hint);
+                }
 
                 topLine.appendChild(label);
                 topLine.appendChild(value);
@@ -413,10 +480,10 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
             // A/D and J/L are the only translation controls left, so each paddle can
             // slide horizontally across the face of the table but not vertically.
-            if (keys['a']) gameObjects.paddleLeft.position.z -= physics.paddleStepZ;
-            if (keys['d']) gameObjects.paddleLeft.position.z += physics.paddleStepZ;
-            if (keys['j']) gameObjects.paddleRight.position.z -= physics.paddleStepZ;
-            if (keys['l']) gameObjects.paddleRight.position.z += physics.paddleStepZ;
+            if (keys['d']) gameObjects.paddleLeft.position.z -= physics.paddleStepZ;
+            if (keys['a']) gameObjects.paddleLeft.position.z += physics.paddleStepZ;
+            if (keys['l']) gameObjects.paddleRight.position.z -= physics.paddleStepZ;
+            if (keys['j']) gameObjects.paddleRight.position.z += physics.paddleStepZ;
 
             // The paddles stay locked to one height so all player motion remains horizontal.
             gameObjects.paddleLeft.position.y = physics.paddleBaseY;
@@ -444,12 +511,14 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
             // Gravity pulls the ball down every frame, then spin can bend the path a bit.
             ballVY -= physics.gravity * dt;
-            const spinForce = -ballSpin * physics.magnusCoefficient * physics.magnusExtraFactor * dt;
-            ballVY += spinForce;
+            // Side-spin around Y axis creates sideways Magnus force mostly on Z.
+            // F ~ omega x v, simplified for our table setup.
+            const sideSpinForce = -ballSpinY * ballVX * physics.magnusCoefficient * physics.magnusExtraFactor * dt;
+            ballVZ += sideSpinForce;
 
-            // Spin slowly decays so the ball eventually settles instead of curving forever.
-            ballSpin *= Math.pow(physics.spinDecay, dt);
-            gameObjects.ball.rotation.z += ballSpin * physics.magnusCoefficient * physics.magnusExtraFactor * physics.visualSpinFactor * dt;
+            // Side-spin slowly decays so the ball eventually settles instead of curving forever.
+            ballSpinY *= Math.pow(physics.spinDecay, dt);
+            gameObjects.ball.rotation.y += ballSpinY * physics.magnusCoefficient * physics.magnusExtraFactor * physics.visualSpinFactor * dt;
 
             // Move the ball through 3D space.
             gameObjects.ball.position.x += ballVX * dt;
@@ -475,7 +544,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             if (Math.abs(gameObjects.ball.position.z) > physics.tableHalfWidth) {
                 gameObjects.ball.position.z = clamp(gameObjects.ball.position.z, -physics.tableHalfWidth, physics.tableHalfWidth);
                 ballVZ = -ballVZ * physics.sideWallRestitution;
-                ballSpin *= physics.sideWallSpinRetention;
+                ballSpinY *= physics.sideWallSpinRetention;
             }
 
             // The net blocks low shots near the middle of the table.
@@ -487,19 +556,31 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 ballVX = -ballVX * physics.netBounceDamping;
                 ballVY *= physics.netBounceDamping;
                 ballVZ *= physics.netBounceDamping;
-                ballSpin *= physics.netSpinRetention;
+                ballSpinY *= physics.netSpinRetention;
             }
 
             const ballRadius = 0.15;
             const overTableX = Math.abs(gameObjects.ball.position.x) <= physics.tableHalfLength;
             const overTableZ = Math.abs(gameObjects.ball.position.z) <= physics.tableHalfWidth;
-            const touchesTable = gameObjects.ball.position.y - ballRadius <= physics.tableTopY;
+
+            // Center is highest; both ends slope downward.
+            const tableSurfaceY = physics.tableTopY - Math.abs(gameObjects.ball.position.x) * physics.tableInclinePerUnitX;
+            const touchesTable = gameObjects.ball.position.y - ballRadius <= tableSurfaceY;
             if (touchesTable && overTableX && overTableZ && ballVY < 0) {
                 // A bounce on the table reverses the downward velocity and trims some energy.
-                gameObjects.ball.position.y = physics.tableTopY + ballRadius;
+                gameObjects.ball.position.y = tableSurfaceY + ballRadius;
                 ballVY = -ballVY * physics.tableBounceRestitution;
                 ballVX *= physics.tableBounceFriction;
                 ballVZ *= physics.tableBounceFriction;
+            }
+
+            // If the ball is close to the table and moving slowly vertically,
+            // pull it toward the downhill direction so it naturally rolls off the ends.
+            if (overTableX && overTableZ && Math.abs(ballVY) < 0.03 && gameObjects.ball.position.y - ballRadius <= tableSurfaceY + 0.03) {
+                const downhillDirection = gameObjects.ball.position.x === 0
+                    ? (Math.sign(ballVX) || 1)
+                    : Math.sign(gameObjects.ball.position.x);
+                ballVX += downhillDirection * physics.tableDownhillAcceleration * dt;
             }
 
             // If the ball falls below the floor plane, I award the point to the opponent.
@@ -543,7 +624,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
                 gameObjects.ball.position.x = gameObjects.paddleLeft.position.x + physics.paddleCollisionDepth;
                 ballVX = Math.abs(ballVX) * physics.paddleBounceBoost * impactFactorLeft;
-                ballSpin = paddleLeftVelZ * physics.spinTransferCoefficient * impactFactorLeft;
+                ballSpinY = paddleLeftVelZ * physics.spinTransferCoefficient * impactFactorLeft;
                 ballVZ += paddleLeftVelZ * physics.velocityTransfer * impactFactorLeft;
 
                 // Z-axis paddle tilt adds lift/drop to the return trajectory.
@@ -571,7 +652,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
                 gameObjects.ball.position.x = gameObjects.paddleRight.position.x - physics.paddleCollisionDepth;
                 ballVX = -Math.abs(ballVX) * physics.paddleBounceBoost * impactFactorRight;
-                ballSpin = paddleRightVelZ * physics.spinTransferCoefficient * impactFactorRight;
+                ballSpinY = paddleRightVelZ * physics.spinTransferCoefficient * impactFactorRight;
                 ballVZ += paddleRightVelZ * physics.velocityTransfer * impactFactorRight;
 
                 // Same tilt-based vertical deflection on the right paddle.
