@@ -155,7 +155,8 @@ export function initChatUI() {
 			renderMessages(channelId);
 			// If it's a DM from someone else, mark it read — but only if the chat window is actually visible
 			if (channelId !== "global" && message.senderId !== verifiedUserId
-					&& chatContainer?.style.display !== "none") {
+					&& chatContainer?.style.display !== "none"
+					&& document.visibilityState === "visible") {
 				markRead(channelId);
 			}
 		} else if (message.senderId !== verifiedUserId) {
