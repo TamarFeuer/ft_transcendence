@@ -89,6 +89,28 @@ export const tr = {
   [TranslationKey.PONG_TOURNAMENT]: 'Turnuva',
   [TranslationKey.PONG_ONLINE]: 'Çevrimiçi Oyun',
 
+  // Stats page
+  [TranslationKey.STATS_TITLE]: 'İstatistikler',
+  [TranslationKey.STATS_BACK]: '← Geri',
+  [TranslationKey.STATS_TOTAL_GAMES]: 'Toplam Oyun',
+  [TranslationKey.STATS_WINS]: 'Galibiyet',
+  [TranslationKey.STATS_LOSSES]: 'Mağlubiyet',
+  [TranslationKey.STATS_ELO]: 'ELO',
+  [TranslationKey.STATS_ACHIEVEMENTS]: '🏆 Başarılar',
+  [TranslationKey.STATS_LEADERBOARD]: '🥇 Lider Tablosu',
+  [TranslationKey.STATS_LOADING]: 'Yükleniyor...',
+  [TranslationKey.STATS_TH_PLAYER]: 'Oyuncu',
+  [TranslationKey.STATS_TH_STREAK]: 'Seri',
+  [TranslationKey.STATS_MATCH_HISTORY]: '🕹️ Maç Geçmişi',
+  [TranslationKey.STATS_TH_OPPONENT]: 'Rakip',
+  [TranslationKey.STATS_TH_SCORE]: 'Skor',
+  [TranslationKey.STATS_TH_RESULT]: 'Sonuç',
+  [TranslationKey.STATS_TH_DATE]: 'Tarih',
+  [TranslationKey.STATS_NO_ACHIEVEMENTS]: '...',
+  [TranslationKey.STATS_NO_GAMES]: '...',
+  [TranslationKey.STATS_NO_DATA]: '...',
+  [TranslationKey.STATS_COULD_NOT_LOAD]: '...',
+
   // User Management
   [TranslationKey.UM_USER]: 'Kullanıcı',
   [TranslationKey.UM_LOGIN_TITLE]: 'Giriş Yap',

@@ -91,6 +91,28 @@ export const nl = {
   [TranslationKey.PONG_TOURNAMENT]: 'Toernooi',
   [TranslationKey.PONG_ONLINE]: 'Online Spel',
 
+  // Stats page
+  [TranslationKey.STATS_TITLE]: 'Statistieken',
+  [TranslationKey.STATS_BACK]: '← Terug',
+  [TranslationKey.STATS_TOTAL_GAMES]: 'Totale Spellen',
+  [TranslationKey.STATS_WINS]: 'Overwinningen',
+  [TranslationKey.STATS_LOSSES]: 'Verliezen',
+  [TranslationKey.STATS_ELO]: 'ELO',
+  [TranslationKey.STATS_ACHIEVEMENTS]: '🏆 Prestaties',
+  [TranslationKey.STATS_LEADERBOARD]: '🥇 Scorebord',
+  [TranslationKey.STATS_LOADING]: 'Laden...',
+  [TranslationKey.STATS_TH_PLAYER]: 'Speler',
+  [TranslationKey.STATS_TH_STREAK]: 'Reeks',
+  [TranslationKey.STATS_MATCH_HISTORY]: '🕹️ Wedstrijdgeschiedenis',
+  [TranslationKey.STATS_TH_OPPONENT]: 'Tegenstander',
+  [TranslationKey.STATS_TH_SCORE]: 'Score',
+  [TranslationKey.STATS_TH_RESULT]: 'Resultaat',
+  [TranslationKey.STATS_TH_DATE]: 'Datum',
+  [TranslationKey.STATS_NO_ACHIEVEMENTS]: '...',
+  [TranslationKey.STATS_NO_GAMES]: '...',
+  [TranslationKey.STATS_NO_DATA]: '...',
+  [TranslationKey.STATS_COULD_NOT_LOAD]: '...',
+
   // User Management
   [TranslationKey.UM_USER]: 'Gebruiker',
   [TranslationKey.UM_LOGIN_TITLE]: 'Inloggen',
