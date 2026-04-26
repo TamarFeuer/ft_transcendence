@@ -5,6 +5,7 @@ import { initChatUI } from './chat/chat-ui.js';
 import { closeGameConnection } from './pong/game/game.js';
 import { handleRoute } from './routes/route_helpers.js';
 import { isGameActive } from './pong/game/game.js';
+import { initI18n, setLanguage, getCurrentLanguage, updatePageTranslations } from './i18n/index.js';
 import { closeChessConnection } from './chess/chess-online.js';
 
 // --- Game Variables ---
@@ -50,7 +51,22 @@ window.addEventListener('load', async () => {
 
 setupRoutes();
 
+// Re-translate the page whenever the language changes
+window.addEventListener('languagechange', () => updatePageTranslations());
+
 window.addEventListener("load", async () => {
+	// Initialize i18n (restores saved language from localStorage)
+	initI18n();
+
+	// Sync the language selector to the current language
+	const languageSelect = document.getElementById("languageSelect");
+	if (languageSelect) {
+		languageSelect.value = getCurrentLanguage();
+		languageSelect.addEventListener("change", (e) => {
+			setLanguage(e.target.value);
+		});
+	}
+
 	const langBtn = document.getElementById("langBtn");
 	const currentUser = await fetchCurrentUser(); // wait for token refresh, ignore the result
 	if (currentUser.authenticated) {
