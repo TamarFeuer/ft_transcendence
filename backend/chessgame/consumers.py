@@ -172,10 +172,13 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			else:
 				winner_name = None
 				loser_name = None
+				white_name = getattr(self.game.players.get('white'), 'username', None)
+				black_name = getattr(self.game.players.get('black'), 'username', None)
 			await self.channel_layer.group_send('global_chat', {
 				'type': 'game_result',
 				'winner': winner_name,
 				'loser': loser_name,
+				'draw_players': [white_name, black_name] if not winner_name else None,
 				'game_type': 'chess',
 				'is_tournament': False
 			})
