@@ -1,6 +1,8 @@
 import { navigate } from "../routes/route_helpers.js";
 import { setChessOnlineIntended } from "../routes/routes.js";
 import { joinMatchmaking } from "../pong/game/game.js";
+import { fetchWithRefreshAuth } from "../users_friends/usermanagement.js";
+import { showMessage } from "../utils/utils.js";
 
 let _keydownHandler = null;
 
@@ -53,6 +55,13 @@ export function initHome() {
 
     document.getElementById('profileNavBtn')?.addEventListener('click', () => navigate('/profile'));
 
+    document.getElementById('profile-search-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter')
+            doSearch();
+    })
+
+    document.getElementById('profile-search-btn')?.addEventListener('click', () => doSearch());
+
     
     document.getElementById('aiBtn')?.addEventListener('click', () => {
         const mode = localStorage.getItem('gameMode') || 'pong';
@@ -94,6 +103,20 @@ export function initHome() {
 
     }
     document.addEventListener('keydown', _keydownHandler);
+}
+
+async function doSearch(){
+    const input = document.getElementById('profile-search-input');
+    const username = input.value.trim();
+    if (!username)
+        return;
+
+    const res = await fetchWithRefreshAuth(`/api/player/${username}/profile`);
+    if (res.status === 404){
+        showMessage("User not found", "error");
+        return;
+    }
+    navigate(`/profile/${username}`);
 }
 
 function updateAiBtnForMode(mode){

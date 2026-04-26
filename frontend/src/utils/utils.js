@@ -1,4 +1,4 @@
-
+import { navigate } from "../routes/route_helpers.js";
 
 export function showMessage(message, type = 'info', duration = 2500) {
   const containerId = 'Message-container';
@@ -39,3 +39,18 @@ export function showError(message){
         errorPopup.classList.add("hidden")
     }, 4000);
 }
+
+export function arrowHomeButton(){
+  document.getElementById("back-btn")?.remove();
+  
+  const btn = document.createElement("button");
+  btn.id = "back-btn";
+  btn.innerHTML = "&larr;";
+  btn.className = "fixed top-6 left-6 z-50 text-3xl font-black text-violet-400 hover:text-white transition duration-200 hover:scale-110";
+  btn.style.webkitTextStroke = "2px currentColor";
+  btn.addEventListener("click", () => {
+    navigate("/");
+  })
+
+  document.body.appendChild(btn);
+} 
