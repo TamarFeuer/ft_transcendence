@@ -443,7 +443,8 @@ export function initChatUI() {
 		const inviteBtn = chatUserMenu.querySelector('[data-action="invite"]');
 		if (inviteBtn) {
 			const targetInGame = onlineUsers[user.id]?.in_game;
-			inviteBtn.style.display = (targetInGame || pendingInvite) ? "none" : "";
+			const senderInGame = onlineUsers[verifiedUserId]?.in_game;
+			inviteBtn.style.display = (targetInGame || senderInGame || pendingInvite) ? "none" : "";
 		}
 
 		// Position at cursor - nudge left/up if too close to screen edge

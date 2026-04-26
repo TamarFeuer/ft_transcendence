@@ -209,7 +209,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			if not target or not game_type or not game_id:
 				logger.warning(f"[invite] missing fields — target={target} game_type={game_type} game_id={game_id}")
 				return
-			if target in IN_GAME_USERS:
+			if target in IN_GAME_USERS or self.user_id in IN_GAME_USERS:
 				await self.send(text_data=json.dumps({
 					"type": "game_invite_rejected",
 					"reason": "in_game",
@@ -310,11 +310,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def game_result(self, event):
 		winner = event.get("winner")
 		loser = event.get("loser")
+		draw_players = event.get("draw_players")
 		game_type = event.get("game_type", "game")
 		if winner and loser:
 			msg = f"{winner} beat {loser} in a game of {game_type}!"
 		elif winner:
 			msg = f"{winner} won a game of {game_type}!"
+		elif draw_players and all(draw_players):
+			msg = f"{draw_players[0]} and {draw_players[1]} drew in a game of {game_type}!"
 		else:
 			msg = f"A game of {game_type} ended in a draw."
 		await self.send(text_data=json.dumps({
