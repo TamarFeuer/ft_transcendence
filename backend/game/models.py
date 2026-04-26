@@ -16,7 +16,7 @@ class GameSession:
     _games = {}
     _lock = Lock()
     
-    SPEED_LIMIT = 20
+    SPEED_LIMIT = 10
     JOIN_TIMEOUT = 10  # Maximum time in seconds to wait for both players to join
     
     def __init__(self, game_id=None):
@@ -188,9 +188,11 @@ class GameSession:
             state['ball']['vy'] *= -1
         # logger.info(f"state['ball']['x']: {state['ball']['x']}")
 
+        hit_paddle = False
         # Left paddle collision
         if state['ball']['x'] < -3.5:
             if abs(state['ball']['y'] - state['paddles']['left']) < 1.2:
+                hit_paddle = True
                 state['ball']['vx'] = abs(state['ball']['vx'])
                 # logger.info(f"0 state['ball']['vx']: {state['ball']['vx']}")
                 if abs(state['ball']['vx']) < self.SPEED_LIMIT:
@@ -202,6 +204,7 @@ class GameSession:
         # Right paddle collision
         if state['ball']['x'] > 3.5:
             if abs(state['ball']['y'] - state['paddles']['right']) < 1.2:
+                hit_paddle = True
                 state['ball']['vx'] = -abs(state['ball']['vx'])
                 # logger.info(f"0 state['ball']['vx']: {state['ball']['vx']}")
                 if abs(state['ball']['vx']) < self.SPEED_LIMIT:
@@ -211,10 +214,10 @@ class GameSession:
         
         # Scoring
         winner = None
-        if state['ball']['x'] < -6:
+        if state['ball']['x'] < -6 and hit_paddle == False:
             state['score']['p2'] += 1
             self.reset_ball()
-        if state['ball']['x'] > 6:
+        if state['ball']['x'] > 6 and hit_paddle == False:
             state['score']['p1'] += 1
             self.reset_ball()
         
