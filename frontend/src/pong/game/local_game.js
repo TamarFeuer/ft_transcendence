@@ -6,6 +6,9 @@ import { MeshBuilder, StandardMaterial, Color3, Vector3 } from "@babylonjs/core"
 
 export function initOfflineGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {
+        // These values are the live tuning knobs for the offline 3D pong model.
+        // I keep them grouped so I can reason about ball travel, bounce feel, spin,
+        // and paddle motion without hunting through the frame loop.
         const defaultPhysics = {
             initialSpeedX: 0.12,
             initialLateralSpeedZ: 0.015,
@@ -30,55 +33,97 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             netSpinRetention: 0.75,
             floorY: -2,
             goalX: 6.3,
-            paddleCollisionDepth: 0.35,
-            paddleCollisionHeight: 0.8,
-            paddleCollisionWidth: 0.75,
+            // Collision dimensions are tuned to match the visible paddle face,
+            // plus a small margin for the ball radius.
+            paddleCollisionDepth: 0.2,
+            paddleCollisionHeight: 0.9,
+            paddleCollisionWidth: 0.45,
             spinTransferCoefficient: 1.5,
             velocityTransfer: 0.11,
             paddleBounceBoost: 1.02,
-            paddleY: 0.65,
+            paddleBaseY: 0.9,
             paddleBoundsZ: 2.5,
-            leftPaddleStep: 0.35,
-            rightPaddleStep: 0.35,
-            mouseFollowFactor: 0.15,
+            paddleRotationStep: 0.06,
+            paddleRotationLimit: 0.65,
+            paddleTiltToVerticalVelocity: 0.12,
+            paddleApproachBoost: 0.14,
+            paddleRetreatDampingStrength: 0.2,
+            paddleRetreatDampingMin: 0.65,
+            paddleRotationLiftFromSpeed: 0.02,
+            paddleStepZ: 0.28,
         };
         const physics = { ...defaultPhysics };
 
+        // The paddles are placed at the two ends of the table on the X axis.
+        const paddleLeftBaseX = -5.95;
+        const paddleRightBaseX = 5.95;
+
+        // Ball state is tracked directly in 3D world units.
+        // X moves along the length of the table, Y is height, and Z is horizontal width.
         let ballVX = physics.initialSpeedX;
         let ballVY = physics.initialUpwardSpeedY;
         let ballVZ = physics.initialLateralSpeedZ;
-        let ballSpin = 0; // Angular velocity (positive = topspin, negative = backspin)
+        let ballSpin = 0;
         let scoreP1int = 0;
         let scoreP2int = 0;
-        
-        // Track paddle positions for velocity calculation (z-axis in 3D table view)
+        let paddleLeftRotationZ = 0;
+        let paddleRightRotationZ = 0;
+        let paddleLeftPrevRotationZ = 0;
+        let paddleRightPrevRotationZ = 0;
+
         let paddleLeftPrevZ = gameObjects.paddleLeft.position.z;
         let paddleRightPrevZ = gameObjects.paddleRight.position.z;
         let lastFrameTime = Date.now();
 
+        // Small helpers keep the frame loop readable.
         const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
         const randomSign = () => (Math.random() > 0.5 ? 1 : -1);
 
+        const createPaddleVisual = (paddle, faceColor) => {
+            // I build the visual paddle as a separate mesh so the collision body can
+            // stay simple while the rendered shape looks closer to a real paddle.
+            const faceMat = new StandardMaterial(`${paddle.name}FaceMat`, scene);
+            faceMat.diffuseColor = faceColor;
+
+            // A real paddle is mostly a flat square face, so I model it as a thin slab.
+            const paddleFace = MeshBuilder.CreateBox(`${paddle.name}Face`, {
+                width: 0.55,
+                height: 1.55,
+                depth: 0.12,
+            }, scene);
+            // Rotate the face 90 degrees so the thin side points toward the ball.
+            paddleFace.rotation.y = Math.PI / 2;
+            paddleFace.parent = paddle;
+
+            paddleFace.material = faceMat;
+            paddle.isVisible = false;
+            return { paddleFace };
+        };
+
         const positionPaddles = () => {
-            gameObjects.paddleLeft.position.x = -4.95;
-            gameObjects.paddleRight.position.x = 4.95;
-            gameObjects.paddleLeft.position.y = physics.paddleY;
-            gameObjects.paddleRight.position.y = physics.paddleY;
+            // Each paddle starts locked to its end of the table, at the same height.
+            gameObjects.paddleLeft.position.x = paddleLeftBaseX;
+            gameObjects.paddleRight.position.x = paddleRightBaseX;
+            gameObjects.paddleLeft.position.y = physics.paddleBaseY + 2;
+            gameObjects.paddleRight.position.y = physics.paddleBaseY;
             gameObjects.paddleLeft.position.z = clamp(gameObjects.paddleLeft.position.z, -physics.paddleBoundsZ, physics.paddleBoundsZ);
             gameObjects.paddleRight.position.z = clamp(gameObjects.paddleRight.position.z, -physics.paddleBoundsZ, physics.paddleBoundsZ);
         };
 
         const resetBall = (serveDirection = 1) => {
-            gameObjects.ball.position.x = 0;
-            gameObjects.ball.position.y = physics.tableTopY + 0.4;
-            gameObjects.ball.position.z = 0;
+            // I restart the rally from the middle of the table so the serve is predictable.
+            gameObjects.ball.position.x = 4; // forward - backward axes
+            gameObjects.ball.position.y = physics.tableTopY + 2; // up axes
+            gameObjects.ball.position.z = 0; // left - right axes
             ballSpin = 0;
-            ballVX = physics.initialSpeedX * serveDirection;
-            ballVY = physics.initialUpwardSpeedY;
+            ballVX = physics.initialSpeedX * serveDirection * 1.2;
+            ballVY = physics.initialUpwardSpeedY * 0.5;
             ballVZ = physics.initialLateralSpeedZ * randomSign();
         };
 
         const createTableArena = () => {
+            // Table surface, white boundary lines, a center net, and a dark floor plane
+            // give the scene a proper table-tennis feel instead of floating objects.
             const tableMat = new StandardMaterial("localTableMat", scene);
             tableMat.diffuseColor = new Color3(0.06, 0.22, 0.36);
 
@@ -142,13 +187,16 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         resetBall(1);
 
         if (scene.activeCamera) {
-            scene.activeCamera.alpha = -Math.PI / 2;
-            scene.activeCamera.beta = Math.PI / 3;
-            scene.activeCamera.radius = 14;
-            scene.activeCamera.setTarget(new Vector3(0, physics.tableTopY + 0.5, 0));
+            // I place the camera at the player's end of the table and aim it straight
+            // down the length of the table so the view feels like sitting behind the paddle.
+            scene.activeCamera.inputs.clear();
+            scene.activeCamera.setPosition(new Vector3(-10.8, physics.tableTopY + 5.85, 0));
+            scene.activeCamera.setTarget(new Vector3(0, physics.tableTopY + -1.0, 0));
         }
 
         const arenaMeshes = createTableArena();
+        const leftPaddleVisual = createPaddleVisual(gameObjects.paddleLeft, new Color3(0.9, 0.2, 0.18));
+        const rightPaddleVisual = createPaddleVisual(gameObjects.paddleRight, new Color3(0.18, 0.3, 0.95));
 
         const scoreP1 = document.getElementById("scoreP1");
         const scoreP2 = document.getElementById("scoreP2");
@@ -156,32 +204,42 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         scoreP2.textContent = "0";
 
         const sliderConfigs = [
+            // Ball launch and travel controls.
             { key: "initialSpeedX", label: "Initial Speed X", min: 0.02, max: 0.3, step: 0.001 },
             { key: "initialLateralSpeedZ", label: "Initial Speed Z", min: 0, max: 0.15, step: 0.001 },
             { key: "initialUpwardSpeedY", label: "Initial Speed Y", min: 0, max: 0.2, step: 0.001 },
             { key: "speedMultiplier", label: "Speed Multiplier", min: 0.98, max: 1.01, step: 0.0001 },
             { key: "speedMax", label: "Max Speed", min: 0.03, max: 0.5, step: 0.001 },
             { key: "gravity", label: "Gravity", min: 0, max: 0.02, step: 0.0001 },
+            // Spin and curve controls.
             { key: "magnusCoefficient", label: "Magnus Coef", min: 0, max: 0.01, step: 0.0001 },
             { key: "magnusExtraFactor", label: "Magnus Boost", min: 0, max: 100, step: 1 },
             { key: "spinDecay", label: "Spin Decay", min: 0.9, max: 1.0, step: 0.0001 },
             { key: "visualSpinFactor", label: "Spin Visual", min: 0, max: 250, step: 1 },
+            // Surface, net, and wall bounce tuning.
             { key: "tableBounceRestitution", label: "Table Restitution", min: 0, max: 1.3, step: 0.01 },
             { key: "tableBounceFriction", label: "Table Friction", min: 0.8, max: 1, step: 0.001 },
             { key: "sideWallRestitution", label: "Side Wall Restitution", min: 0, max: 1.3, step: 0.01 },
             { key: "sideWallSpinRetention", label: "Side Wall Spin Keep", min: 0, max: 1, step: 0.01 },
             { key: "netBounceDamping", label: "Net Damping", min: 0, max: 1, step: 0.01 },
             { key: "netSpinRetention", label: "Net Spin Keep", min: 0, max: 1, step: 0.01 },
+            // Paddle contact volumes and hit reaction.
             { key: "paddleCollisionDepth", label: "Paddle Depth", min: 0.05, max: 0.8, step: 0.01 },
-            { key: "paddleCollisionHeight", label: "Paddle Height Hitbox", min: 0.2, max: 1.6, step: 0.01 },
-            { key: "paddleCollisionWidth", label: "Paddle Width Hitbox", min: 0.2, max: 1.6, step: 0.01 },
+            { key: "paddleCollisionHeight", label: "Paddle Height Hitbox", min: 0.2, max: 1.8, step: 0.01 },
+            { key: "paddleCollisionWidth", label: "Paddle Width Hitbox", min: 0.2, max: 1.8, step: 0.01 },
             { key: "spinTransferCoefficient", label: "Spin Transfer", min: 0, max: 4, step: 0.01 },
             { key: "velocityTransfer", label: "Velocity Transfer", min: 0, max: 0.5, step: 0.001 },
             { key: "paddleBounceBoost", label: "Paddle Bounce Boost", min: 0.8, max: 1.3, step: 0.01 },
+            { key: "paddleApproachBoost", label: "Approach Boost", min: 0, max: 0.5, step: 0.01 },
+            { key: "paddleRetreatDampingStrength", label: "Retreat Damping", min: 0, max: 0.6, step: 0.01 },
+            { key: "paddleRetreatDampingMin", label: "Retreat Min Factor", min: 0.2, max: 1, step: 0.01 },
+            { key: "paddleRotationLiftFromSpeed", label: "Rotation Lift", min: 0, max: 0.08, step: 0.001 },
+            // Paddle placement and movement controls.
+            { key: "paddleBaseY", label: "Paddle Base Y", min: 0.6, max: 1.6, step: 0.01 },
             { key: "paddleBoundsZ", label: "Paddle Z Limit", min: 0.8, max: 3, step: 0.1 },
-            { key: "leftPaddleStep", label: "Left Paddle Step", min: 0.05, max: 1.5, step: 0.01 },
-            { key: "rightPaddleStep", label: "Right Paddle Step", min: 0.05, max: 1.5, step: 0.01 },
-            { key: "mouseFollowFactor", label: "Mouse Follow", min: 0.01, max: 1, step: 0.01 },
+            { key: "paddleRotationStep", label: "Paddle Rotation Step", min: 0.01, max: 0.2, step: 0.01 },
+            { key: "paddleRotationLimit", label: "Paddle Rotation Limit", min: 0.1, max: 1.2, step: 0.01 },
+            { key: "paddleStepZ", label: "Paddle Step Z", min: 0.05, max: 1.2, step: 0.01 },
         ];
 
         const makeValueFormatter = (step) => {
@@ -191,6 +249,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         };
 
         const createPhysicsPanel = () => {
+            // The sliders float over the game so I can tune the match while watching the rally.
             const gameContainer = document.getElementById("gameContainer") || document.getElementById("app-root");
             if (!gameContainer) return null;
 
@@ -339,85 +398,71 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         const physicsPanel = createPhysicsPanel();
 
         const keys = {};
-        let mouseControlledPaddleZ = null; // Track mouse position for right paddle
-
-        // Handlers
-        const keyDownHandler = (e) => keys[e.key] = true;
-        const keyUpHandler = (e) => keys[e.key] = false;
-        
-        // Mouse control for right paddle
-        const pointerMoveHandler = (e) => {
-            // Normalize mouse Y position to table z coordinates
-            const normalized = 1 - (e.clientY / window.innerHeight); // 0 to 1
-            mouseControlledPaddleZ = (normalized - 0.5) * (physics.tableHalfWidth * 2);
-        };
+        const keyDownHandler = (e) => keys[e.key.toLowerCase()] = true;
+        const keyUpHandler = (e) => keys[e.key.toLowerCase()] = false;
 
         window.addEventListener("keydown", keyDownHandler);
         window.addEventListener("keyup", keyUpHandler);
-        window.addEventListener("pointermove", pointerMoveHandler);
-                
-        // Smoother keyboard controls with higher frequency and smaller steps
-        const keyboardInterval = setInterval(() => {
-            // Left paddle - W/S keys
-            if (keys['w'] || keys['s']) {
-                let z = 0;
-                if (keys['w']) z = physics.leftPaddleStep;
-                if (keys['s']) z = -physics.leftPaddleStep;
-                gameObjects.paddleLeft.position.z += z;
-                
-                // Keep within bounds
-                gameObjects.paddleLeft.position.z = clamp(gameObjects.paddleLeft.position.z, -physics.paddleBoundsZ, physics.paddleBoundsZ);
-            }
-            
-            // Right paddle - Arrow keys OR mouse (mouse takes priority)
-            if (mouseControlledPaddleZ !== null) {
-                // Smooth interpolation to mouse position
-                const targetZ = clamp(mouseControlledPaddleZ, -physics.paddleBoundsZ, physics.paddleBoundsZ);
-                const diff = targetZ - gameObjects.paddleRight.position.z;
-                gameObjects.paddleRight.position.z += diff * physics.mouseFollowFactor;
-            } else if (keys['ArrowUp'] || keys['ArrowDown']) {
-                let z = 0;
-                if (keys['ArrowUp']) z = physics.rightPaddleStep;
-                if (keys['ArrowDown']) z = -physics.rightPaddleStep;
-                gameObjects.paddleRight.position.z += z;
-                
-                // Keep within bounds
-                gameObjects.paddleRight.position.z = clamp(gameObjects.paddleRight.position.z, -physics.paddleBoundsZ, physics.paddleBoundsZ);
-            }
 
-            gameObjects.paddleLeft.position.y = physics.paddleY;
-            gameObjects.paddleRight.position.y = physics.paddleY;
-        }, 1000 / 60); // Increased from 15 to 60 fps for smoother movement
+        const keyboardInterval = setInterval(() => {
+            // W/S and I/K now rotate the paddles instead of translating them on a second axis.
+            if (keys['w']) paddleLeftRotationZ -= physics.paddleRotationStep;
+            if (keys['s']) paddleLeftRotationZ += physics.paddleRotationStep;
+            if (keys['i']) paddleRightRotationZ -= physics.paddleRotationStep;
+            if (keys['k']) paddleRightRotationZ += physics.paddleRotationStep;
+
+            // A/D and J/L are the only translation controls left, so each paddle can
+            // slide horizontally across the face of the table but not vertically.
+            if (keys['a']) gameObjects.paddleLeft.position.z -= physics.paddleStepZ;
+            if (keys['d']) gameObjects.paddleLeft.position.z += physics.paddleStepZ;
+            if (keys['j']) gameObjects.paddleRight.position.z -= physics.paddleStepZ;
+            if (keys['l']) gameObjects.paddleRight.position.z += physics.paddleStepZ;
+
+            // The paddles stay locked to one height so all player motion remains horizontal.
+            gameObjects.paddleLeft.position.y = physics.paddleBaseY;
+            gameObjects.paddleRight.position.y = physics.paddleBaseY;
+            // Only Z translation is allowed now, so the paddles stay anchored to their end.
+            gameObjects.paddleLeft.position.x = paddleLeftBaseX;
+            gameObjects.paddleRight.position.x = paddleRightBaseX;
+            gameObjects.paddleLeft.position.z = clamp(gameObjects.paddleLeft.position.z, -physics.paddleBoundsZ, physics.paddleBoundsZ);
+            gameObjects.paddleRight.position.z = clamp(gameObjects.paddleRight.position.z, -physics.paddleBoundsZ, physics.paddleBoundsZ);
+
+            // Clamp the rotation so the paddle can be angled, but not spun wildly.
+            paddleLeftRotationZ = clamp(paddleLeftRotationZ, -physics.paddleRotationLimit, physics.paddleRotationLimit);
+            paddleRightRotationZ = clamp(paddleRightRotationZ, -physics.paddleRotationLimit, physics.paddleRotationLimit);
+
+            // Apply visible tilt around Z so paddles open/close upward/downward.
+            gameObjects.paddleLeft.rotation.z = paddleLeftRotationZ;
+            gameObjects.paddleRight.rotation.z = paddleRightRotationZ;
+        }, 1000 / 60);
 
         const renderObserver = scene.onBeforeRenderObservable.add(() => {
-            // Calculate delta time for frame-independent physics
+            // I compute a frame delta so the physics stay stable even if the frame rate moves around.
             const currentTime = Date.now();
-            const dt = (currentTime - lastFrameTime) / 16.67; // Normalize to 60fps
+            const dt = (currentTime - lastFrameTime) / 16.67;
             lastFrameTime = currentTime;
-            
-            // Gravity + spin-driven lift/force.
+
+            // Gravity pulls the ball down every frame, then spin can bend the path a bit.
             ballVY -= physics.gravity * dt;
             const spinForce = -ballSpin * physics.magnusCoefficient * physics.magnusExtraFactor * dt;
             ballVY += spinForce;
-            
-            // Air resistance causes spin to decay
+
+            // Spin slowly decays so the ball eventually settles instead of curving forever.
             ballSpin *= Math.pow(physics.spinDecay, dt);
-            
-            // Visual rotation based on spin.
             gameObjects.ball.rotation.z += ballSpin * physics.magnusCoefficient * physics.magnusExtraFactor * physics.visualSpinFactor * dt;
-            
-            // Update ball position
+
+            // Move the ball through 3D space.
             gameObjects.ball.position.x += ballVX * dt;
             gameObjects.ball.position.y += ballVY * dt;
             gameObjects.ball.position.z += ballVZ * dt;
-            
-            // General speed scaling (drag/boost).
+
+            // Apply a small drag-style multiplier so the rally does not accelerate forever.
             const speedScale = Math.pow(physics.speedMultiplier, dt);
             ballVX *= speedScale;
             ballVY *= speedScale;
             ballVZ *= speedScale;
 
-            // Clamp maximum speed (resultant velocity)
+            // Clamp the combined speed so the ball never becomes unplayably fast.
             const currentSpeed = Math.hypot(ballVX, ballVY, ballVZ);
             if (currentSpeed > physics.speedMax && currentSpeed > 0) {
                 const scale = physics.speedMax / currentSpeed;
@@ -426,14 +471,14 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 ballVZ *= scale;
             }
 
-            // Side rail bounce on table width.
+            // Side rails keep the ball inside the table width.
             if (Math.abs(gameObjects.ball.position.z) > physics.tableHalfWidth) {
                 gameObjects.ball.position.z = clamp(gameObjects.ball.position.z, -physics.tableHalfWidth, physics.tableHalfWidth);
                 ballVZ = -ballVZ * physics.sideWallRestitution;
                 ballSpin *= physics.sideWallSpinRetention;
             }
 
-            // Ball-net collision.
+            // The net blocks low shots near the middle of the table.
             const insideNetHeight = gameObjects.ball.position.y - 0.15 < physics.tableTopY + physics.netHeight;
             const insideNetDepth = Math.abs(gameObjects.ball.position.z) < physics.tableHalfWidth;
             if (Math.abs(gameObjects.ball.position.x) < physics.netHalfThickness && insideNetHeight && insideNetDepth) {
@@ -445,19 +490,19 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 ballSpin *= physics.netSpinRetention;
             }
 
-            // Bounce on table top.
             const ballRadius = 0.15;
             const overTableX = Math.abs(gameObjects.ball.position.x) <= physics.tableHalfLength;
             const overTableZ = Math.abs(gameObjects.ball.position.z) <= physics.tableHalfWidth;
             const touchesTable = gameObjects.ball.position.y - ballRadius <= physics.tableTopY;
             if (touchesTable && overTableX && overTableZ && ballVY < 0) {
+                // A bounce on the table reverses the downward velocity and trims some energy.
                 gameObjects.ball.position.y = physics.tableTopY + ballRadius;
                 ballVY = -ballVY * physics.tableBounceRestitution;
                 ballVX *= physics.tableBounceFriction;
                 ballVZ *= physics.tableBounceFriction;
             }
 
-            // Lost point if ball drops below floor outside playable bounce.
+            // If the ball falls below the floor plane, I award the point to the opponent.
             if (gameObjects.ball.position.y < physics.floorY) {
                 if (gameObjects.ball.position.x < 0) {
                     scoreP2int++;
@@ -470,38 +515,72 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 }
             }
 
-            // Calculate paddle velocities (in units per frame) on z-axis.
             const paddleLeftVelZ = (gameObjects.paddleLeft.position.z - paddleLeftPrevZ) / Math.max(dt, 0.0001);
             const paddleRightVelZ = (gameObjects.paddleRight.position.z - paddleRightPrevZ) / Math.max(dt, 0.0001);
+            const paddleLeftRotVelZ = (paddleLeftRotationZ - paddleLeftPrevRotationZ) / Math.max(dt, 0.0001);
+            const paddleRightRotVelZ = (paddleRightRotationZ - paddleRightPrevRotationZ) / Math.max(dt, 0.0001);
             paddleLeftPrevZ = gameObjects.paddleLeft.position.z;
             paddleRightPrevZ = gameObjects.paddleRight.position.z;
+            paddleLeftPrevRotationZ = paddleLeftRotationZ;
+            paddleRightPrevRotationZ = paddleRightRotationZ;
 
-            // Left paddle collision in 3D.
+            // Paddles only interact with the ball when the ball is coming toward them.
             if (ballVX < 0 &&
                 gameObjects.ball.position.x < gameObjects.paddleLeft.position.x + physics.paddleCollisionDepth &&
                 gameObjects.ball.position.x > gameObjects.paddleLeft.position.x - physics.paddleCollisionDepth &&
                 Math.abs(gameObjects.ball.position.y - gameObjects.paddleLeft.position.y) < physics.paddleCollisionHeight &&
                 Math.abs(gameObjects.ball.position.z - gameObjects.paddleLeft.position.z) < physics.paddleCollisionWidth) {
 
+                // The paddle sends the ball back across the table and can add spin.
+                const toBallZLeft = gameObjects.ball.position.z - gameObjects.paddleLeft.position.z;
+                const approachSpeedLeft = Math.sign(toBallZLeft) * paddleLeftVelZ;
+                const approachFactorLeft = 1 + Math.max(0, approachSpeedLeft) * physics.paddleApproachBoost;
+                const retreatFactorLeft = Math.max(
+                    physics.paddleRetreatDampingMin,
+                    1 - Math.max(0, -approachSpeedLeft) * physics.paddleRetreatDampingStrength,
+                );
+                const impactFactorLeft = approachFactorLeft * retreatFactorLeft;
+
                 gameObjects.ball.position.x = gameObjects.paddleLeft.position.x + physics.paddleCollisionDepth;
-                ballVX = Math.abs(ballVX) * physics.paddleBounceBoost;
-                ballSpin = paddleLeftVelZ * physics.spinTransferCoefficient;
-                ballVZ += paddleLeftVelZ * physics.velocityTransfer;
+                ballVX = Math.abs(ballVX) * physics.paddleBounceBoost * impactFactorLeft;
+                ballSpin = paddleLeftVelZ * physics.spinTransferCoefficient * impactFactorLeft;
+                ballVZ += paddleLeftVelZ * physics.velocityTransfer * impactFactorLeft;
+
+                // Z-axis paddle tilt adds lift/drop to the return trajectory.
+                ballVY += Math.sin(paddleLeftRotationZ) * physics.paddleTiltToVerticalVelocity * impactFactorLeft;
+                // Faster paddle rotation adds extra upward kick on impact.
+                ballVY += Math.abs(paddleLeftRotVelZ) * physics.paddleRotationLiftFromSpeed;
             }
-            
-            // Right paddle collision in 3D.
+
+            // Right-paddle collision uses the same logic, mirrored for the opposite end.
             if (ballVX > 0 &&
                 gameObjects.ball.position.x > gameObjects.paddleRight.position.x - physics.paddleCollisionDepth &&
                 gameObjects.ball.position.x < gameObjects.paddleRight.position.x + physics.paddleCollisionDepth &&
                 Math.abs(gameObjects.ball.position.y - gameObjects.paddleRight.position.y) < physics.paddleCollisionHeight &&
                 Math.abs(gameObjects.ball.position.z - gameObjects.paddleRight.position.z) < physics.paddleCollisionWidth) {
 
+                // I mirror the bounce so the ball heads back toward the other side.
+                const toBallZRight = gameObjects.ball.position.z - gameObjects.paddleRight.position.z;
+                const approachSpeedRight = Math.sign(toBallZRight) * paddleRightVelZ;
+                const approachFactorRight = 1 + Math.max(0, approachSpeedRight) * physics.paddleApproachBoost;
+                const retreatFactorRight = Math.max(
+                    physics.paddleRetreatDampingMin,
+                    1 - Math.max(0, -approachSpeedRight) * physics.paddleRetreatDampingStrength,
+                );
+                const impactFactorRight = approachFactorRight * retreatFactorRight;
+
                 gameObjects.ball.position.x = gameObjects.paddleRight.position.x - physics.paddleCollisionDepth;
-                ballVX = -Math.abs(ballVX) * physics.paddleBounceBoost;
-                ballSpin = paddleRightVelZ * physics.spinTransferCoefficient;
-                ballVZ += paddleRightVelZ * physics.velocityTransfer;
+                ballVX = -Math.abs(ballVX) * physics.paddleBounceBoost * impactFactorRight;
+                ballSpin = paddleRightVelZ * physics.spinTransferCoefficient * impactFactorRight;
+                ballVZ += paddleRightVelZ * physics.velocityTransfer * impactFactorRight;
+
+                // Same tilt-based vertical deflection on the right paddle.
+                ballVY += Math.sin(paddleRightRotationZ) * physics.paddleTiltToVerticalVelocity * impactFactorRight;
+                // Faster paddle rotation adds extra upward kick on impact.
+                ballVY += Math.abs(paddleRightRotVelZ) * physics.paddleRotationLiftFromSpeed;
             }
 
+            // A point is also scored if the ball exits the table length entirely.
             if (gameObjects.ball.position.x < -physics.goalX) {
                 scoreP2int++;
                 scoreP2.textContent = scoreP2int.toString();
@@ -512,7 +591,6 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 resetBall(-1);
             }
 
-            // Check winner
             if (scoreP1int >= 10 || scoreP2int >= 10) {
                 setTimeout(() => endGame(true), 0);
             }
@@ -521,16 +599,18 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         let hasEnded = false;
 
         const cleanup = () => {
+            // I remove every listener and mesh I created so a fresh match starts cleanly.
             clearInterval(keyboardInterval);
             window.removeEventListener("keydown", keyDownHandler);
             window.removeEventListener("keyup", keyUpHandler);
-            window.removeEventListener("pointermove", pointerMoveHandler);
             window.removeEventListener("beforeunload", browserExitHandler);
             window.removeEventListener("pagehide", browserExitHandler);
             window.removeEventListener("popstate", browserExitHandler);
             scene.onBeforeRenderObservable.remove(renderObserver);
             physicsPanel?.remove();
             Object.values(arenaMeshes).forEach((mesh) => mesh?.dispose());
+            Object.values(leftPaddleVisual).forEach((mesh) => mesh?.dispose());
+            Object.values(rightPaddleVisual).forEach((mesh) => mesh?.dispose());
             disposeCurrentEngine();
             document.getElementById('renderCanvas')?.remove();
         };
@@ -539,8 +619,9 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             if (hasEnded) return;
             hasEnded = true;
             cleanup();
-            
+
             if (showWinnerMessage && !tournament) {
+                // Local mode shows a simple message and sends me back to the pong menu.
                 showMessage(scoreP1int >= 10 ? "They win!" : "You win!");
                 navigate('/pong');
             }
@@ -552,11 +633,8 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             endGame(false);
         };
 
-        // Ensure the match ends cleanly when user refreshes or navigates back.
         window.addEventListener("beforeunload", browserExitHandler);
         window.addEventListener("pagehide", browserExitHandler);
         window.addEventListener("popstate", browserExitHandler);
-
-
     });
 }
