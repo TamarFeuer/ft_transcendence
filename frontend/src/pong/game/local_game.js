@@ -10,14 +10,14 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         // I keep them grouped so I can reason about ball travel, bounce feel, spin,
         // and paddle motion without hunting through the frame loop.
         const defaultPhysics = {
-            initialSpeedX: 0.12,
-            initialLateralSpeedZ: 0.015,
+            initialSpeedX: 0.10,
+            initialLateralSpeedZ: 0.013,
             initialUpwardSpeedY: 0.09,
             speedMultiplier: 0.999,
             speedMax: 0.24,
             gravity: 0.0042,
             magnusCoefficient: 0.0008,
-            magnusExtraFactor: 40,
+            magnusExtraFactor: 20,
             spinDecay: 0.992,
             visualSpinFactor: 100,
             tableTopY: 0,
@@ -30,7 +30,8 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             tableBounceFriction: 0.985,
             sideWallRestitution: 0.92,
             sideWallSpinRetention: 0.9,
-            netHeight: 0.85,
+            // Net height controls the center barrier visually and physically.
+            netHeight: 0.2,
             netHalfThickness: 0.05,
             netBounceDamping: 0.6,
             netSpinRetention: 0.75,
@@ -55,7 +56,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             paddleRetreatDampingStrength: 0.2,
             paddleRetreatDampingMin: 0.65,
             paddleRotationLiftFromSpeed: 0.02,
-            paddleStepZ: 0.28,
+            paddleStepZ: 0.10,
         };
         const physics = { ...defaultPhysics };
 
@@ -175,11 +176,13 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             sideLineRight.position = new Vector3(0, physics.tableTopY + 0.085, -physics.tableHalfWidth + 0.06);
             sideLineRight.material = lineMat;
 
+            // Build net with unit height so slider changes can resize it safely at runtime.
             const net = MeshBuilder.CreateBox("localPongNet", {
                 width: physics.netHalfThickness * 2,
-                height: physics.netHeight,
+                height: 1,
                 depth: physics.tableHalfWidth * 2 - 0.08,
             }, scene);
+            net.scaling.y = physics.netHeight;
             net.position = new Vector3(0, physics.tableTopY + physics.netHeight / 2, 0);
             net.material = netMat;
 
@@ -230,6 +233,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             { key: "tableBounceFriction", label: "Table Friction", min: 0.8, max: 1, step: 0.001 },
             { key: "sideWallRestitution", label: "Side Wall Restitution", min: 0, max: 1.3, step: 0.01 },
             { key: "sideWallSpinRetention", label: "Side Wall Spin Keep", min: 0, max: 1, step: 0.01 },
+            { key: "netHeight", label: "Net Height", min: 0.2, max: 2, step: 0.01 },
             { key: "netBounceDamping", label: "Net Damping", min: 0, max: 1, step: 0.01 },
             { key: "netSpinRetention", label: "Net Spin Keep", min: 0, max: 1, step: 0.01 },
             // Paddle contact volumes and hit reaction.
@@ -261,6 +265,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         const highImpactKeys = new Set([
             "tableInclinePerUnitX",
             "tableDownhillAcceleration",
+            "netHeight",
             "spinTransferCoefficient",
             "velocityTransfer",
             "magnusCoefficient",
@@ -277,6 +282,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         const highImpactHints = {
             tableInclinePerUnitX: "How steeply table drops toward each end",
             tableDownhillAcceleration: "How strongly ball is pulled downhill on table",
+            netHeight: "How tall the center and side net looks/blocks",
             spinTransferCoefficient: "How much sideways paddle motion becomes Y-axis side-spin",
             velocityTransfer: "How much sideways paddle motion becomes sideways ball speed",
             magnusCoefficient: "How strongly side-spin bends flight in Z",
@@ -417,6 +423,12 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                     const parsed = Number(input.value);
                     physics[config.key] = parsed;
                     value.textContent = format(parsed);
+
+                    // Keep center net visuals in sync with live Net Height slider value.
+                    if (config.key === "netHeight" && arenaMeshes?.net) {
+                        arenaMeshes.net.scaling.y = parsed;
+                        arenaMeshes.net.position.y = physics.tableTopY + parsed / 2;
+                    }
                 });
 
                 row.appendChild(topLine);
