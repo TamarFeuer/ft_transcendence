@@ -91,6 +91,28 @@ export const en = {
   [TranslationKey.PONG_TOURNAMENT]: 'Tournament',
   [TranslationKey.PONG_ONLINE]: 'Online Game',
 
+  // Stats page
+  [TranslationKey.STATS_TITLE]: 'Statistics',
+  [TranslationKey.STATS_BACK]: '← Back',
+  [TranslationKey.STATS_TOTAL_GAMES]: 'Total Games',
+  [TranslationKey.STATS_WINS]: 'Wins',
+  [TranslationKey.STATS_LOSSES]: 'Losses',
+  [TranslationKey.STATS_ELO]: 'ELO',
+  [TranslationKey.STATS_ACHIEVEMENTS]: '🏆 Achievements',
+  [TranslationKey.STATS_LEADERBOARD]: '🥇 Leaderboard',
+  [TranslationKey.STATS_LOADING]: 'Loading...',
+  [TranslationKey.STATS_TH_PLAYER]: 'Player',
+  [TranslationKey.STATS_TH_STREAK]: 'Streak',
+  [TranslationKey.STATS_MATCH_HISTORY]: '🕹️ Match History',
+  [TranslationKey.STATS_TH_OPPONENT]: 'Opponent',
+  [TranslationKey.STATS_TH_SCORE]: 'Score',
+  [TranslationKey.STATS_TH_RESULT]: 'Result',
+  [TranslationKey.STATS_TH_DATE]: 'Date',
+  [TranslationKey.STATS_NO_ACHIEVEMENTS]: '...',
+  [TranslationKey.STATS_NO_GAMES]: '...',
+  [TranslationKey.STATS_NO_DATA]: '...',
+  [TranslationKey.STATS_COULD_NOT_LOAD]: '...',
+
   // User Management
   [TranslationKey.UM_USER]: 'User',
   [TranslationKey.UM_LOGIN_TITLE]: 'Login',

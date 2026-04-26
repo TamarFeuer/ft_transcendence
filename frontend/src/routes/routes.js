@@ -7,7 +7,7 @@ import { startLocalTournament } from '../pong/tournament/local_tournament.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "../pong/game/game.js";
 import { checkAuthRequired, fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
-import { updatePageTranslations } from '../i18n/index.js';
+import { updatePageTranslations, t } from '../i18n/index.js';
 import { verifiedUserId } from '../chat/chat.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
   loadUpcomingTournaments
@@ -288,7 +288,7 @@ export function setupRoutes() {
         const tbody = document.getElementById('stats-leaderboard-table');
         if (!tbody) return;
         if (!data.leaderboard || data.leaderboard.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500 pt-2">No data yet.</td></tr>';
+          tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500 pt-2">${t('STATS_NO_DATA')}</td></tr>`;
           return;
         }
         tbody.innerHTML = data.leaderboard
@@ -306,7 +306,7 @@ export function setupRoutes() {
       })
       .catch(() => {
         const tbody = document.getElementById('stats-leaderboard-table');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500">Could not load.</td></tr>';
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500">${t('STATS_COULD_NOT_LOAD')}</td></tr>`;
       });
 
     fetchWithRefreshAuth('/api/auth/me')
@@ -318,7 +318,7 @@ export function setupRoutes() {
             const tbody = document.getElementById('stats-history-table');
             if (!tbody) return;
             if (!data.matches || data.matches.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="4" class="text-zinc-500 pt-2">No games yet.</td></tr>';
+              tbody.innerHTML = `<tr><td colspan="4" class="text-zinc-500 pt-2">${t('STATS_NO_GAMES')}</td></tr>`;
               return;
             }
             tbody.innerHTML = data.matches.slice(0, 20)
@@ -342,7 +342,7 @@ export function setupRoutes() {
           })
           .catch(() => {
             const tbody = document.getElementById('stats-history-table');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-zinc-500">Could not load.</td></tr>';
+            if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-zinc-500">${t('STATS_COULD_NOT_LOAD')}</td></tr>`;
           });
 
         fetchWithRefreshAuth(`/api/player/${me.username}/achievements`)
@@ -351,7 +351,7 @@ export function setupRoutes() {
             const list = document.getElementById('stats-achievements-list');
             if (!list) return;
             if (!data.achievements || data.achievements.length === 0) {
-              list.innerHTML = '<li class="text-zinc-500">No achievements yet.</li>';
+              list.innerHTML = `<li class="text-zinc-500">${t('STATS_NO_ACHIEVEMENTS')}</li>`;
               return;
             }
             list.innerHTML = data.achievements
@@ -360,7 +360,7 @@ export function setupRoutes() {
           })
           .catch(() => {
             const list = document.getElementById('stats-achievements-list');
-            if (list) list.innerHTML = '<li class="text-zinc-500">Could not load.</li>';
+            if (list) list.innerHTML = `<li class="text-zinc-500">${t('STATS_COULD_NOT_LOAD')}</li>`;
           });
       })
       .catch(() => {});
