@@ -337,6 +337,11 @@ export function initChatUI() {
 					e.stopPropagation();
 					showChatUserMenu({ id, name }, e.clientX, e.clientY);
 				});
+				div.addEventListener("dblclick", (e) => {
+					e.stopPropagation();
+					hideChatUserMenu();
+					openDMChannel(id, name || id);
+				});
 			}
 
 			onlineUsersList.appendChild(div);
