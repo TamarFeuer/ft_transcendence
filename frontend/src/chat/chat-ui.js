@@ -643,7 +643,13 @@ export function initChatUI() {
 	});
 
 	window.addEventListener("gameInviteAccepted", (e) => removeInviteFromHistory(e.detail.gameId));
-	window.addEventListener("gameInviteExpired", (e) => removeInviteFromHistory(e.detail.gameId));
+	window.addEventListener("gameInviteExpired", (e) => {
+		removeInviteFromHistory(e.detail.gameId);
+		if (pendingInvite) {
+			pendingInvite = false;
+			window.history.back();
+		}
+	});
 	window.addEventListener("gameInviteBlocked", (e) => {
 		removeInviteFromHistory(e.detail.gameId);
 		if (pendingInvite) {
