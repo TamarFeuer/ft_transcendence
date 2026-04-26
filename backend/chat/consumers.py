@@ -78,7 +78,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Deliver any game result the user missed while their chat WS was down.
 		pending = PENDING_GAME_RESULTS.pop(self.user_id, None)
 		if pending:
-			await self.send(text_data=json.dumps(pending))
+			await self.send(text_data=json.dumps({
+				"type": "game_result",
+				"message": self.format_game_result_message(pending),
+			}))
 
 		# Broadcast updated online users list to everyone.
 		await self.broadcast_online_users()
@@ -307,22 +310,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"game_id": event["game_id"],
 		}))
 
-	async def game_result(self, event):
+	def format_game_result_message(self, event):
 		winner = event.get("winner")
 		loser = event.get("loser")
 		draw_players = event.get("draw_players")
 		game_type = event.get("game_type", "game")
 		if winner and loser:
-			msg = f"{winner} beat {loser} in a game of {game_type}!"
+			return f"{winner} beat {loser} in a game of {game_type}!"
 		elif winner:
-			msg = f"{winner} won a game of {game_type}!"
+			return f"{winner} won a game of {game_type}!"
 		elif draw_players and all(draw_players):
-			msg = f"{draw_players[0]} and {draw_players[1]} drew in a game of {game_type}!"
+			return f"{draw_players[0]} and {draw_players[1]} drew in a game of {game_type}!"
 		else:
-			msg = f"A game of {game_type} ended in a draw."
+			return f"A game of {game_type} ended in a draw."
+
+	async def game_result(self, event):
 		await self.send(text_data=json.dumps({
 			"type": "game_result",
-			"message": msg,
+			"message": self.format_game_result_message(event),
 		}))
 
 	async def trigger_online_users_broadcast(self, event):
