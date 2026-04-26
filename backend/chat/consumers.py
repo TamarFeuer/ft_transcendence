@@ -249,6 +249,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 						"type": "game.invite.accepted",
 						"game_id": game_id,
 					})
+					await self.channel_layer.group_send(f"user_{self.user_id}", {
+						"type": "game.invite.accepted",
+						"game_id": game_id,
+					})
 
 		elif msg_type == "user_blocked":
 			target = data.get("target")
