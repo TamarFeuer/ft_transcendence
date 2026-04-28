@@ -60,6 +60,19 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             paddleSwingReach: 1.62,
             paddleSwingRotationBoost: 0.86,
             paddleSwingDuration: 0.24,
+            paddleLobDuration: 0.2,
+            paddleLobLiftBoost: 0.12,
+            paddleLobSlowFactor: 0.5,
+            paddleLobSideDamping: 0.65,
+            paddleLobRotationBoost: 0.22,
+            paddleWingDuration: 0.22,
+            paddleWingReach: 0.38,
+            paddleWingSideReach: 0.42,
+            paddleWingLiftBoost: 0.16,
+            paddleWingSideBoost: 0.08,
+            paddleWingSpinBoost: 0.85,
+            paddleWingForwardFactor: 0.95,
+            paddleWingRotationBoost: 0.28,
         };
         const physics = { ...defaultPhysics };
 
@@ -85,7 +98,23 @@ export function initOfflineGame(scene, gameObjects, tournament) {
         let rightSwingTimer = 0;
         let leftSwingIntensity = 0;
         let rightSwingIntensity = 0;
+        let leftLobTimer = 0;
+        let rightLobTimer = 0;
+        let leftLobIntensity = 0;
+        let rightLobIntensity = 0;
+        let leftWingTimer = 0;
+        let rightWingTimer = 0;
+        let leftWingIntensity = 0;
+        let rightWingIntensity = 0;
+        let leftWingDirection = 1;
+        let rightWingDirection = 1;
+        let leftWingStartZ = 0;
+        let rightWingStartZ = 0;
         let swingQueued = false;
+        let leftLobQueued = false;
+        let rightLobQueued = false;
+        let leftWingQueued = false;
+        let rightWingQueued = false;
 
         let paddleLeftPrevZ = gameObjects.paddleLeft.position.z;
         let paddleRightPrevZ = gameObjects.paddleRight.position.z;
@@ -264,6 +293,19 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             { key: "paddleSwingReach", label: "Swing Reach", min: 0.1, max: 0.8, step: 0.01 },
             { key: "paddleSwingRotationBoost", label: "Swing Rotation Boost", min: 0, max: 1, step: 0.01 },
             { key: "paddleSwingDuration", label: "Swing Duration", min: 0.05, max: 0.5, step: 0.01 },
+            { key: "paddleLobDuration", label: "Lob Duration", min: 0.05, max: 0.5, step: 0.01 },
+            { key: "paddleLobLiftBoost", label: "Lob Lift Boost", min: 0, max: 0.4, step: 0.01 },
+            { key: "paddleLobSlowFactor", label: "Lob Slow Factor", min: 0, max: 0.9, step: 0.01 },
+            { key: "paddleLobSideDamping", label: "Lob Side Damping", min: 0, max: 1, step: 0.01 },
+            { key: "paddleLobRotationBoost", label: "Lob Rotation Boost", min: 0, max: 0.8, step: 0.01 },
+            { key: "paddleWingDuration", label: "Wing Duration", min: 0.05, max: 0.5, step: 0.01 },
+            { key: "paddleWingReach", label: "Wing Reach", min: 0.05, max: 0.8, step: 0.01 },
+            { key: "paddleWingSideReach", label: "Wing Side Reach", min: 0.05, max: 0.8, step: 0.01 },
+            { key: "paddleWingLiftBoost", label: "Wing Lift Boost", min: 0, max: 0.4, step: 0.01 },
+            { key: "paddleWingSideBoost", label: "Wing Side Boost", min: 0, max: 0.2, step: 0.01 },
+            { key: "paddleWingSpinBoost", label: "Wing Spin Boost", min: 0, max: 2, step: 0.01 },
+            { key: "paddleWingForwardFactor", label: "Wing Forward Factor", min: 0.6, max: 1.2, step: 0.01 },
+            { key: "paddleWingRotationBoost", label: "Wing Rotation Boost", min: 0, max: 0.8, step: 0.01 },
         ];
 
         const makeValueFormatter = (step) => {
@@ -290,6 +332,11 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             "paddleStepZ",
             "paddleSwingReach",
             "paddleSwingRotationBoost",
+            "paddleLobLiftBoost",
+            "paddleLobSlowFactor",
+            "paddleWingLiftBoost",
+            "paddleWingSideBoost",
+            "paddleWingSpinBoost",
         ]);
 
         const highImpactHints = {
@@ -309,6 +356,11 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             paddleStepZ: "How fast paddle slides sideways",
             paddleSwingReach: "How far the scripted swing thrusts the paddle",
             paddleSwingRotationBoost: "How much extra rotation the swing adds",
+            paddleLobLiftBoost: "Extra upward kick for scoop/lob hit",
+            paddleLobSlowFactor: "How much a lob removes forward speed",
+            paddleWingLiftBoost: "Upward kick for the wing shot",
+            paddleWingSideBoost: "Sideways kick for the wing shot",
+            paddleWingSpinBoost: "Extra spin from wing brushing contact",
         };
 
         // A single key can trigger a preprogrammed hit motion.
@@ -318,6 +370,26 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 leftSwingTimer = physics.paddleSwingDuration;
             } else {
                 rightSwingTimer = physics.paddleSwingDuration;
+            }
+        };
+
+        const triggerLob = (side) => {
+            if (side === "left") {
+                leftLobTimer = physics.paddleLobDuration;
+            } else {
+                rightLobTimer = physics.paddleLobDuration;
+            }
+        };
+
+        const triggerWing = (side) => {
+            if (side === "left") {
+                leftWingTimer = physics.paddleWingDuration;
+                leftWingStartZ = gameObjects.paddleLeft.position.z;
+                leftWingDirection = Math.sign(gameObjects.ball.position.z - gameObjects.paddleLeft.position.z) || 1;
+            } else {
+                rightWingTimer = physics.paddleWingDuration;
+                rightWingStartZ = gameObjects.paddleRight.position.z;
+                rightWingDirection = Math.sign(gameObjects.ball.position.z - gameObjects.paddleRight.position.z) || 1;
             }
         };
 
@@ -513,6 +585,42 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                     swingQueued = false;
                 }, 40);
             }
+
+            if (e.code === "KeyQ" && !leftLobQueued) {
+                e.preventDefault();
+                leftLobQueued = true;
+                triggerLob("left");
+                setTimeout(() => {
+                    leftLobQueued = false;
+                }, 40);
+            }
+
+            if (e.code === "KeyU" && !rightLobQueued) {
+                e.preventDefault();
+                rightLobQueued = true;
+                triggerLob("right");
+                setTimeout(() => {
+                    rightLobQueued = false;
+                }, 40);
+            }
+
+            if (e.code === "KeyE" && !leftWingQueued) {
+                e.preventDefault();
+                leftWingQueued = true;
+                triggerWing("left");
+                setTimeout(() => {
+                    leftWingQueued = false;
+                }, 40);
+            }
+
+            if (e.code === "KeyO" && !rightWingQueued) {
+                e.preventDefault();
+                rightWingQueued = true;
+                triggerWing("right");
+                setTimeout(() => {
+                    rightWingQueued = false;
+                }, 40);
+            }
         };
 
         window.addEventListener("keydown", keyDownHandler);
@@ -521,10 +629,10 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
         const keyboardInterval = setInterval(() => {
             // W/S and I/K now rotate the paddles instead of translating them on a second axis.
-            if (keys['w']) paddleLeftRotationZ -= physics.paddleRotationStep;
-            if (keys['s']) paddleLeftRotationZ += physics.paddleRotationStep;
-            if (keys['i']) paddleRightRotationZ -= physics.paddleRotationStep;
-            if (keys['k']) paddleRightRotationZ += physics.paddleRotationStep;
+            if (keys['']) paddleLeftRotationZ -= physics.paddleRotationStep;
+            if (keys['']) paddleLeftRotationZ += physics.paddleRotationStep;
+            if (keys['']) paddleRightRotationZ -= physics.paddleRotationStep;
+            if (keys['']) paddleRightRotationZ += physics.paddleRotationStep;
 
             // A/D and J/L are the only translation controls left, so each paddle can
             // slide horizontally across the face of the table but not vertically.
@@ -666,6 +774,30 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 gameObjects.paddleLeft.position.x = paddleLeftBaseX;
             }
 
+            if (leftLobTimer > 0) {
+                leftLobTimer = Math.max(0, leftLobTimer - dt * 0.01667);
+                const lobProgress = 1 - (leftLobTimer / physics.paddleLobDuration);
+                leftLobIntensity = Math.sin(Math.PI * lobProgress);
+                gameObjects.paddleLeft.rotation.z += leftLobIntensity * physics.paddleLobRotationBoost;
+            } else {
+                leftLobIntensity = 0;
+            }
+
+            if (leftWingTimer > 0) {
+                leftWingTimer = Math.max(0, leftWingTimer - dt * 0.01667);
+                const wingProgress = 1 - (leftWingTimer / physics.paddleWingDuration);
+                leftWingIntensity = Math.sin(Math.PI * wingProgress);
+                gameObjects.paddleLeft.position.x += leftWingIntensity * physics.paddleWingReach;
+                gameObjects.paddleLeft.position.z = clamp(
+                    leftWingStartZ + leftWingDirection * leftWingIntensity * physics.paddleWingSideReach,
+                    -physics.paddleBoundsZ,
+                    physics.paddleBoundsZ,
+                );
+                gameObjects.paddleLeft.rotation.z += leftWingDirection * leftWingIntensity * physics.paddleWingRotationBoost;
+            } else {
+                leftWingIntensity = 0;
+            }
+
             if (rightSwingTimer > 0) {
                 rightSwingTimer = Math.max(0, rightSwingTimer - dt * 0.01667);
                 const swingProgress = 1 - (rightSwingTimer / physics.paddleSwingDuration);
@@ -676,6 +808,30 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             } else {
                 rightSwingIntensity = 0;
                 gameObjects.paddleRight.position.x = paddleRightBaseX;
+            }
+
+            if (rightLobTimer > 0) {
+                rightLobTimer = Math.max(0, rightLobTimer - dt * 0.01667);
+                const lobProgress = 1 - (rightLobTimer / physics.paddleLobDuration);
+                rightLobIntensity = Math.sin(Math.PI * lobProgress);
+                gameObjects.paddleRight.rotation.z -= rightLobIntensity * physics.paddleLobRotationBoost;
+            } else {
+                rightLobIntensity = 0;
+            }
+
+            if (rightWingTimer > 0) {
+                rightWingTimer = Math.max(0, rightWingTimer - dt * 0.01667);
+                const wingProgress = 1 - (rightWingTimer / physics.paddleWingDuration);
+                rightWingIntensity = Math.sin(Math.PI * wingProgress);
+                gameObjects.paddleRight.position.x -= rightWingIntensity * physics.paddleWingReach;
+                gameObjects.paddleRight.position.z = clamp(
+                    rightWingStartZ + rightWingDirection * rightWingIntensity * physics.paddleWingSideReach,
+                    -physics.paddleBoundsZ,
+                    physics.paddleBoundsZ,
+                );
+                gameObjects.paddleRight.rotation.z += rightWingDirection * rightWingIntensity * physics.paddleWingRotationBoost;
+            } else {
+                rightWingIntensity = 0;
             }
 
             // Paddles only interact with the ball when the ball is coming toward them.
@@ -705,6 +861,20 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 ballVY += leftSwingIntensity * 0.02;
                 // Faster paddle rotation adds extra upward kick on impact.
                 ballVY += Math.abs(paddleLeftRotVelZ) * physics.paddleRotationLiftFromSpeed;
+
+                if (leftLobIntensity > 0) {
+                    const lobForwardFactor = Math.max(0.12, 1 - physics.paddleLobSlowFactor * leftLobIntensity);
+                    ballVX *= lobForwardFactor;
+                    ballVZ *= 1 - (1 - physics.paddleLobSideDamping) * leftLobIntensity;
+                    ballVY += physics.paddleLobLiftBoost * leftLobIntensity;
+                }
+
+                if (leftWingIntensity > 0) {
+                    ballVX *= physics.paddleWingForwardFactor;
+                    ballVY += physics.paddleWingLiftBoost * leftWingIntensity;
+                    ballVZ += leftWingDirection * physics.paddleWingSideBoost * leftWingIntensity;
+                    ballSpinY += leftWingDirection * physics.paddleWingSpinBoost * leftWingIntensity;
+                }
             }
 
             // Right-paddle collision uses the same logic, mirrored for the opposite end.
@@ -734,6 +904,20 @@ export function initOfflineGame(scene, gameObjects, tournament) {
                 ballVY += rightSwingIntensity * 0.02;
                 // Faster paddle rotation adds extra upward kick on impact.
                 ballVY += Math.abs(paddleRightRotVelZ) * physics.paddleRotationLiftFromSpeed;
+
+                if (rightLobIntensity > 0) {
+                    const lobForwardFactor = Math.max(0.12, 1 - physics.paddleLobSlowFactor * rightLobIntensity);
+                    ballVX *= lobForwardFactor;
+                    ballVZ *= 1 - (1 - physics.paddleLobSideDamping) * rightLobIntensity;
+                    ballVY += physics.paddleLobLiftBoost * rightLobIntensity;
+                }
+
+                if (rightWingIntensity > 0) {
+                    ballVX *= physics.paddleWingForwardFactor;
+                    ballVY += physics.paddleWingLiftBoost * rightWingIntensity;
+                    ballVZ += rightWingDirection * physics.paddleWingSideBoost * rightWingIntensity;
+                    ballSpinY += rightWingDirection * physics.paddleWingSpinBoost * rightWingIntensity;
+                }
             }
 
             // A point is also scored if the ball exits the table length entirely.
