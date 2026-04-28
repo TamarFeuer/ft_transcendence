@@ -4,7 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import ChessPlayer, ChessMatch
 from .models import ChessSession
-from chat.consumers import IN_GAME_USERS
+from chat.consumers import IN_GAME_USERS, PENDING_GAME_RESULTS
 
 logger = logging.getLogger(__name__)
 
@@ -99,13 +99,18 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				loser_color = 'black' if winner == 'white' else 'white'
 				winner_name = getattr(self.game.players[winner], 'username', winner)
 				loser_name = getattr(self.game.players[loser_color], 'username', None)
-				await self.channel_layer.group_send('global_chat', {
+				result_msg = {
 					'type': 'game_result',
 					'winner': winner_name,
 					'loser': loser_name,
 					'game_type': 'chess',
-					'is_tournament': False
-				})
+					'is_tournament': False,
+				}
+				await self.channel_layer.group_send('global_chat', result_msg)
+				# Store for the abandoning player — their chat WS closed with the tab,
+				# so the global_chat broadcast won't reach them. Deliver on reconnect.
+				loser_id = str(self.game.players[self.color].id)
+				PENDING_GAME_RESULTS[loser_id] = result_msg
 
 			elif self.game.status == 'waiting' and self.game.invitee_id is not None:
 				invitor_id = str(self.game.players[self.color].id)
