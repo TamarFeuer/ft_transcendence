@@ -648,6 +648,14 @@ export function initChatUI() {
 		if (activeChannel === channelId) renderMessages(channelId);
 	});
 
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "visible"
+				&& activeChannel !== "global"
+				&& chatContainer?.style.display !== "none") {
+			markRead(activeChannel);
+		}
+	});
+
 	window.addEventListener("gameInviteAccepted", (e) => removeInviteFromHistory(e.detail.gameId));
 	window.addEventListener("gameInviteExpired", (e) => {
 		removeInviteFromHistory(e.detail.gameId);
