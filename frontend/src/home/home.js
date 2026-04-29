@@ -3,6 +3,7 @@ import { setChessOnlineIntended } from "../routes/routes.js";
 import { joinMatchmaking } from "../pong/game/game.js";
 import { fetchWithRefreshAuth } from "../users_friends/usermanagement.js";
 import { showMessage } from "../utils/utils.js";
+import { t } from "../i18n/index.js";
 
 let _keydownHandler = null;
 
@@ -113,7 +114,7 @@ async function doSearch(){
 
     const res = await fetchWithRefreshAuth(`/api/player/${username}/profile`);
     if (res.status === 404){
-        showMessage("User not found", "error");
+        showMessage(t('FEEDBACK_USER_NOT_FOUND'), "error");
         return;
     }
     navigate(`/profile/${username}`);

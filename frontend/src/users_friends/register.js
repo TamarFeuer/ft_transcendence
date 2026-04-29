@@ -1,6 +1,7 @@
 import { registerUser } from "./usermanagement"
 import { navigate } from "../routes/route_helpers"
 import { showError } from "../utils/utils";
+import { t } from "../i18n/index.js";
 
 export function registerPage(){
     const form = document.getElementById("register-form");
@@ -19,24 +20,24 @@ export function registerPage(){
 
         const validUser = /^[a-zA-Z0-9_]+$/;
         if(!validUser.test(username)){
-            showError("Username may only contain letters, numbers, and underscores.");
+            showError(t('REG_INVALID_CHARS'));
             return;
         }
 
         if(username.length < 3 || username.length > 20)
         {
-            showError("Username must be between 3 and 20 characters.");
+            showError(t('REG_USERNAME_LENGTH'));
             return;
         }
 
         if(password.length < 3 || password.length > 72)
         {
-            showError("Password must be between 3 and 72 characters.");
+            showError(t('REG_PASSWORD_LENGTH'));
             return;
         }
 
         if (!legalAccepted) {
-            showError("You must accept the Terms of Service and Privacy Policy.");
+            showError(t('REG_ACCEPT_TERMS'));
             return;
         }
 
