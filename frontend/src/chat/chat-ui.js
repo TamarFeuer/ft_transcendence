@@ -6,6 +6,7 @@ import { onlineUsers, blockedMeIds, sendChatMessage, initTyping, verifiedUserId,
 import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 import { navigate, handleRoute } from '../routes/route_helpers.js';
 import { showMessage } from '../utils/utils.js';
+import { t } from '../i18n/index.js';
 
 export function initChatUI() {
 
@@ -48,7 +49,7 @@ export function initChatUI() {
 			chatInput.disabled = true;
 			sendChatBtn.disabled = true;
 			chatInput.value = "";
-			blockNotice.textContent = blockedByMe ? "You have blocked this user." : "You have been blocked.";
+			blockNotice.textContent = blockedByMe ? t('CHAT_BLOCKED_BY_YOU') : t('CHAT_BLOCKED_YOU');
 			blockNotice.style.display = "block";
 		} else {
 			chatInput.disabled = false;
@@ -71,11 +72,11 @@ export function initChatUI() {
 		// Update channel title
 		const channelTitle = document.getElementById("channelTitle");
 		if (channelId === "global") {
-			channelTitle.textContent = "# Global Chat";
+			channelTitle.textContent = t('CHAT_GLOBAL_TITLE');
 		} else {
 			const name = onlineUsers[channelId]?.name
 				|| activeTab?.querySelector("span:nth-child(2)")?.textContent;
-			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
+			channelTitle.textContent = name ? `@ ${name}` : `@ ${t('CHAT_DIRECT_MSG')}`;
 			markRead(channelId);
 		}
 		openConversation(channelId === "global" ? null : channelId);
@@ -90,6 +91,19 @@ export function initChatUI() {
 		updateDMInputState(channelId);
 		document.getElementById("chatInput").focus();
 	}
+
+	window.addEventListener('languagechange', () => {
+		const titleEl = document.getElementById("channelTitle");
+		if (!titleEl) return;
+		if (activeChannel === "global") {
+			titleEl.textContent = t('CHAT_GLOBAL_TITLE');
+		} else {
+			const name = onlineUsers[activeChannel]?.name;
+			titleEl.textContent = name ? `@ ${name}` : `@ ${t('CHAT_DIRECT_MSG')}`;
+		}
+		renderOnlineUsers();
+		renderMessages(activeChannel);
+	});
 
 	// Opens a DM channel tab.
 	// switchToChannel=true (default) — switches to the tab immediately.
@@ -189,11 +203,11 @@ export function initChatUI() {
 				msgDiv.classList.add(isOwnMessage ? "self" : "dm-received", "game-invite");
 				if (isOwnMessage) {
 					const recipientName = msg.recipientName || "them";
-					msgDiv.appendChild(document.createTextNode(`You invited ${recipientName} to a game of ${msg.invite.gameType}`));
+					msgDiv.appendChild(document.createTextNode(t('CHAT_INVITE_SENT', { name: recipientName, game: msg.invite.gameType })));
 				} else {
-					msgDiv.appendChild(document.createTextNode(`${msg.senderName} invited you to a game of ${msg.invite.gameType}`));
+					msgDiv.appendChild(document.createTextNode(t('CHAT_INVITE_RECEIVED', { name: msg.senderName, game: msg.invite.gameType })));
 					const acceptBtn = document.createElement("button");
-					acceptBtn.textContent = "Accept";
+					acceptBtn.textContent = t('CHAT_ACCEPT');
 					acceptBtn.className = "ml-2 px-2 py-0.5 text-xs bg-pink-500 hover:bg-pink-400 rounded font-semibold";
 					acceptBtn.addEventListener("click", () => {
 						msgDiv.remove();
@@ -222,7 +236,7 @@ export function initChatUI() {
 
 			const senderSpan = document.createElement("span");
 			senderSpan.className = "sender";
-			senderSpan.textContent = isOwnMessage ? "Me" : msg.senderName;
+			senderSpan.textContent = isOwnMessage ? t('CHAT_ME') : msg.senderName;
 
 			const messageSpan = document.createElement("span");
 			messageSpan.textContent = msg.message;
@@ -294,7 +308,7 @@ export function initChatUI() {
 		onlineUsersList.innerHTML = "";
 
 		if (!onlineUsers || onlineUsers.length === 0) {
-			onlineUsersList.innerHTML = '<div class="text-xs text-gray-500 px-2">No users online</div>';
+			onlineUsersList.innerHTML = `<div class="text-xs text-gray-500 px-2">${t('CHAT_NO_USERS')}</div>`;
 			return;
 		}
 
@@ -320,7 +334,7 @@ export function initChatUI() {
 			if (blocked_by_me) {
 				// Show unblock button instead of normal click behavior
 				const unblockBtn = document.createElement("button");
-				unblockBtn.textContent = "Unblock";
+				unblockBtn.textContent = t('CHAT_UNBLOCK');
 				unblockBtn.className = "ml-auto text-xs text-pink-400 hover:text-pink-200";
 				unblockBtn.addEventListener("click", (e) => {
 					e.stopPropagation();
@@ -539,7 +553,7 @@ export function initChatUI() {
 			console.log('[invite] /api/chess/join/ response — status:', res.status, 'ok:', res.ok);
 			if (!res.ok) {
 				pendingInvite = false;
-				showMessage("Could not create game. Please try again.", "error");
+				showMessage(t('CHAT_CREATE_GAME_ERROR'), "error");
 				return;
 			}
 			const data = await res.json();
@@ -564,7 +578,7 @@ export function initChatUI() {
 			});
 			if (!res.ok) {
 				pendingInvite = false;
-				showMessage("Could not create game. Please try again.", "error");
+				showMessage(t('CHAT_CREATE_GAME_ERROR'), "error");
 				return;
 			}
 			const data = await res.json();
@@ -615,7 +629,7 @@ export function initChatUI() {
 		window.history.back();
 		// Show feedback to the invitor
 		if (e.detail.reason === "in_game") {
-			showMessage("That user is currently in a game.", "error");
+			showMessage(t('CHAT_USER_IN_GAME'), "error");
 		}
 	});
 

@@ -1,4 +1,5 @@
 import { showMessage } from "../../utils/utils.js";
+import { t } from "../../i18n/index.js";
 import { disposeCurrentEngine } from "../../routes/routes.js";
 import { navigate } from "../../routes/route_helpers.js";
 
@@ -148,7 +149,7 @@ export function initAIGame(scene, gameObjects, tournament) {
             cleanup();
 
             if (showWinnerMessage && !tournament) {
-                showMessage(scoreP1int >= 10 ? "AI wins!" : "You win!");
+                showMessage(scoreP1int >= 10 ? t('GAME_AI_WIN') : t('GAME_YOU_WIN'));
                 navigate('/pong')
             }
 

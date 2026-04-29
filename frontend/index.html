@@ -28,7 +28,7 @@
 			bg-black text-white rounded-xl shadow-[0_0_15px_rgba(0,255,100,0.8)]
 			border-2 border-lime-400
 			tracking-wider
-			transition-colors duration-200 ease-in-out z-50">
+			transition-colors duration-200 ease-in-out z-50" data-i18n="CHAT_OPEN_BTN">
 			Chat
 		</button>
 
@@ -40,7 +40,7 @@
 			<div id="channelTabs" class="flex-1 flex items-center gap-2 overflow-x-auto">
 				<button class="channel-tab active" data-channel="global">
 					<span class="font-bold opacity-80">#</span>
-					<span>Global</span>
+					<span data-i18n="CHAT_GLOBAL">Global</span>
 				</button>
 			</div>
 			<button id="closeChatBtn">✕</button>
@@ -51,7 +51,7 @@
 			
 			<!-- Left sidebar: Online users -->
 			<div id="usersSidebar">
-				<div class="px-2 py-2 text-lg font-bold text-[#fce7f3] tracking-wider">
+				<div class="px-2 py-2 text-lg font-bold text-[#fce7f3] tracking-wider" data-i18n="CHAT_ONLINE_USERS">
 					Online
 				</div>
 				<div id="onlineUsersList" class="flex-1 overflow-y-auto px-2 space-y-0.2">
@@ -60,13 +60,13 @@
 
 			<!-- Right side: Chat panel -->
 			<div id="chatPanel">
-				<div id="channelTitle" class="px-4 py-2 border-b border-pink-600/30 text-sm font-semibold text-gray-300 flex-shrink-0">
+				<div id="channelTitle" class="px-4 py-2 border-b border-pink-600/30 text-sm font-semibold text-gray-300 flex-shrink-0" data-i18n="CHAT_GLOBAL_TITLE">
 					# Global Chat
 				</div>
 				<div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
 				<div id="typingIndicator" class="px-4 h-5 flex-shrink-0 text-sm text-gray-300 italic"></div>
 				<div id="chatInputWrapper" class="p-4 bg-black/80 border-t border-pink-600/30 flex-shrink-0">
-					<textarea id="chatInput" rows="2" placeholder="Type a message..."
+					<textarea id="chatInput" rows="2" data-i18n-placeholder="CHAT_TYPE_PLACEHOLDER" placeholder="Type a message..."
 						class="w-full px-3 py-2 bg-gray-800 text-white rounded resize-none 
 									focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
 						<div class="flex items-center justify-between mt-1">
@@ -75,7 +75,7 @@
 						</div>
 						<button id="sendChatBtn"
 						class="mt-2 w-full py-2 bg-pink-500 hover:bg-pink-400 
-									rounded font-semibold transition-colors">
+									rounded font-semibold transition-colors" data-i18n="CHAT_SEND">
 						Send
 					</button>
 				</div>
@@ -89,22 +89,22 @@
 		<div id="chatUserMenuName" class="px-4 py-2 text-xs text-pink-300 font-bold border-b border-pink-600/20 truncate">
 		</div>
 		<button data-action="profile"
-			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">View Profile</button>
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors" data-i18n="CHAT_MENU_PROFILE">View Profile</button>
 		<button data-action="invite"
-			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Invite to Game</button>
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors" data-i18n="CHAT_MENU_INVITE">Invite to Game</button>
 		<button data-action="chat"
-			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Chat</button>
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors" data-i18n="CHAT_MENU_CHAT">Chat</button>
 		<button data-action="block"
-			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Block User</button>
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors" data-i18n="CHAT_MENU_BLOCK">Block User</button>
 	</div>
 	<!-- Game picker submenu — appears below the context menu when "Invite to Game" is clicked -->
 	<div id="gamePickerMenu" style="display:none;"
 		class="fixed z-[9999] bg-gray-900 border border-pink-600/40 rounded-lg shadow-xl py-1 min-w-[160px]">
-		<div class="px-4 py-2 text-xs text-pink-300 font-bold border-b border-pink-600/20">Choose a game</div>
+		<div class="px-4 py-2 text-xs text-pink-300 font-bold border-b border-pink-600/20" data-i18n="CHAT_PICK_GAME">Choose a game</div>
 		<button data-game="chess"
-			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Chess</button>
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors" data-i18n="BTN_CHESS">Chess</button>
 		<button data-game="pong"
-			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors">Pong</button>
+			class="block w-full px-4 py-2 text-left text-sm text-[#fce7f3] hover:text-[#4ade80] transition-colors" data-i18n="BTN_PONG">Pong</button>
 	</div>
 	<script type="module" src="src/main.js"></script>
 

@@ -1,5 +1,6 @@
 import "../../styles.css";
 import { showMessage } from "../../utils/utils.js"
+import { t } from "../../i18n/index.js";
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
 import { currentEngine, disposeCurrentEngine, resizeListener } from "../../routes/routes.js";
 
@@ -200,7 +201,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
             cleanup();
             
             if (showWinnerMessage && !tournament) {
-                showMessage(scoreP1int >= 10 ? "They win!" : "You win!");
+                showMessage(scoreP1int >= 10 ? t('GAME_THEY_WIN') : t('GAME_YOU_WIN'));
                 navigate('/pong');
             }
 
