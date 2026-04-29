@@ -20,13 +20,17 @@ export function initChatUI() {
 	const chatMessages = document.getElementById("chatMessages");
 	const channelTitle = document.getElementById("channelTitle");
 	const blockNotice = document.getElementById("blockNotice");
+	const typingIndicator = document.getElementById("typingIndicator");
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	// activeChannel is either "global" or a user ID for DMs
 	let activeChannel = "global";
 	// messageHistory stores messages per channel — keyed by "global" or user ID
-	// Messages are lost on refresh since there's no database yet
 	const messageHistory = { global: [] };
+	// tracks which DM channels have been read by the other person
+	const seenBy = {}; // channelId -> true/false
+	// tracks who is currently typing per channel: channelId -> Map(userId -> name)
+	const typingUsers = {};
 
 	// ── Channel management ────────────────────────────────────────────────────
 
@@ -69,7 +73,8 @@ export function initChatUI() {
 		if (channelId === "global") {
 			channelTitle.textContent = "# Global Chat";
 		} else {
-			const name = onlineUsers[channelId]?.name;
+			const name = onlineUsers[channelId]?.name
+				|| activeTab?.querySelector("span:nth-child(2)")?.textContent;
 			channelTitle.textContent = name ? `@ ${name}` : "@ Direct Message";
 			markRead(channelId);
 		}
@@ -81,6 +86,7 @@ export function initChatUI() {
 		}
 
 		renderMessages(channelId);
+		renderTypingIndicator();
 		updateDMInputState(channelId);
 		document.getElementById("chatInput").focus();
 	}
@@ -147,6 +153,12 @@ export function initChatUI() {
 		if (channelId === activeChannel) {
 			// User is already viewing this channel, render immediately
 			renderMessages(channelId);
+			// If it's a DM from someone else, mark it read — but only if the chat window is actually visible
+			if (channelId !== "global" && message.senderId !== verifiedUserId
+					&& chatContainer?.style.display !== "none"
+					&& document.visibilityState === "visible") {
+				markRead(channelId);
+			}
 		} else if (message.senderId !== verifiedUserId) {
 			// Only badge for messages from others — own messages echoed to other tabs shouldn't count as unread
 			const tab = document.querySelector(`[data-channel="${channelId}"]`);
@@ -221,16 +233,58 @@ export function initChatUI() {
 			chatMessages.appendChild(msgDiv);
 		});
 
+		// Show "Seen" only if the other person read AND the last message is ours
+		const lastMsg = messages[messages.length - 1];
+		if (channelId !== "global" && seenBy[channelId] && lastMsg?.senderId === verifiedUserId) {
+			const seenDiv = document.createElement("div");
+			seenDiv.className = "text-right text-xs text-gray-400 pr-1 mt-1 font-medium";
+			seenDiv.textContent = "✓ Seen";
+			chatMessages.appendChild(seenDiv);
+		}
+
 		// Scroll to bottom so latest message is always visible
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 
-		// Clear unread badge when switching to this channel
-		const tab = document.querySelector(`[data-channel="${channelId}"]`);
-		if (tab) {
-			const badge = tab.querySelector(".unread-badge");
-			if (badge) badge.remove();
+		// Clear unread badge only when the user is actively viewing this channel
+		if (channelId === activeChannel) {
+			const tab = document.querySelector(`[data-channel="${channelId}"]`);
+			if (tab) {
+				const badge = tab.querySelector(".unread-badge");
+				if (badge) badge.remove();
+			}
 		}
 	}
+
+	// ── Typing indicator ─────────────────────────────────────────────────────
+
+	function renderTypingIndicator() {
+		if (!typingIndicator) return;
+		const typers = typingUsers[activeChannel];
+		if (!typers || typers.size === 0) {
+			typingIndicator.textContent = "";
+			return;
+		}
+		if (typers.size === 1) {
+			const name = [...typers.values()][0];
+			typingIndicator.textContent = `${name} is typing...`;
+		} else {
+			typingIndicator.textContent = `${typers.size} people are typing...`;
+		}
+	}
+
+	window.addEventListener("typingStarted", (e) => {
+		const { userId, name, channelId } = e.detail;
+		if (userId === verifiedUserId) return;
+		if (!typingUsers[channelId]) typingUsers[channelId] = new Map();
+		typingUsers[channelId].set(userId, name);
+		if (channelId === activeChannel) renderTypingIndicator();
+	});
+
+	window.addEventListener("typingStopped", (e) => {
+		const { userId, channelId } = e.detail;
+		if (typingUsers[channelId]) typingUsers[channelId].delete(userId);
+		if (channelId === activeChannel) renderTypingIndicator();
+	});
 
 	// ── Online users ──────────────────────────────────────────────────────────
 
@@ -283,6 +337,11 @@ export function initChatUI() {
 					e.stopPropagation();
 					showChatUserMenu({ id, name }, e.clientX, e.clientY);
 				});
+				div.addEventListener("dblclick", (e) => {
+					e.stopPropagation();
+					hideChatUserMenu();
+					openDMChannel(id, name || id);
+				});
 			}
 
 			onlineUsersList.appendChild(div);
@@ -315,7 +374,7 @@ export function initChatUI() {
 
 	// chat.js dispatches this when DM history is fetched from the database
 	window.addEventListener("dmHistoryReceived", (e) => {
-		const { channelId, messages } = e.detail;
+		const { channelId, messages, seen } = e.detail;
 		if (!messageHistory[channelId]) messageHistory[channelId] = [];
 		messageHistory[channelId] = messages.map(msg => {
 			const entry = {
@@ -329,6 +388,7 @@ export function initChatUI() {
 			}
 			return entry;
 		});
+		if (seen) seenBy[channelId] = true;
 		if (channelId === activeChannel) renderMessages(channelId);
 	});
 	
@@ -346,6 +406,7 @@ export function initChatUI() {
 					tab.appendChild(badge);
 				}
 			}
+			if (data.seen) seenBy[userId] = true;
 		});
 	});
 	
@@ -358,6 +419,7 @@ export function initChatUI() {
 			openChatBtn.style.display = "none";
 			chatInput.focus();
 			renderOnlineUsers();
+			if (activeChannel !== "global") markRead(activeChannel);
 		});
 	}
 
@@ -382,7 +444,8 @@ export function initChatUI() {
 		const inviteBtn = chatUserMenu.querySelector('[data-action="invite"]');
 		if (inviteBtn) {
 			const targetInGame = onlineUsers[user.id]?.in_game;
-			inviteBtn.style.display = (targetInGame || pendingInvite) ? "none" : "";
+			const senderInGame = onlineUsers[verifiedUserId]?.in_game;
+			inviteBtn.style.display = (targetInGame || senderInGame || pendingInvite) ? "none" : "";
 		}
 
 		// Position at cursor - nudge left/up if too close to screen edge
@@ -559,13 +622,49 @@ export function initChatUI() {
 	function removeInviteFromHistory(gameId) {
 		for (const channelId in messageHistory) {
 			const before = messageHistory[channelId].length;
+			const removedFromOther = messageHistory[channelId].filter(
+				m => m.invite?.gameId === gameId && m.senderId !== verifiedUserId
+			).length;
 			messageHistory[channelId] = messageHistory[channelId].filter(m => m.invite?.gameId !== gameId);
-			if (messageHistory[channelId].length < before) renderMessages(channelId);
+			if (messageHistory[channelId].length < before) {
+				renderMessages(channelId);
+				if (channelId !== activeChannel && removedFromOther > 0) {
+					const tab = document.querySelector(`[data-channel="${channelId}"]`);
+					if (tab) {
+						const badge = tab.querySelector(".unread-badge");
+						if (badge) {
+							const newCount = parseInt(badge.textContent) - removedFromOther;
+							if (newCount <= 0) badge.remove();
+							else badge.textContent = newCount;
+						}
+					}
+				}
+			}
 		}
 	}
 
+	window.addEventListener("messagesRead", (e) => {
+		const channelId = e.detail.by;
+		seenBy[channelId] = true;
+		if (activeChannel === channelId) renderMessages(channelId);
+	});
+
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "visible"
+				&& activeChannel !== "global"
+				&& chatContainer?.style.display !== "none") {
+			markRead(activeChannel);
+		}
+	});
+
 	window.addEventListener("gameInviteAccepted", (e) => removeInviteFromHistory(e.detail.gameId));
-	window.addEventListener("gameInviteExpired", (e) => removeInviteFromHistory(e.detail.gameId));
+	window.addEventListener("gameInviteExpired", (e) => {
+		removeInviteFromHistory(e.detail.gameId);
+		if (pendingInvite) {
+			pendingInvite = false;
+			window.history.back();
+		}
+	});
 	window.addEventListener("gameInviteBlocked", (e) => {
 		removeInviteFromHistory(e.detail.gameId);
 		if (pendingInvite) {
@@ -598,7 +697,8 @@ export function initChatUI() {
 	});
 
 	// initTyping attaches the typing indicator to the textarea (chat.js)
-	initTyping(chatInput);
+	// Pass a getTarget callback so typing events include the active DM channel
+	initTyping(chatInput, () => activeChannel === "global" ? null : activeChannel);
 
 	if (sendChatBtn && chatInput) {
 		const sendMessage = () => {
@@ -608,6 +708,8 @@ export function initChatUI() {
 
 			// null target means global chat, otherwise it's a DM to that user ID
 			const target = activeChannel === "global" ? null : activeChannel;
+			// Clear "Seen" when we send a new message — it's no longer valid
+			if (target) seenBy[target] = false;
 			sendChatMessage(message, target);
 
 			chatInput.value = "";

@@ -37,6 +37,10 @@ class ConversationParticipant(models.Model):
 	# Set back to False when a new message arrives.
 	is_closed = models.BooleanField(default=False)
 
+	# Set to now() whenever this user reads the conversation (mark_read).
+	# Used to compute whether the other user has seen the last message.
+	last_read_at = models.DateTimeField(null=True, blank=True)
+
 	def __str__(self):
 		return f"{self.user.username} in conversation {self.conversation_id}"
 

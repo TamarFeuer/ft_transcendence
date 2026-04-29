@@ -112,8 +112,7 @@
   "pk": 1,
   "fields": {
     "user": 1,
-    "avatar": "",
-    "bio": "Chat developer"
+    "avatar": ""
   }
 },
 {
@@ -121,8 +120,7 @@
   "pk": 2,
   "fields": {
     "user": 2,
-    "avatar": "",
-    "bio": "Game and auth developer"
+    "avatar": ""
   }
 },
 {
@@ -130,8 +128,7 @@
   "pk": 3,
   "fields": {
     "user": 3,
-    "avatar": "",
-    "bio": "Friends and chess developer"
+    "avatar": ""
   }
 },
 {
@@ -139,8 +136,7 @@
   "pk": 4,
   "fields": {
     "user": 4,
-    "avatar": "",
-    "bio": "Frontend developer"
+    "avatar": ""
   }
 },
 {
@@ -148,8 +144,7 @@
   "pk": 5,
   "fields": {
     "user": 5,
-    "avatar": "",
-    "bio": "Stats developer"
+    "avatar": ""
   }
 },
 {
@@ -157,8 +152,7 @@
   "pk": 6,
   "fields": {
     "user": 6,
-    "avatar": "",
-    "bio": "Servers maintainer in AlasCode"
+    "avatar": ""
   }
 },
 {
@@ -611,5 +605,55 @@
     "achievement": 5,
     "timestamp": "2026-03-22T10:15:34.123Z"
   }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 1,
+  "fields": { "from_user": 1, "to_user": 2, "status": "accepted", "created_at": "2026-03-01T10:00:00Z", "updated_at": "2026-03-01T10:00:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 2,
+  "fields": { "from_user": 1, "to_user": 3, "status": "accepted", "created_at": "2026-03-01T10:01:00Z", "updated_at": "2026-03-01T10:01:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 3,
+  "fields": { "from_user": 1, "to_user": 4, "status": "accepted", "created_at": "2026-03-01T10:02:00Z", "updated_at": "2026-03-01T10:02:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 4,
+  "fields": { "from_user": 1, "to_user": 5, "status": "accepted", "created_at": "2026-03-01T10:03:00Z", "updated_at": "2026-03-01T10:03:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 5,
+  "fields": { "from_user": 4, "to_user": 3, "status": "accepted", "created_at": "2026-03-01T10:04:00Z", "updated_at": "2026-03-01T10:04:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 1,
+  "fields": { "blocker": 6, "blocked_user": 1, "created_at": "2026-03-02T10:00:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 2,
+  "fields": { "blocker": 6, "blocked_user": 2, "created_at": "2026-03-02T10:01:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 3,
+  "fields": { "blocker": 6, "blocked_user": 3, "created_at": "2026-03-02T10:02:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 4,
+  "fields": { "blocker": 6, "blocked_user": 4, "created_at": "2026-03-02T10:03:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 5,
+  "fields": { "blocker": 6, "blocked_user": 5, "created_at": "2026-03-02T10:04:00Z" }
 }
 ]

@@ -8,7 +8,7 @@ from channels.db import database_sync_to_async
 from .models import GameSession, Player
 from .services import match_ends
 import logging
-from chat.consumers import IN_GAME_USERS
+from chat.consumers import IN_GAME_USERS, PENDING_GAME_RESULTS
 
 logger = logging.getLogger(__name__)
 
@@ -322,16 +322,17 @@ class GameConsumer(AsyncWebsocketConsumer):
                     }
                 )
                 loser_name = getattr(departing_user, 'username', None)
-                await self.channel_layer.group_send(
-                    "global_chat",
-                    {
-                        "type": "game_result",
-                        "winner": winner_name,
-                        "loser": loser_name,
-                        "game_type": "pong",
-                        "is_tournament": self.game.isTournamentGame
-                    }
-                )
+                result_msg = {
+                    "type": "game_result",
+                    "winner": winner_name,
+                    "loser": loser_name,
+                    "game_type": "pong",
+                    "is_tournament": self.game.isTournamentGame
+                }
+                await self.channel_layer.group_send("global_chat", result_msg)
+                for pid in [str(winner_id), str(getattr(departing_user, 'id', None))]:
+                    if pid:
+                        PENDING_GAME_RESULTS[pid] = result_msg
 
             elif status_before == 'waiting' and getattr(self.game, 'invitee_id', None) is not None:
                 invitor_id = str(getattr(departing_user, 'id', None))
@@ -356,15 +357,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'type': 'game_over',
                         'winner': 'Player disconnected',
                         'winner_id': None
-                    }
-                )
-                await self.channel_layer.group_send(
-                    "global_chat",
-                    {
-                        "type": "game_result",
-                        "winner": None,
-                        "game_type": "pong",
-                        "is_tournament": self.game.isTournamentGame
                     }
                 )
 
@@ -441,16 +433,17 @@ class GameConsumer(AsyncWebsocketConsumer):
                             'new_achievements': new_achievements,
                         }
                     )
-                    await self.channel_layer.group_send(
-                        'global_chat',
-                        {
-                            'type': 'game_result',
-                            'winner': winner_name,
-                            'loser': loser_name,
-                            'game_type': 'pong',
-                            'is_tournament': self.game.isTournamentGame,
-                        }
-                    )
+                    result_msg = {
+                        'type': 'game_result',
+                        'winner': winner_name,
+                        'loser': loser_name,
+                        'game_type': 'pong',
+                        'is_tournament': self.game.isTournamentGame,
+                    }
+                    await self.channel_layer.group_send('global_chat', result_msg)
+                    for pid in [str(winner_id), str(getattr(loser_user, 'id', None))]:
+                        if pid:
+                            PENDING_GAME_RESULTS[pid] = result_msg
                     break
             
             await asyncio.sleep(1/60)  # 60 FPS
