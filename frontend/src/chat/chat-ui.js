@@ -419,6 +419,7 @@ export function initChatUI() {
 			openChatBtn.style.display = "none";
 			chatInput.focus();
 			renderOnlineUsers();
+			if (activeChannel !== "global") markRead(activeChannel);
 		});
 	}
 
