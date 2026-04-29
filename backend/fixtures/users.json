@@ -644,8 +644,8 @@
   "fields": {
     "user": 1,
     "elo_rating": 1240,
-    "total_games": 5,
-    "total_wins": 3,
+    "total_games": 3,
+    "total_wins": 1,
     "total_losses": 2
   }
 },
@@ -655,8 +655,8 @@
   "fields": {
     "user": 2,
     "elo_rating": 1185,
-    "total_games": 4,
-    "total_wins": 2,
+    "total_games": 3,
+    "total_wins": 1,
     "total_losses": 2
   }
 },
@@ -666,9 +666,9 @@
   "fields": {
     "user": 3,
     "elo_rating": 1310,
-    "total_games": 7,
-    "total_wins": 5,
-    "total_losses": 2
+    "total_games": 3,
+    "total_wins": 3,
+    "total_losses": 0
   }
 },
 {
@@ -678,7 +678,7 @@
     "user": 4,
     "elo_rating": 1160,
     "total_games": 3,
-    "total_wins": 1,
+    "total_wins": 0,
     "total_losses": 2
   }
 },
@@ -699,9 +699,9 @@
   "fields": {
     "user": 6,
     "elo_rating": 1200,
-    "total_games": 5,
-    "total_wins": 2,
-    "total_losses": 3
+    "total_games": 4,
+    "total_wins": 1,
+    "total_losses": 2
   }
 },
 {
