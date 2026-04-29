@@ -2,6 +2,7 @@ import { createGameCanvas } from "../../routes/routes.js";
 
 import { showMessage } from "../../utils/utils.js"
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
+import { t } from '../../i18n/index.js';
 
 
 export async function startLocalTournament(playerCount) {
@@ -21,7 +22,7 @@ export async function startLocalTournament(playerCount) {
 	const scores = new Array(playerCount).fill(0);
 
 	for (const [i, j] of schedule) {
-		showMessage(`Match: ${players[i]} vs ${players[j]}`);
+		showMessage(t('TOURN_MATCH', { p1: players[i], p2: players[j] }));
 
 		const appRoot = document.getElementById("app-root");
 		appRoot.innerHTML = `
@@ -58,6 +59,6 @@ export async function startLocalTournament(playerCount) {
 		if (scores[i] > scores[winner]) winner = i;
 	}
 
-	showMessage(`Tournament Winner: ${players[winner]} with ${scores[winner]} wins!`);
+	showMessage(t('TOURN_WINNER', { name: players[winner], wins: scores[winner] }));
 	navigate('/');
 }

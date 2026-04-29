@@ -221,6 +221,31 @@ export const tr = {
   [TranslationKey.CHAT_INVITE_RECEIVED]: '{name} sizi {game} oyununa davet etti',
   [TranslationKey.CHAT_CREATE_GAME_ERROR]: 'Oyun oluşturulamadı. Lütfen tekrar deneyin.',
   [TranslationKey.CHAT_USER_IN_GAME]: 'O kullanıcı şu an bir oyunda.',
+
+  [TranslationKey.LOGIN_INVALID]: 'Geçersiz kullanıcı adı veya şifre, lütfen tekrar deneyin.',
+  [TranslationKey.LOGIN_TOO_MANY]: 'Çok fazla başarısız deneme. 3 dakika sonra tekrar deneyin.',
+  [TranslationKey.REG_INVALID_CHARS]: 'Kullanıcı adı yalnızca harf, rakam ve alt çizgi içerebilir.',
+  [TranslationKey.REG_USERNAME_LENGTH]: 'Kullanıcı adı 3 ile 20 karakter arasında olmalıdır.',
+  [TranslationKey.REG_PASSWORD_LENGTH]: 'Şifre 3 ile 72 karakter arasında olmalıdır.',
+  [TranslationKey.REG_ACCEPT_TERMS]: 'Kullanım Koşullarını ve Gizlilik Politikasını kabul etmelisiniz.',
+
+  [TranslationKey.FEEDBACK_USER_NOT_FOUND]: 'Kullanıcı bulunamadı',
+
+  [TranslationKey.TOURN_LOGIN_REQUIRED]: 'Oyun başlatmak için giriş yapmanız gerekiyor.',
+  [TranslationKey.TOURN_GAME_STARTED]: 'Oyun başladı!',
+  [TranslationKey.TOURN_GAME_START_FAILED]: 'Oyun başlatılamadı',
+  [TranslationKey.TOURN_JOINED]: 'Turnuvaya başarıyla katıldınız!',
+  [TranslationKey.TOURN_JOIN_FAILED]: 'Turnuvaya katılınamadı',
+  [TranslationKey.TOURN_STARTED]: 'Turnuva başladı!',
+  [TranslationKey.TOURN_START_FAILED]: 'Turnuva başlatılamadı',
+  [TranslationKey.TOURN_CANCELLED]: 'Turnuva iptal edildi',
+  [TranslationKey.TOURN_CANCEL_FAILED]: 'Turnuva iptal edilemedi',
+  [TranslationKey.TOURN_NAME_REQUIRED]: 'Turnuva adı gereklidir',
+  [TranslationKey.TOURN_CREATING]: 'Turnuva oluşturuluyor...',
+  [TranslationKey.TOURN_CREATED]: 'Turnuva başarıyla oluşturuldu!',
+  [TranslationKey.TOURN_CREATE_FAILED]: 'Turnuva oluşturulamadı',
+  [TranslationKey.TOURN_MATCH]: 'Maç: {p1} - {p2}',
+  [TranslationKey.TOURN_WINNER]: 'Turnuva Şampiyonu: {name} — {wins} galibiyet!',
 };
 
 

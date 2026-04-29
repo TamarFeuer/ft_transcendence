@@ -3,6 +3,7 @@ import * as tournamentAPI from './tournament_api.js';
 import { showMessage } from "../../utils/utils.js"
 import { checkAuthRequired } from '../../users_friends/usermanagement.js';
 import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
+import { t } from '../../i18n/index.js';
 import { joinOnlineGame } from '../game/game.js';
 
 export async function loadTournamentGames() {
@@ -83,7 +84,7 @@ async function loadReadyGames() {
         listEl.querySelectorAll('.start-game-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             if (await checkAuthRequired()) {
-            showMessage('You need to be logged in to start games.', 'error');
+            showMessage(t('TOURN_LOGIN_REQUIRED'), 'error');
             return;
             }
 
@@ -93,12 +94,12 @@ async function loadReadyGames() {
 
             const result = await tournamentAPI.startTournamentGame(gameId);
             if (result.ok) {
-            showMessage('Game started!', 'success');
+            showMessage(t('TOURN_GAME_STARTED'), 'success');
             // Redirect to the game
             stopTournamentAutoRefresh();
             joinOnlineGame(result.data.game_id, true);
             } else {
-            showMessage(result.data?.error || 'Failed to start game', 'error');
+            showMessage(result.data?.error || t('TOURN_GAME_START_FAILED'), 'error');
             btn.disabled = false;
             btn.textContent = 'Start Game';
             }
