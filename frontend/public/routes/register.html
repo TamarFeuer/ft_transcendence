@@ -1,37 +1,41 @@
 <div class="min-h-screen flex justify-center items-center bg-zinc-900 flex-col">
   <h1 class="text-white text-6xl font-bold text-center relative -top-20">Transcendence</h1>
   <div class="p-6 bg-zinc-800 rounded-lg w-80">
-    <h1 class="text-white text-2xl font-semibold text-center mb-6">Register</h1>
+    <h1 class="text-white text-2xl font-semibold text-center mb-6" data-i18n="UM_REGISTER_TITLE">Register</h1>
     <form id="register-form">
       <div id="error-message" class="hidden text-red-400 text-sm text-center bg-red-900/30 border-border-red-500 rounded p-2 mb-2"></div>
       <input
         id="register-username"
         name="username"
         type="text"
+        data-i18n-placeholder="UM_USERNAME_PLACEHOLDER"
         placeholder="Username"
         class="w-full mt-2 p-2 rounded bg-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"/>
       <input
         id="register-password"
         name="password"
         type="password"
+        data-i18n-placeholder="UM_PASSWORD_PLACEHOLDER"
         placeholder="Password"
         class="w-full mt-4 p-2 rounded bg-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"/>
       <label class="mt-4 flex items-start gap-2 text-xs text-zinc-300">
         <input id="register-legal-accept" type="checkbox" class="mt-0.5 rounded border-zinc-600 bg-zinc-700 text-violet-500 focus:ring-violet-500"/>
         <span>
-          I agree to the
-          <a id="register-terms-link" href="/terms-of-service" class="text-violet-400 hover:text-violet-300 underline">Terms of Service</a>
-          and
-          <a id="register-privacy-link" href="/privacy-policy" class="text-violet-400 hover:text-violet-300 underline">Privacy Policy</a>.
+          <span data-i18n="UM_AGREE_TO">I agree to the</span>
+          <a id="register-terms-link" href="/terms-of-service" class="text-violet-400 hover:text-violet-300 underline" data-i18n="UM_TERMS_OF_SERVICE">Terms of Service</a>
+          <span data-i18n="UM_AND">and</span>
+          <a id="register-privacy-link" href="/privacy-policy" class="text-violet-400 hover:text-violet-300 underline" data-i18n="UM_PRIVACY_POLICY">Privacy Policy</a>.
         </span>
       </label>
       <button
         type="submit"
-        class="w-full mt-6 py-3 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-violet-400">
+        class="w-full mt-6 py-3 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-violet-400"
+        data-i18n="UM_CREATE_ACCOUNT">
         Create account
       </button>
       <a id="register-back-login"
-        class="block w-full text-center mt-4 py-2 text-zinc-300 font-semibold hover:text-white transition transform hover:scale-105 cursor-pointer">
+        class="block w-full text-center mt-4 py-2 text-zinc-300 font-semibold hover:text-white transition transform hover:scale-105 cursor-pointer"
+        data-i18n="UM_BACK_TO_LOGIN">
         Back to login
       </a>
     </form>

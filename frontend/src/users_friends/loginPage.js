@@ -1,6 +1,7 @@
 import { loginUser } from "./usermanagement";
 import { navigate } from "../routes/route_helpers.js"
 import { showError } from "../utils/utils.js";
+import { t } from "../i18n/index.js";
 
 export function initLoginPage(){
     const form = document.getElementById("login-form");
@@ -17,11 +18,14 @@ export function initLoginPage(){
         const result = await loginUser(username, password);
         if(result.username)
             window.location.href = "/";
-        else if (result.error){
+        else if (result.error === 'Too many failed attempts. Try again in 3 minutes')
+            showError(t('LOGIN_TOO_MANY'));
+        else if (result.error === 'invalid credentials')
+            showError(t('LOGIN_INVALID'));
+        else if (result.error)
             showError(result.error);
-        }
         else
-            showError("Invalid username or password, please try again.");
+            showError(t('LOGIN_INVALID'));
     })
     const createAccountBtn = document.getElementById("login-create-account");
     

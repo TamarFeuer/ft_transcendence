@@ -2,54 +2,54 @@
   <div class="w-full max-w-3xl flex flex-col gap-6">
 
     <div class="flex items-center gap-4">
-      <button id="stats-back-btn" class="text-zinc-400 hover:text-white transition text-sm">← Back</button>
-      <h1 class="text-white text-4xl font-bold">Statistics</h1>
+      <button id="stats-back-btn" class="text-zinc-400 hover:text-white transition text-sm" data-i18n="STATS_BACK">← Back</button>
+      <h1 class="text-white text-4xl font-bold" data-i18n="STATS_TITLE">Statistics</h1>
     </div>
 
     <!-- Summary stats -->
     <div class="bg-zinc-800 rounded-lg p-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
       <div>
-        <p class="text-zinc-400 text-sm mb-1">Total Games</p>
+        <p class="text-zinc-400 text-sm mb-1" data-i18n="STATS_TOTAL_GAMES">Total Games</p>
         <p id="stats-total-games" class="text-white text-3xl font-bold">—</p>
       </div>
       <div>
-        <p class="text-zinc-400 text-sm mb-1">Wins</p>
+        <p class="text-zinc-400 text-sm mb-1" data-i18n="STATS_WINS">Wins</p>
         <p id="stats-wins" class="text-green-400 text-3xl font-bold">—</p>
       </div>
       <div>
-        <p class="text-zinc-400 text-sm mb-1">Losses</p>
+        <p class="text-zinc-400 text-sm mb-1" data-i18n="STATS_LOSSES">Losses</p>
         <p id="stats-losses" class="text-red-400 text-3xl font-bold">—</p>
       </div>
       <div>
-        <p class="text-zinc-400 text-sm mb-1">ELO</p>
+        <p class="text-zinc-400 text-sm mb-1" data-i18n="STATS_ELO">ELO</p>
         <p id="stats-elo" class="text-violet-400 text-3xl font-bold">—</p>
       </div>
     </div>
 
     <!-- Achievements -->
     <div class="bg-zinc-800 rounded-lg p-6">
-      <p class="text-white font-semibold text-lg mb-3">🏆 Achievements</p>
+      <p class="text-white font-semibold text-lg mb-3" data-i18n="STATS_ACHIEVEMENTS">🏆 Achievements</p>
       <ul id="stats-achievements-list" class="list-disc pl-5 space-y-1 text-sm text-zinc-300">
-        <li class="text-zinc-500">Loading...</li>
+        <li class="text-zinc-500" data-i18n="STATS_LOADING">Loading...</li>
       </ul>
     </div>
 
     <!-- Leaderboard -->
     <div class="bg-zinc-800 rounded-lg p-6">
-      <p class="text-white font-semibold text-lg mb-3">🥇 Leaderboard</p>
+      <p class="text-white font-semibold text-lg mb-3" data-i18n="STATS_LEADERBOARD">🥇 Leaderboard</p>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="text-orange-400 text-xs uppercase border-b border-zinc-700">
               <th class="text-left pb-2 pr-3">#</th>
-              <th class="text-left pb-2 pr-3">Player</th>
-              <th class="text-left pb-2 pr-3">ELO</th>
-              <th class="text-left pb-2 pr-3">Wins</th>
-              <th class="text-left pb-2">Streak</th>
+              <th class="text-left pb-2 pr-3" data-i18n="STATS_TH_PLAYER">Player</th>
+              <th class="text-left pb-2 pr-3" data-i18n="STATS_ELO">ELO</th>
+              <th class="text-left pb-2 pr-3" data-i18n="STATS_WINS">Wins</th>
+              <th class="text-left pb-2" data-i18n="STATS_TH_STREAK">Streak</th>
             </tr>
           </thead>
           <tbody id="stats-leaderboard-table">
-            <tr><td colspan="5" class="text-zinc-500 pt-2">Loading...</td></tr>
+            <tr><td colspan="5" class="text-zinc-500 pt-2" data-i18n="STATS_LOADING">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -57,19 +57,19 @@
 
     <!-- Match history -->
     <div class="bg-zinc-800 rounded-lg p-6">
-      <p class="text-white font-semibold text-lg mb-3">🕹️ Match History</p>
+      <p class="text-white font-semibold text-lg mb-3" data-i18n="STATS_MATCH_HISTORY">🕹️ Match History</p>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="text-orange-400 text-xs uppercase border-b border-zinc-700">
-              <th class="text-left pb-2 pr-3">Opponent</th>
-              <th class="text-left pb-2 pr-3">Score</th>
-              <th class="text-left pb-2 pr-3">Result</th>
-              <th class="text-left pb-2">Date</th>
+              <th class="text-left pb-2 pr-3" data-i18n="STATS_TH_OPPONENT">Opponent</th>
+              <th class="text-left pb-2 pr-3" data-i18n="STATS_TH_SCORE">Score</th>
+              <th class="text-left pb-2 pr-3" data-i18n="STATS_TH_RESULT">Result</th>
+              <th class="text-left pb-2" data-i18n="STATS_TH_DATE">Date</th>
             </tr>
           </thead>
           <tbody id="stats-history-table">
-            <tr><td colspan="4" class="text-zinc-500 pt-2">Loading...</td></tr>
+            <tr><td colspan="4" class="text-zinc-500 pt-2" data-i18n="STATS_LOADING">Loading...</td></tr>
           </tbody>
         </table>
       </div>

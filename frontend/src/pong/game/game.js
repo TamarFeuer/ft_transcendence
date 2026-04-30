@@ -16,6 +16,7 @@ import { updateTournamentGameResult } from "../tournament/tournament_api.js";
 import "../../styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { showMessage } from "../../utils/utils.js"
+import { t } from "../../i18n/index.js";
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
 
 function showAchievements(achievements) {
@@ -32,7 +33,7 @@ function showAchievements(achievements) {
 
 function showPongResultModal({ winnerId, winnerName, currentUserId }) {
   const didWin = winnerId != null && Number(winnerId) === currentUserId;
-  const title = didWin ? 'You Won!' : 'You Lost';
+  const title = didWin ? t('GAME_YOU_WON') : t('GAME_YOU_LOST');
   const accent = didWin ? 'border-green-400 text-green-300' : 'border-red-400 text-red-300';
   const glow = didWin
     ? 'shadow-[0_0_30px_rgba(74,222,128,0.35)]'
@@ -46,15 +47,15 @@ function showPongResultModal({ winnerId, winnerName, currentUserId }) {
         ${title}
       </h2>
       <div class="mt-5 rounded-lg bg-zinc-800/70 p-3">
-        <p class="text-sm text-zinc-400">Result</p>
+        <p class="text-sm text-zinc-400">${t('GAME_RESULT')}</p>
         <p class="text-base text-white">
-          ${winnerName ? `${winnerName} wins` : (didWin ? 'Victory' : 'Defeat')}
+          ${winnerName ? `${winnerName} ${t('GAME_WINS_SUFFIX')}` : (didWin ? t('GAME_VICTORY') : t('GAME_DEFEAT'))}
         </p>
       </div>
       <div class="mt-6 flex justify-end gap-2">
         <button id="pongResultOkBtn"
           class="rounded-lg bg-violet-600 px-4 py-2 text-white hover:bg-violet-500">
-          Continue
+          ${t('GAME_CONTINUE')}
         </button>
       </div>
     </div>

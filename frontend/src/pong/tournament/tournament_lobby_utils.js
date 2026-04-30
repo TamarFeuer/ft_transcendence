@@ -3,6 +3,7 @@ import * as tournamentAPI from './tournament_api.js';
 import { showMessage } from "../../utils/utils.js"
 import { getCurrentUser } from '../../users_friends/usermanagement.js';
 import { navigate } from '../../routes/route_helpers.js';
+import { t } from '../../i18n/index.js';
 
 let tournamentAutoRefreshInterval = null;
 
@@ -197,10 +198,10 @@ async function loadRegistrationTournaments() {
         
         const result = await tournamentAPI.joinTournament(tournamentId);
         if (result.ok) {
-        showMessage('Joined tournament successfully!', 'success');
+        showMessage(t('TOURN_JOINED'), 'success');
         await loadAllTournaments();
         } else {
-        showMessage(result.data?.error || 'Failed to join tournament', 'error');
+        showMessage(result.data?.error || t('TOURN_JOIN_FAILED'), 'error');
         btn.disabled = false;
         btn.textContent = 'Join';
         }
@@ -218,10 +219,10 @@ async function loadRegistrationTournaments() {
         const result = await tournamentAPI.startTournament(tournamentId);
         // result.ok = false; // TEMPORARY DISABLE STARTING TO PREVENT ISSUES WHILE TESTING
         if (result.ok) {
-        showMessage('Tournament started!', 'success');
+        showMessage(t('TOURN_STARTED'), 'success');
         await loadAllTournaments();
         } else {
-        showMessage(result.data?.error || 'Failed to start tournament', 'error');
+        showMessage(result.data?.error || t('TOURN_START_FAILED'), 'error');
         btn.disabled = false;
         btn.textContent = 'Start';
         }
@@ -238,10 +239,10 @@ async function loadRegistrationTournaments() {
         
         const result = await tournamentAPI.cancelTournament(tournamentId);
         if (result.ok) {
-        showMessage('Tournament cancelled', 'success');
+        showMessage(t('TOURN_CANCELLED'), 'success');
         await loadAllTournaments();
         } else {
-        showMessage(result.data?.error || 'Failed to cancel tournament', 'error');
+        showMessage(result.data?.error || t('TOURN_CANCEL_FAILED'), 'error');
         btn.disabled = false;
         btn.textContent = 'Cancel';
         }
@@ -256,22 +257,22 @@ export async function createTournamentBtn()
     const maxPlayers = parseInt(document.getElementById('tournamentMaxPlayers').value);
     
     if (!name) {
-        showStatus('createStatus', 'Tournament name is required', 'error');
+        showStatus('createStatus', t('TOURN_NAME_REQUIRED'), 'error');
         return;
     }
     
-    showStatus('createStatus', 'Creating tournament...', 'info');
+    showStatus('createStatus', t('TOURN_CREATING'), 'info');
     const result = await tournamentAPI.createTournament(name, description, maxPlayers);
     
     if (result.ok) {
-        showStatus('createStatus', 'Tournament created successfully!', 'success');
+        showStatus('createStatus', t('TOURN_CREATED'), 'success');
         // Clear form
         document.getElementById('tournamentName').value = '';
         document.getElementById('tournamentDescription').value = '';
         // Refresh lists
         setTimeout(() => loadAllTournaments(), 500);
     } else {
-        showStatus('createStatus', result.data?.error || 'Failed to create tournament', 'error');
+        showStatus('createStatus', result.data?.error || t('TOURN_CREATE_FAILED'), 'error');
     }
 }
 

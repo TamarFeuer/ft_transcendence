@@ -2,7 +2,7 @@
 
     <nav class="w-full h-16 lg:h-20 bg-zinc-800 border-b border-zinc-700 pl-3 lg:pl-4 xl:pl-6 pr-6 lg:pr-8 xl:pr-12 flex items-center justify-between shrink-0 z-10 relative">
         <div class="flex items-center gap-1">
-            <input id="profile-search-input" type="text" placeholder="Search user..."
+            <input id="profile-search-input" type="text" data-i18n-placeholder="HOME_SEARCH_PLACEHOLDER" placeholder="Search user..."
                 class="px-4 py-2 rounded-full bg-zinc-900 text-white text-sm placeholder:text-zinc-500 border border-zinc-700 focus:border-violet-400 focus:outline-none w-48 transition">
             <button id="profile-search-btn" class="text-violet-400 hover:text-white transition p-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -17,11 +17,11 @@
         </button>
     </nav>
     <div class="absolute top-16 lg:top-20 left-0 flex items-center gap-3 p-5 z-10">
-        <div id="pong" class="text-white font-semibold text-xl">Pong</div>
+        <div id="pong" class="text-white font-semibold text-xl" data-i18n="BTN_PONG">Pong</div>
         <button id="toggle-game-mode" type="button" class="w-14 h-8 rounded-full bg-violet-600 relative cursor-pointer">
             <div id="toggle-btn" class="w-6 h-6 bg-white rounded-full absolute top-1 transition-all" style="left: 0.25rem;"></div>
         </button>
-        <div id="chess" class="text-zinc-500 font-semibold text-xl">Chess</div>
+        <div id="chess" class="text-zinc-500 font-semibold text-xl" data-i18n="BTN_CHESS">Chess</div>
 
     </div>
     <div class="flex-1 flex flex-col items-center justify-center gap-12 lg:gap-16 xl:gap-20 px-6 lg:px-8 xl:px-12">
@@ -37,30 +37,30 @@
 
             <div id="aiBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl lg:rounded-3xl p-5 lg:p-7 xl:p-9 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
                 <div>
-                    <h2 class="font-bold text-lg lg:text-2xl xl:text-3xl text-white pb-2 lg:pb-3">Play Computer</h2>
-                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed">Train against a bot and improve your skills.</p>
+                    <h2 class="font-bold text-lg lg:text-2xl xl:text-3xl text-white pb-2 lg:pb-3" data-i18n="HOME_PLAY_COMPUTER">Play Computer</h2>
+                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed" data-i18n="HOME_PLAY_COMPUTER_DESC">Train against a bot and improve your skills.</p>
                 </div>
-                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">
+                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none" data-i18n="HOME_PLAY">
                     Play
                 </button>
             </div>
 
             <div id="onlineBtn" class="flex-[1.3] aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl lg:rounded-3xl p-5 lg:p-7 xl:p-9 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
                 <div>
-                    <h2 class="font-bold text-xl lg:text-3xl xl:text-4xl text-white pb-2 lg:pb-3">Play Online</h2>
-                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed">Match with real players online.</p>
+                    <h2 class="font-bold text-xl lg:text-3xl xl:text-4xl text-white pb-2 lg:pb-3" data-i18n="HOME_PLAY_ONLINE">Play Online</h2>
+                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed" data-i18n="HOME_PLAY_ONLINE_DESC">Match with real players online.</p>
                 </div>
-                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">
+                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none" data-i18n="HOME_PLAY">
                     Play
                 </button>
             </div>
 
             <div id="localBtn" class="flex-1 aspect-square bg-zinc-800 border border-zinc-700 rounded-2xl lg:rounded-3xl p-5 lg:p-7 xl:p-9 flex flex-col justify-between cursor-pointer transition-all duration-200 transform hover:-translate-y-2 hover:border-violet-500 hover:shadow-lg hover:shadow-violet-500/40">
                 <div>
-                    <h2 class="font-bold text-lg lg:text-2xl xl:text-3xl text-white pb-2 lg:pb-3">Play Local</h2>
-                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed">Play on the same device as a friend.</p>
+                    <h2 class="font-bold text-lg lg:text-2xl xl:text-3xl text-white pb-2 lg:pb-3" data-i18n="HOME_PLAY_LOCAL">Play Local</h2>
+                    <p class="text-zinc-400 text-sm lg:text-base xl:text-lg leading-relaxed" data-i18n="HOME_PLAY_LOCAL_DESC">Play on the same device as a friend.</p>
                 </div>
-                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none">
+                <button type="button" class="bg-violet-600 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20 pointer-events-none" data-i18n="HOME_PLAY">
                     Play
                 </button>
             </div>
@@ -73,15 +73,15 @@
 
     <div id="online-panel" class="fixed top-0 right-0 h-full w-80 bg-zinc-800 border-l border-zinc-700 transform translate-x-full transition-transform duration-300 z-30 p-6 flex flex-col gap-6">
         <div class="flex justify-between items-center">
-            <h2 class="text-white text-2xl font-bold">Play Online</h2>
+            <h2 class="text-white text-2xl font-bold" data-i18n="HOME_PLAY_ONLINE">Play Online</h2>
             <button id="online-close-btn" type="button" class="text-zinc-400 hover:text-white text-2xl">✕</button>
         </div>
 
-        <button id="play-ranked-btn" type="button" class="w-full bg-violet-600 hover:bg-violet-500 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20">
+        <button id="play-ranked-btn" type="button" class="w-full bg-violet-600 hover:bg-violet-500 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20" data-i18n="HOME_PLAY_RANKED">
             Play Ranked
         </button>
 
-        <button id="play-tournament-btn" type="button" class="w-full bg-violet-600 hover:bg-violet-500 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20">
+        <button id="play-tournament-btn" type="button" class="w-full bg-violet-600 hover:bg-violet-500 rounded-xl lg:rounded-2xl h-10 lg:h-12 xl:h-14 flex items-center justify-center font-semibold text-white text-sm lg:text-base xl:text-lg transition-colors duration-200 shadow-lg shadow-violet-500/20" data-i18n="HOME_PLAY_TOURNAMENT">
             Play Tournament
         </button>
     </div>
