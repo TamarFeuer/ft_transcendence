@@ -234,6 +234,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			game_id = data.get("game_id")
 			if not target or not game_id:
 				return
+			await self.delete_invite(game_id)
 			payload = {
 				"type": "game.invite.expired",
 				"game_id": game_id,
