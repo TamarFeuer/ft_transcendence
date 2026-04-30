@@ -113,7 +113,7 @@ def join_pong(request):
         return error
     with GameSession._lock:
         for game in GameSession._games.values():
-            if game.status == 'waiting' and not game.isTournamentGame:
+            if game.status == 'waiting' and not game.isTournamentGame and game.invitee_id is None:
                 left_id = getattr(game.players['left'], 'id', None)
                 right_id = getattr(game.players['right'], 'id', None)
                 #if exactly one slot is filled

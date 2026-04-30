@@ -37,29 +37,31 @@ def join_chess(request):
 	if not user:
 		return JsonResponse({'error': 'Authentication required'}, status=401)
 
+	body = json.loads(request.body or '{}')
+	invitee_id = body.get('invitee_id')
+
 	#search and create are atomic so two players never both see an empty lobby
 	#colors are pre-assigned here so WS connect order does not cause a race
 	with ChessSession._lock:
-		for game in ChessSession._games.values():
-			if game.status == 'waiting':
-				white_id = getattr(game.players['white'], 'id', None)
-				black_id = getattr(game.players['black'], 'id', None)
-				#if only one slot is filled
-				if (white_id is None) != (black_id is None):
-					#if the slot is not filled by this user
-					if user.id not in (white_id, black_id):
-						if game.players['white'] is None:
-							game.players['white'] = user
-						else:
-							game.players['black'] = user
+		if not invitee_id:
+			for game in ChessSession._games.values():
+				if game.status == 'waiting' and game.invitee_id is None:
+					white_id = getattr(game.players['white'], 'id', None)
+					black_id = getattr(game.players['black'], 'id', None)
+					#if only one slot is filled
+					if (white_id is None) != (black_id is None):
+						#if the slot is not filled by this user
+						if user.id not in (white_id, black_id):
+							if game.players['white'] is None:
+								game.players['white'] = user
+							else:
+								game.players['black'] = user
 
-					return JsonResponse({'gameId': game.id})
+						return JsonResponse({'gameId': game.id})
 
 		game = ChessSession()
 		color = random.choice(['white', 'black'])
 		game.players[color] = user
-		body = json.loads(request.body or '{}')
-		invitee_id = body.get('invitee_id')
 		if invitee_id:
 			game.invitee_id = str(invitee_id)
 		ChessSession._games[game.id] = game
