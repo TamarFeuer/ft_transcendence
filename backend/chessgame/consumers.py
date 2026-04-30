@@ -158,6 +158,21 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		})
 
 		if over:
+			#read player names before deleting the game session
+			winner_color = over['winner']
+			if winner_color:
+				winner_name = getattr(self.game.players[winner_color], 'username', winner_color)
+				loser_color = 'black' if winner_color == 'white' else 'white'
+				loser_name = getattr(self.game.players[loser_color], 'username', None)
+				draw_players = None
+			else:
+				winner_name = None
+				loser_name = None
+				draw_players = [
+					getattr(self.game.players.get('white'), 'username', None),
+					getattr(self.game.players.get('black'), 'username', None),
+				]
+
 			#save result in db
 			await self.save_chess_result(self.game, over['winner'], over['result'])
 			for player in self.game.players.values():
@@ -172,22 +187,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'result': over['result']
 			})
 
-			#announce result to global chat
-			winner_color = over['winner']
-			if winner_color:
-				winner_name = getattr(self.game.players[winner_color], 'username', winner_color)
-				loser_color = 'black' if winner_color == 'white' else 'white'
-				loser_name = getattr(self.game.players[loser_color], 'username', None)
-			else:
-				winner_name = None
-				loser_name = None
-				white_name = getattr(self.game.players.get('white'), 'username', None)
-				black_name = getattr(self.game.players.get('black'), 'username', None)
 			await self.channel_layer.group_send('global_chat', {
 				'type': 'game_result',
 				'winner': winner_name,
 				'loser': loser_name,
-				'draw_players': [white_name, black_name] if not winner_name else None,
+				'draw_players': draw_players,
 				'game_type': 'chess',
 				'is_tournament': False
 			})
