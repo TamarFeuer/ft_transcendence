@@ -7,7 +7,7 @@ from django.conf import settings
 import logging
 import random
 import json
-from .models import ChessSession
+from .models import ChessSession, ChessPlayer, ChessMatch
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -66,3 +66,73 @@ def join_chess(request):
 
 	logger.info(f"Player {user} created game {game.id} as {color}")
 	return JsonResponse({'gameId': game.id})
+
+
+@require_http_methods(["GET"])
+def chess_stats(request):
+	user = get_user_from_access_cookie(request)
+	if not user:
+		return JsonResponse({'error': 'Authentication required'}, status=401)
+	try:
+		player = ChessPlayer.objects.get(user=user)
+	except ChessPlayer.DoesNotExist:
+		return JsonResponse({'total_games': 0, 'total_wins': 0, 'total_losses': 0, 'elo_rating': 1200})
+	return JsonResponse({
+		'total_games': player.total_games,
+		'total_wins': player.total_wins,
+		'total_losses': player.total_losses,
+		'elo_rating': player.elo_rating,
+	})
+
+
+@require_http_methods(["GET"])
+def chess_leaderboard(request):
+	players = ChessPlayer.get_leaderboard()
+	leaderboard = [
+		{
+			'username': p.user.username,
+			'elo_rating': p.elo_rating,
+			'total_wins': p.total_wins,
+			'total_games': p.total_games,
+		}
+		for p in players
+	]
+	return JsonResponse({'leaderboard': leaderboard})
+
+
+@require_http_methods(["GET"])
+def chess_match_history(request):
+	user = get_user_from_access_cookie(request)
+	if not user:
+		return JsonResponse({'error': 'Authentication required'}, status=401)
+	try:
+		player = ChessPlayer.objects.get(user=user)
+	except ChessPlayer.DoesNotExist:
+		return JsonResponse({'matches': []})
+	matches_qs = ChessMatch.objects.filter(
+		white=player
+	).union(
+		ChessMatch.objects.filter(black=player)
+	).order_by('-timestamp')[:20]
+	matches = []
+	for m in matches_qs:
+		white_user = m.white.user.username if m.white and m.white.user else '?'
+		black_user = m.black.user.username if m.black and m.black.user else '?'
+		is_white = m.white_id == player.id
+		opponent = black_user if is_white else white_user
+		if m.result == '1-0':
+			winner = white_user
+		elif m.result == '0-1':
+			winner = black_user
+		else:
+			winner = None
+		matches.append({
+			'white': white_user,
+			'black': black_user,
+			'opponent': opponent,
+			'result': m.result,
+			'winner': winner,
+			'timestamp': m.timestamp.isoformat(),
+		})
+	return JsonResponse({'matches': matches})
+
