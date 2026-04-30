@@ -177,6 +177,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Headers: {headers}")
         logger.debug(f"Authorization: {headers.get(b'authorization')}")
 
+        # Reject if user is already in another game
+        if str(getattr(self.scope.get('user'), 'id', None)) in IN_GAME_USERS:
+            await self.close(code=4003)
+            return
+
         # Check for duplicate connections
         logger.debug(f"Scope: {self.scope}")
         logger.debug(f"Connecting to game: {self.game_id} with channel: {self.channel_name} and player {self.scope['user']}")
@@ -241,11 +246,10 @@ class GameConsumer(AsyncWebsocketConsumer):
                 IN_GAME_USERS.add(pid)
             await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
 
-            # Expire any pending invites between these two players
-            if len(player_ids) == 2:
-                invite_ids = await self.get_invite_ids_between(player_ids[0], player_ids[1])
-                for gid in invite_ids:
-                    for uid in player_ids:
+            # Expire all pending invites for each player, including from third parties
+            for pid in player_ids:
+                for sender_id, gid in await self.get_pending_invites_for_recipient(pid):
+                    for uid in [pid, str(sender_id)]:
                         await self.channel_layer.group_send(
                             f'user_{uid}',
                             {'type': 'game.invite.expired', 'game_id': gid}
@@ -543,18 +547,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         """Close the websocket connection"""
         await self.close(code=1008)
 
-    @sync_to_async
-    def get_invite_ids_between(self, user1_id, user2_id):
-        from chat.models import GameInvite, ConversationParticipant
-        conv_ids = ConversationParticipant.objects.filter(
-            user_id=user1_id
-        ).values_list('conversation_id', flat=True)
-        shared_conv_id = ConversationParticipant.objects.filter(
-            conversation_id__in=conv_ids,
-            user_id=user2_id
-        ).values_list('conversation_id', flat=True).first()
-        if not shared_conv_id:
-            return []
+    @database_sync_to_async
+    def get_pending_invites_for_recipient(self, user_id):
+        from chat.models import GameInvite
         return list(GameInvite.objects.filter(
-            conversation_id=shared_conv_id
-        ).values_list('game_id', flat=True))
+            recipient_id=user_id
+        ).values_list('sender_id', 'game_id'))
