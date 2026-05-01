@@ -3,6 +3,7 @@ import { logoutUser, fetchWithRefreshAuth } from "./usermanagement.js";
 import { fetchFriendsList, removeFriend, sendFriendRequest } from "./friends.js";
 import { fetchPendingRequests, handleAccept, handleDelete } from "./friends.js";
 import { arrowHomeButton } from "../utils/utils.js";
+import { t } from '../i18n/index.js';
 
 
 export async function initProfilePage(username){
@@ -112,12 +113,22 @@ async function renderMatchHistory(username){
         const opponent = isPlayer1 ? m.player2 : m.player1;
         const myScore = isPlayer1 ? m.player1_score : m.player2_score;
         const oppScore = isPlayer1 ? m.player2_score : m.player1_score;
-        const won = m.winner === username;
+        let resultKey, colorClass;
+        if (m.winner === null) {
+            resultKey = 'PROFILE_DRAW';
+            colorClass = 'text-yellow-400';
+        } else if (m.winner === username) {
+            resultKey = 'PROFILE_WIN';
+            colorClass = 'text-green-400';
+        } else {
+            resultKey = 'PROFILE_LOSS';
+            colorClass = 'text-red-400';
+        }
 
         row.querySelector(".match-opponent").textContent = opponent;
         row.querySelector(".match-score").textContent = `${myScore}-${oppScore}`;
-        row.querySelector(".match-result").textContent = won ? "Win" : "Loss";
-        row.querySelector(".match-result").classList.add(won ? "text-green-400" : "text-red-400");
+        row.querySelector(".match-result").textContent = t(resultKey);
+        row.querySelector(".match-result").classList.add(colorClass);
         row.querySelector(".match-date").textContent = new Date(m.timestamp).toLocaleDateString();
 
         container.appendChild(row);

@@ -425,11 +425,11 @@ export function setupRoutes() {
         tbody.innerHTML = data.matches
           .map(m => {
             const resultLabel = m.result === '1/2-1/2'
-              ? '<span class="text-zinc-400">Draw</span>'
+              ? `<span class="text-zinc-400">${t(TranslationKey.PROFILE_DRAW)}</span>`
               : m.winner
                 ? (m.winner === m.opponent
-                    ? '<span class="text-red-400">Loss</span>'
-                    : '<span class="text-green-400">Win</span>')
+                    ? `<span class="text-red-400">${t(TranslationKey.PROFILE_LOSS)}</span>`
+                    : `<span class="text-green-400">${t(TranslationKey.PROFILE_WIN)}</span>`)
                 : '<span class="text-zinc-400">-</span>';
             const colorDot = (color) => color === 'White'
               ? '<span class="inline-block w-4 h-4 rounded-sm bg-white border border-zinc-400"></span>'

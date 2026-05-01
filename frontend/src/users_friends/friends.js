@@ -1,5 +1,7 @@
 import { onlineUsers } from "../chat/chat.js";
 import { fetchWithRefreshAuth } from "./usermanagement.js";
+import { t } from '../i18n/index.js';
+
 
 function clearOnNextClick(message){
     function handler(){
@@ -23,7 +25,7 @@ export function sendFriendRequest(friendInput, status) {
       .then(data => {
         if (data.success) {
           status.style.color = 'lightgreen';
-          status.textContent = data.message || 'Friend Request Sent';
+          status.textContent = data.message || t('FRIEND_REQUEST_SENT');
           clearOnNextClick(status);
         } else if (data.error) {
           status.style.color = 'red';
@@ -34,7 +36,7 @@ export function sendFriendRequest(friendInput, status) {
       .catch(err => {
         console.error('Error sending friend request', err);
         status.style.color = 'red';
-        status.textContent = 'Could not send friend request';
+        status.textContent = t('FRIEND_REQUEST_FAILED');
         clearOnNextClick(status);
       });
 }
