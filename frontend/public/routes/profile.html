@@ -80,8 +80,8 @@
                             <p class="text-white pending-username"></p>
                         </div>
                         <div class="flex gap-2">
-                            <button class="accept-btn px-3 py-1 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition">Accept</button>
-                            <button class="decline-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-zinc-500 transition">Decline</button>
+                            <button class="accept-btn px-3 py-1 rounded bg-violet-500 text-zinc-900 font-semibold hover:bg-violet-400 transition" data-i18n="PROFILE_ACCEPT">Accept</button>
+                            <button class="decline-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-zinc-500 transition" data-i18n="PROFILE_DECLINE">Decline</button>
                         </div>
                     </div>
                 </template>
@@ -96,7 +96,7 @@
                             <div class="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center text-white font-bold friend-avatar"></div>
                             <p class="text-white friend-username"></p>
                         </div>
-                        <button class="remove-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-red-500 transition">Remove</button>
+                        <button class="remove-btn px-3 py-1 rounded bg-zinc-600 text-white font-semibold hover:bg-red-500 transition" data-i18n="PROFILE_REMOVE">Remove</button>
                     </div>
                 </template>
                 <div id="friends-list" class="flex flex-col gap-2" style="max-height: 240px; overflow-y: auto;"></div>
@@ -105,12 +105,13 @@
 
             <button id="profile-stats"
                 class="w-full py-2 text-violet-400 font-semibold hover:text-white transition transform hover:scale-105"
-                data-i18n="PROFILE_STATISTICS">
+                data-i18n="PROFILE_STATISTICS_PONG">
                 Statistics (Pong)
             </button>
 
             <button id="profile-chess-stats"
-                class="w-full py-2 text-violet-400 font-semibold hover:text-white transition transform hover:scale-105">
+                class="w-full py-2 text-violet-400 font-semibold hover:text-white transition transform hover:scale-105"
+                data-i18n="PROFILE_STATISTICS_CHESS">
                 Statistics (Chess)
             </button>
 
