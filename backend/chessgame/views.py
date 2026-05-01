@@ -45,6 +45,9 @@ def join_chess(request):
 	with ChessSession._lock:
 		if not invitee_id:
 			for game in ChessSession._games.values():
+				if game.status == 'waiting' and game.invitee_id is not None:
+					logger.debug(f"[join_chess] skipping invite-only session {game.id} for open matchmaking user={user}")
+					continue
 				if game.status == 'waiting' and game.invitee_id is None:
 					white_id = getattr(game.players['white'], 'id', None)
 					black_id = getattr(game.players['black'], 'id', None)

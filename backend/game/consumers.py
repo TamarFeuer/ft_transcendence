@@ -179,6 +179,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         # Reject if user is already in another game
         if str(getattr(self.scope.get('user'), 'id', None)) in IN_GAME_USERS:
+            logger.debug(f"[pong connect] rejected {self.scope.get('user')} — already in IN_GAME_USERS")
             await self.close(code=4003)
             return
 
@@ -249,6 +250,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Expire all pending invites for each player, including from third parties
             for pid in player_ids:
                 for sender_id, gid in await self.get_pending_invites_for_recipient(pid):
+                    logger.debug(f"[pong] expiring third-party invite game_id={gid} for player={pid} sender={sender_id}")
                     for uid in [pid, str(sender_id)]:
                         await self.channel_layer.group_send(
                             f'user_{uid}',

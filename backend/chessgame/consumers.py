@@ -22,6 +22,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		
 		#reject if this user is already in another game
 		if str(self.scope['user'].id) in IN_GAME_USERS:
+			logger.debug(f"[chess connect] rejected {self.scope['user']} — already in IN_GAME_USERS")
 			await self.close(code=4003)
 			return
 
@@ -67,6 +68,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			# disappear everywhere — including invites from third parties.
 			for pid in player_ids:
 				for sender_id, gid in await self.get_pending_invites_for_recipient(pid):
+					logger.debug(f"[chess] expiring third-party invite game_id={gid} for player={pid} sender={sender_id}")
 					for uid in [pid, str(sender_id)]:
 						await self.channel_layer.group_send(
 							f'user_{uid}',
