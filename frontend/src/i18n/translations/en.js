@@ -1,6 +1,37 @@
 import { TranslationKey } from '../keys.js';
 
 export const en = {
+  [TranslationKey.TOURNAMENT_START_GAME]: 'Start Game',
+  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'No ready games for you.',
+  [TranslationKey.TOURNAMENT_NO_ONGOING_GAMES]: 'No ongoing games',
+  [TranslationKey.TOURNAMENT_NO_COMPLETED_GAMES]: 'No completed games',
+  [TranslationKey.TOURNAMENT_ROUND]: 'Round',
+  [TranslationKey.TOURNAMENT_ONGOING]: 'Ongoing',
+  [TranslationKey.TOURNAMENT_WINNER]: 'Winner',
+  [TranslationKey.TOURNAMENT_NO_WINNER]: 'no winner',
+  [TranslationKey.TOURNAMENT_NONE]: 'None',
+  [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'players',
+  [TranslationKey.TOURNAMENT_VIEW_GAMES]: 'View Games',
+  [TranslationKey.TOURNAMENT_NO_REGISTRATION]: 'No tournaments available for registration.',
+  [TranslationKey.TOURNAMENT_JOIN]: 'Join',
+  [TranslationKey.TOURNAMENT_JOINED]: 'Joined',
+  [TranslationKey.TOURNAMENT_START]: 'Start',
+  [TranslationKey.TOURNAMENT_CANCEL]: 'Cancel',
+  [TranslationKey.TOURNAMENT_FULL]: 'Full',
+  [TranslationKey.TOURNAMENT_JOINING]: 'Joining...',
+  [TranslationKey.TOURNAMENT_STARTING]: 'Starting...',
+  [TranslationKey.TOURNAMENT_CANCELLING]: 'Cancelling...',
+  [TranslationKey.TOURNAMENT_CONFIRM_START]: 'Start this tournament? All registered players will begin competing.',
+  [TranslationKey.TOURNAMENT_CONFIRM_CANCEL]: 'Cancel this tournament? This cannot be undone.',
+  [TranslationKey.TOURNAMENT_STATUS_UPCOMING]: 'Upcoming',
+  [TranslationKey.TOURNAMENT_STATUS_ONGOING]: 'Ongoing',
+  [TranslationKey.TOURNAMENT_STATUS_COMPLETED]: 'Completed',
+  [TranslationKey.TABLE_LOADING]: 'Loading...',
+  [TranslationKey.TABLE_NO_RESULTS]: 'No results',
+  [TranslationKey.TABLE_ERROR_LOADING_LEADERBOARD]: 'Error loading leaderboard',
+  [TranslationKey.TABLE_NO_DATA_YET]: 'No data yet.',
+  [TranslationKey.TABLE_COULD_NOT_LOAD]: 'Could not load.',
+  [TranslationKey.TABLE_NO_GAMES_YET]: 'No games yet.',
   [TranslationKey.CHAT_GUEST]: 'Guest',
   [TranslationKey.CHAT_UNKNOWN]: 'unknown',
   [TranslationKey.CHAT_CONNECTED]: 'Chat WebSocket connected',
@@ -354,4 +385,34 @@ export const en = {
   [TranslationKey.TOURN_CREATE_FAILED]: 'Failed to create tournament',
   [TranslationKey.TOURN_MATCH]: 'Match: {p1} vs {p2}',
   [TranslationKey.TOURN_WINNER]: 'Tournament Winner: {name} with {wins} wins!',
+
+  // Pong waiting modal
+  [TranslationKey.PONG_WAITING]: 'Waiting for opponent...',
+  [TranslationKey.PONG_GAME_STARTING]: 'Game will start soon',
+  [TranslationKey.PONG_LEAVE_GAME]: 'Leave Game',
+
+  // Game names
+  [TranslationKey.GAME_NAME_CHESS]: 'chess',
+  [TranslationKey.GAME_NAME_PONG]: 'pong',
+
+  // Game result chat messages
+  [TranslationKey.CHAT_GAME_RESULT_TITLE]: '🏆 Game Result',
+  [TranslationKey.CHAT_GAME_RESULT_WIN_LOSS]: '{winner} beat {loser} in a game of {game}!',
+  [TranslationKey.CHAT_GAME_RESULT_WIN_ONLY]: '{winner} won a game of {game}!',
+  [TranslationKey.CHAT_GAME_RESULT_DRAW]: '{player1} and {player2} drew in a game of {game}!',
+  [TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN]: 'A game of {game} ended in a draw.',
+
+  // Achievements
+  [TranslationKey.ACHIEVEMENT_FIRST_GAME]: 'First Game: You played your first game!',
+  [TranslationKey.ACHIEVEMENT_THIRD_GAME]: 'Third Game: You played your third game!',
+  [TranslationKey.ACHIEVEMENT_TENTH_GAME]: 'Tenth Game: You played your tenth game!',
+  [TranslationKey.ACHIEVEMENT_TWENTIETH_GAME]: 'Twentieth Game: You played your twentieth game!',
+  [TranslationKey.ACHIEVEMENT_FIRST_WIN]: 'First Win: You won for the first time! Congratulations!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_1]: 'Winning Streak: You won 3 games in a row!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_2]: 'Winning Streak: You won 5 games in a row!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_3]: 'Winning Streak: You won 10 games in a row!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_4]: 'Winning Streak: You won 20 games in a row!',
+  [TranslationKey.ACHIEVEMENT_PONG_EXPERT]: 'Pong Expert: Your rating reached 1050!',
+  [TranslationKey.ACHIEVEMENT_PONG_MASTER]: 'Pong Master: Your rating reached 1100!',
+  [TranslationKey.ACHIEVEMENT_PONG_GURU]: 'Pong Guru: Your rating reached 1150!',
 };

@@ -186,7 +186,9 @@ async function renderFriendList(){
         row.querySelector(".friend-username").textContent = friend.username;
         row.querySelector(".friend-avatar").textContent = friend.username.charAt(0).toUpperCase();
 
-        row.querySelector(".remove-btn").addEventListener("click", async () => {
+        const removeBtn = row.querySelector(".remove-btn");
+        removeBtn.textContent = t('PROFILE_REMOVE');
+        removeBtn.addEventListener("click", async () => {
             await removeFriend(friend.id);
             renderFriendList();
         })

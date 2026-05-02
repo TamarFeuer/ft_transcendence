@@ -94,32 +94,32 @@ export async function initOnlineChessGame(gameId = null){
 	let gameActive = false;
 
 	//if no gameId was passed in, ask the server for one (normal matchmaking flow)
-	if (!gameId) {
-		try {
-			const res = await fetch('/api/chess/join/', {
-				method: 'POST',
-				credentials: 'include',
-			});
-			if (!res.ok) {
-				const text = await res.text();
-				console.error('Chess join failed:', res.status, text);
-				if (waitingEl) waitingEl.classList.add('hidden');
-				if (statusEl) {
-					statusEl.textContent = res.status === 401
-						? 'Please log in to play online.'
-						: 'Could not join a game. Please try again.';
-				}
-				return;
-			}
-			const data = await res.json();
-			gameId = data.gameId;
-		} catch (err) {
-			console.error('Failed to join chess game:', err);
-			if (waitingEl) waitingEl.classList.add('hidden');
-			if (statusEl) statusEl.textContent = 'Failed to connect. Please try again.';
-			return;
-		}
-	}
+	   if (!gameId) {
+		   try {
+			   const res = await fetch('/api/chess/join/', {
+				   method: 'POST',
+				   credentials: 'include',
+			   });
+			   if (!res.ok) {
+				   const text = await res.text();
+				   console.error('Chess join failed:', res.status, text);
+				   if (waitingEl) waitingEl.classList.add('hidden');
+				   if (statusEl) {
+					   statusEl.textContent = res.status === 401
+						   ? t('CHESS_LOGIN_REQUIRED')
+						   : t('CHESS_JOIN_FAILED');
+				   }
+				   return;
+			   }
+			   const data = await res.json();
+			   gameId = data.gameId;
+		   } catch (err) {
+			   console.error('Failed to join chess game:', err);
+			   if (waitingEl) waitingEl.classList.add('hidden');
+			   if (statusEl) statusEl.textContent = t('CHESS_CONNECT_FAILED');
+			   return;
+		   }
+	   }
 
 	const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 	const ws = new WebSocket(`${proto}//${location.host}/ws/chess/${gameId}`);
@@ -128,10 +128,10 @@ export async function initOnlineChessGame(gameId = null){
 	ws.onmessage = (event) => {
 		const data = JSON.parse(event.data);
 
-		if (data.type === 'assign') {
-			myColor = data.color;
-			if (statusEl) statusEl.textContent = `You are ${myColor}. Waiting for opponent...`;
-		}
+		   if (data.type === 'assign') {
+			   myColor = data.color;
+			   if (statusEl) statusEl.textContent = t('CHESS_WAITING_FOR_OPPONENT', { color: myColor });
+		   }
 
 		else if (data.type === 'gameStart') {
 			gameActive = true;
