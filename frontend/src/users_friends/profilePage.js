@@ -56,6 +56,7 @@ function setupOwnProfile(){
     setupAddFriend();
     renderPendingRequests();
     renderFriendList();
+    window.addEventListener("friendListChanged", renderFriendList);
 }
 
 function hideOwnProfileSections(){

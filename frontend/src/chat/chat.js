@@ -158,6 +158,10 @@ export function initChat() {
 				}));
 				break;
 
+			case "friendListChanged":
+				window.dispatchEvent(new CustomEvent("friendListChanged"));
+				break;
+
 			case "game_result":
 				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
 					detail: {

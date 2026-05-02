@@ -268,6 +268,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 						f'user_{target}',
 						{'type': 'game.invite.expired', 'game_id': gid}
 					)
+				await self.channel_layer.group_send(
+					f'user_{self.user_id}',
+					{'type': 'friend.list.changed'}
+				)
+				await self.channel_layer.group_send(
+					f'user_{target}',
+					{'type': 'friend.list.changed'}
+				)
 			await self.broadcast_online_users()
 
 		elif msg_type in ["typing", "stop_typing"]:
@@ -360,6 +368,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"type": "game_invite_expired",
 			"game_id": game_id,
 		}))
+
+	async def friend_list_changed(self, _event):
+		await self.send(text_data=json.dumps({'type': 'friendListChanged'}))
 
 	async def typing_notification(self, event):
 		# Deliver a typing indicator to this consumer's client.
