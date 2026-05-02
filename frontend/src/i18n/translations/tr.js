@@ -1,6 +1,37 @@
 import { TranslationKey } from '../keys.js';
 
 export const tr = {
+  [TranslationKey.TOURNAMENT_START_GAME]: 'Oyunu Başlat',
+  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'Hazır oyun yok.',
+  [TranslationKey.TOURNAMENT_NO_ONGOING_GAMES]: 'Devam eden oyun yok.',
+  [TranslationKey.TOURNAMENT_NO_COMPLETED_GAMES]: 'Tamamlanan oyun yok.',
+  [TranslationKey.TOURNAMENT_ROUND]: 'Tur',
+  [TranslationKey.TOURNAMENT_ONGOING]: 'Devam ediyor',
+  [TranslationKey.TOURNAMENT_WINNER]: 'Kazanan',
+  [TranslationKey.TOURNAMENT_NO_WINNER]: 'kazanan yok',
+  [TranslationKey.TOURNAMENT_NONE]: 'Hiç turnuva yok',
+  [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'oyuncu',
+  [TranslationKey.TOURNAMENT_VIEW_GAMES]: 'Oyunları Görüntüle',
+  [TranslationKey.TOURNAMENT_NO_REGISTRATION]: 'Kayıt için uygun turnuva yok.',
+  [TranslationKey.TOURNAMENT_JOIN]: 'Katıl',
+  [TranslationKey.TOURNAMENT_JOINED]: 'Katıldın',
+  [TranslationKey.TOURNAMENT_START]: 'Başlat',
+  [TranslationKey.TOURNAMENT_CANCEL]: 'İptal Et',
+  [TranslationKey.TOURNAMENT_FULL]: 'Dolu',
+  [TranslationKey.TOURNAMENT_JOINING]: 'Katılıyor...',
+  [TranslationKey.TOURNAMENT_STARTING]: 'Başlatılıyor...',
+  [TranslationKey.TOURNAMENT_CANCELLING]: 'İptal ediliyor...',
+  [TranslationKey.TOURNAMENT_CONFIRM_START]: 'Bu turnuvayı başlatmak istiyor musunuz? Kayıtlı tüm oyuncular yarışmaya başlayacak.',
+  [TranslationKey.TOURNAMENT_CONFIRM_CANCEL]: 'Bu turnuvayı iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+  [TranslationKey.TOURNAMENT_STATUS_UPCOMING]: 'Yaklaşan',
+  [TranslationKey.TOURNAMENT_STATUS_ONGOING]: 'Devam eden',
+  [TranslationKey.TOURNAMENT_STATUS_COMPLETED]: 'Tamamlandı',
+  [TranslationKey.TABLE_LOADING]: 'Yükleniyor...',
+  [TranslationKey.TABLE_NO_RESULTS]: 'Sonuç yok',
+  [TranslationKey.TABLE_ERROR_LOADING_LEADERBOARD]: 'Lider tablosu yüklenirken hata oluştu',
+  [TranslationKey.TABLE_NO_DATA_YET]: 'Henüz veri yok.',
+  [TranslationKey.TABLE_COULD_NOT_LOAD]: 'Yüklenemedi.',
+  [TranslationKey.TABLE_NO_GAMES_YET]: 'Henüz oyun yok.',
   [TranslationKey.CHAT_GUEST]: 'Misafir',
   [TranslationKey.CHAT_UNKNOWN]: 'bilinmiyor',
   [TranslationKey.CHAT_CONNECTED]: 'Sohbet WebSocket bağlantısı kuruldu',
@@ -352,6 +383,36 @@ export const tr = {
   [TranslationKey.TOURN_CREATE_FAILED]: 'Turnuva oluşturulamadı',
   [TranslationKey.TOURN_MATCH]: 'Maç: {p1} - {p2}',
   [TranslationKey.TOURN_WINNER]: 'Turnuva Şampiyonu: {name} — {wins} galibiyet!',
+
+  // Pong waiting modal
+  [TranslationKey.PONG_WAITING]: 'Rakip bekleniyor...',
+  [TranslationKey.PONG_GAME_STARTING]: 'Oyun yakında başlayacak',
+  [TranslationKey.PONG_LEAVE_GAME]: 'Oyundan Çık',
+
+  // Game names
+  [TranslationKey.GAME_NAME_CHESS]: 'satranç',
+  [TranslationKey.GAME_NAME_PONG]: 'pong',
+
+  // Game result chat messages
+  [TranslationKey.CHAT_GAME_RESULT_TITLE]: '🏆 Oyun Sonucu',
+  [TranslationKey.CHAT_GAME_RESULT_WIN_LOSS]: '{winner}, {loser}\'i {game} oyununda yendi!',
+  [TranslationKey.CHAT_GAME_RESULT_WIN_ONLY]: '{winner} bir {game} oyunu kazandı!',
+  [TranslationKey.CHAT_GAME_RESULT_DRAW]: '{player1} ve {player2} {game} oyununda berabere kaldı!',
+  [TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN]: 'Bir {game} oyunu berabere sona erdi.',
+
+  // Achievements
+  [TranslationKey.ACHIEVEMENT_FIRST_GAME]: 'İlk Oyun: İlk oyununu oynadın!',
+  [TranslationKey.ACHIEVEMENT_THIRD_GAME]: 'Üçüncü Oyun: Üçüncü oyununu oynadın!',
+  [TranslationKey.ACHIEVEMENT_TENTH_GAME]: 'Onuncu Oyun: Onuncu oyununu oynadın!',
+  [TranslationKey.ACHIEVEMENT_TWENTIETH_GAME]: 'Yirminci Oyun: Yirminci oyununu oynadın!',
+  [TranslationKey.ACHIEVEMENT_FIRST_WIN]: 'İlk Galibiyet: İlk kez kazandın! Tebrikler!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_1]: 'Galibiyet Serisi: Üst üste 3 oyun kazandın!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_2]: 'Galibiyet Serisi: Üst üste 5 oyun kazandın!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_3]: 'Galibiyet Serisi: Üst üste 10 oyun kazandın!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_4]: 'Galibiyet Serisi: Üst üste 20 oyun kazandın!',
+  [TranslationKey.ACHIEVEMENT_PONG_EXPERT]: 'Pong Uzmanı: Reytingin 1050\'ye ulaştı!',
+  [TranslationKey.ACHIEVEMENT_PONG_MASTER]: 'Pong Ustası: Reytingin 1100\'e ulaştı!',
+  [TranslationKey.ACHIEVEMENT_PONG_GURU]: 'Pong Gurusu: Reytingin 1150\'ye ulaştı!',
 };
 
 

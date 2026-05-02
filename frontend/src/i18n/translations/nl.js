@@ -1,6 +1,37 @@
 import { TranslationKey } from '../keys.js';
 
 export const nl = {
+  [TranslationKey.TOURNAMENT_START_GAME]: 'Start spel',
+  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'Geen spellen voor jou beschikbaar.',
+  [TranslationKey.TOURNAMENT_NO_ONGOING_GAMES]: 'Geen lopende spellen',
+  [TranslationKey.TOURNAMENT_NO_COMPLETED_GAMES]: 'Geen voltooide spellen',
+  [TranslationKey.TOURNAMENT_ROUND]: 'Ronde',
+  [TranslationKey.TOURNAMENT_ONGOING]: 'Bezig',
+  [TranslationKey.TOURNAMENT_WINNER]: 'Winnaar',
+  [TranslationKey.TOURNAMENT_NO_WINNER]: 'geen winnaar',
+  [TranslationKey.TOURNAMENT_NONE]: 'Geen',
+  [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'spelers',
+  [TranslationKey.TOURNAMENT_VIEW_GAMES]: 'Bekijk spellen',
+  [TranslationKey.TOURNAMENT_NO_REGISTRATION]: 'Geen toernooien beschikbaar voor registratie.',
+  [TranslationKey.TOURNAMENT_JOIN]: 'Deelnemen',
+  [TranslationKey.TOURNAMENT_JOINED]: 'Deelgenomen',
+  [TranslationKey.TOURNAMENT_START]: 'Start',
+  [TranslationKey.TOURNAMENT_CANCEL]: 'Annuleren',
+  [TranslationKey.TOURNAMENT_FULL]: 'Vol',
+  [TranslationKey.TOURNAMENT_JOINING]: 'Bezig met deelnemen...',
+  [TranslationKey.TOURNAMENT_STARTING]: 'Bezig met starten...',
+  [TranslationKey.TOURNAMENT_CANCELLING]: 'Bezig met annuleren...',
+  [TranslationKey.TOURNAMENT_CONFIRM_START]: 'Dit toernooi starten? Alle geregistreerde spelers beginnen met spelen.',
+  [TranslationKey.TOURNAMENT_CONFIRM_CANCEL]: 'Dit toernooi annuleren? Dit kan niet ongedaan worden gemaakt.',
+  [TranslationKey.TOURNAMENT_STATUS_UPCOMING]: 'Aankomend',
+  [TranslationKey.TOURNAMENT_STATUS_ONGOING]: 'Bezig',
+  [TranslationKey.TOURNAMENT_STATUS_COMPLETED]: 'Voltooid',
+  [TranslationKey.TABLE_LOADING]: 'Laden...',
+  [TranslationKey.TABLE_NO_RESULTS]: 'Geen resultaten',
+  [TranslationKey.TABLE_ERROR_LOADING_LEADERBOARD]: 'Fout bij laden van scorebord',
+  [TranslationKey.TABLE_NO_DATA_YET]: 'Nog geen gegevens.',
+  [TranslationKey.TABLE_COULD_NOT_LOAD]: 'Kon niet laden.',
+  [TranslationKey.TABLE_NO_GAMES_YET]: 'Nog geen spellen.',
   [TranslationKey.CHAT_GUEST]: 'Gast',
   [TranslationKey.CHAT_UNKNOWN]: 'onbekend',
   [TranslationKey.CHAT_CONNECTED]: 'Chat WebSocket verbonden',
@@ -353,4 +384,34 @@ export const nl = {
   [TranslationKey.TOURN_CREATE_FAILED]: 'Kon het toernooi niet aanmaken',
   [TranslationKey.TOURN_MATCH]: 'Wedstrijd: {p1} vs {p2}',
   [TranslationKey.TOURN_WINNER]: 'Toernooi winnaar: {name} met {wins} overwinningen!',
+
+  // Pong waiting modal
+  [TranslationKey.PONG_WAITING]: 'Wachten op tegenstander...',
+  [TranslationKey.PONG_GAME_STARTING]: 'Het spel begint binnenkort',
+  [TranslationKey.PONG_LEAVE_GAME]: 'Spel verlaten',
+
+  // Game names
+  [TranslationKey.GAME_NAME_CHESS]: 'schaken',
+  [TranslationKey.GAME_NAME_PONG]: 'pong',
+
+  // Game result chat messages
+  [TranslationKey.CHAT_GAME_RESULT_TITLE]: '🏆 Spelresultaat',
+  [TranslationKey.CHAT_GAME_RESULT_WIN_LOSS]: '{winner} versloeg {loser} in een potje {game}!',
+  [TranslationKey.CHAT_GAME_RESULT_WIN_ONLY]: '{winner} won een potje {game}!',
+  [TranslationKey.CHAT_GAME_RESULT_DRAW]: '{player1} en {player2} speelden gelijk in een potje {game}!',
+  [TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN]: 'Een potje {game} eindigde in een gelijkspel.',
+
+  // Achievements
+  [TranslationKey.ACHIEVEMENT_FIRST_GAME]: 'Eerste spel: Je hebt je eerste spel gespeeld!',
+  [TranslationKey.ACHIEVEMENT_THIRD_GAME]: 'Derde spel: Je hebt je derde spel gespeeld!',
+  [TranslationKey.ACHIEVEMENT_TENTH_GAME]: 'Tiende spel: Je hebt je tiende spel gespeeld!',
+  [TranslationKey.ACHIEVEMENT_TWENTIETH_GAME]: 'Twintigste spel: Je hebt je twintigste spel gespeeld!',
+  [TranslationKey.ACHIEVEMENT_FIRST_WIN]: 'Eerste overwinning: Je hebt voor het eerst gewonnen! Gefeliciteerd!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_1]: 'Winnende reeks: Je hebt 3 spellen op rij gewonnen!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_2]: 'Winnende reeks: Je hebt 5 spellen op rij gewonnen!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_3]: 'Winnende reeks: Je hebt 10 spellen op rij gewonnen!',
+  [TranslationKey.ACHIEVEMENT_WINNING_STREAK_4]: 'Winnende reeks: Je hebt 20 spellen op rij gewonnen!',
+  [TranslationKey.ACHIEVEMENT_PONG_EXPERT]: 'Pong Expert: Jouw rating heeft 1050 bereikt!',
+  [TranslationKey.ACHIEVEMENT_PONG_MASTER]: 'Pong Master: Jouw rating heeft 1100 bereikt!',
+  [TranslationKey.ACHIEVEMENT_PONG_GURU]: 'Pong Guru: Jouw rating heeft 1150 bereikt!',
 };
