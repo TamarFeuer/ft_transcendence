@@ -1,8 +1,6 @@
 import { TranslationKey } from '../keys.js';
 
 export const en = {
-  [TranslationKey.TOURNAMENT_START_GAME]: 'Start Game',
-  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'No ready games for you.',
   [TranslationKey.TOURNAMENT_NO_ONGOING_GAMES]: 'No ongoing games',
   [TranslationKey.TOURNAMENT_NO_COMPLETED_GAMES]: 'No completed games',
   [TranslationKey.TOURNAMENT_ROUND]: 'Round',
@@ -32,25 +30,6 @@ export const en = {
   [TranslationKey.TABLE_NO_DATA_YET]: 'No data yet.',
   [TranslationKey.TABLE_COULD_NOT_LOAD]: 'Could not load.',
   [TranslationKey.TABLE_NO_GAMES_YET]: 'No games yet.',
-  [TranslationKey.CHAT_GUEST]: 'Guest',
-  [TranslationKey.CHAT_UNKNOWN]: 'unknown',
-  [TranslationKey.CHAT_CONNECTED]: 'Chat WebSocket connected',
-  [TranslationKey.CHAT_DISCONNECTED]: 'Chat WebSocket disconnected',
-  [TranslationKey.CHAT_ERROR]: 'Chat WebSocket error:',
-  [TranslationKey.CHAT_SENT_TO_TARGET]: 'I sent this - channelId set to target:',
-  [TranslationKey.CHAT_SENT_TO_SENDER]: 'Someone sent to me - channelId set to sender:',
-  [TranslationKey.CHAT_GLOBAL_CHANNEL]: 'Global message - channelId set to:',
-  [TranslationKey.CHAT_ONLINE_USERS_RECEIVED]: 'Received online_users message:',
-  [TranslationKey.CHAT_CONVERSATIONS_RECEIVED]: 'conversations received:',
-  [TranslationKey.CHAT_WS_NOT_READY]: 'sendChatMessage: WebSocket not ready (state:',
-  [TranslationKey.CHAT_NO_INPUT]: 'initTyping: no chatInput element provided',
-  [TranslationKey.CHAT_SOCKET_NOT_READY]: 'Typing init: chatSocket not ready yet',
-  [TranslationKey.CHAT_UNKNOWN_TYPE]: 'Unknown chat message type:',
-  [TranslationKey.PROFILE_TH_YOU]: 'You',
-  [TranslationKey.PROFILE_TH_OPPONENT]: 'Opponent',
-  [TranslationKey.PROFILE_TH_SCORE]: 'Score',
-  [TranslationKey.PROFILE_TH_RESULT]: 'Result',
-  [TranslationKey.PROFILE_TH_DATE]: 'Date',
   // Terms of Service & Privacy Policy
   [TranslationKey.TOS_TITLE]: 'Terms of Service',
   [TranslationKey.TOS_LAST_UPDATED]: 'Last updated:',
@@ -122,57 +101,13 @@ export const en = {
   [TranslationKey.CHESS_BLACK_WINS]: 'Black wins',
   [TranslationKey.GAME_RESULT_DRAW]: 'Draw',
 
-  // Chess statistics
-  [TranslationKey.CHESS_STATS_ELO]: 'ELO',
-  [TranslationKey.CHESS_STATS_WINS]: 'Wins',
-  [TranslationKey.CHESS_STATS_LOSSES]: 'Losses',
-  [TranslationKey.CHESS_STATS_LEADERBOARD]: 'Leaderboard',
-  [TranslationKey.CHESS_STATS_ACHIEVEMENTS]: 'Achievements',
-  [TranslationKey.CHESS_STATS_HISTORY]: 'History',
-  [TranslationKey.CHESS_STATS_STREAK]: 'Streak',
-  [TranslationKey.CHESS_STATS_SCORE]: 'Score',
-  [TranslationKey.CHESS_STATS_OPPONENT]: 'Opponent',
-  [TranslationKey.CHESS_STATS_DATE]: 'Date',
-  [TranslationKey.PAGE_TITLE]: 'Pong',
-  [TranslationKey.MAIN_TITLE]: 'Pong',
-  
-  [TranslationKey.BTN_TIC_TAC_TOE]: 'Tic-Tac-Toe',
-  [TranslationKey.BTN_MINESWEEPER]: 'Minesweeper',
   [TranslationKey.BTN_PONG]: 'Pong',
   
-  [TranslationKey.BTN_LOCAL]: 'LOCAL',
-  [TranslationKey.BTN_ONLINE]: 'ONLINE',
-  [TranslationKey.BTN_SINGLEPLAYER]: 'SINGLEPLAYER',
-  [TranslationKey.BTN_MULTIPLAYER]: 'MULTIPLAYER',
-  [TranslationKey.BTN_TOURNAMENT]: 'TOURNAMENT',
-  
-  [TranslationKey.LABEL_PLAYER_COUNT]: 'Enter number of players:',
   [TranslationKey.BTN_START_GAME]: 'START GAME',
-  [TranslationKey.BTN_REGISTER_PLAYERS]: 'REGISTER PLAYERS',
-  [TranslationKey.LABEL_PLAYER_ALIAS]: 'Enter your alias:',
-  [TranslationKey.BTN_SET_ALIAS]: 'SET ALIAS',
   
   [TranslationKey.PLAYER_1]: 'Player 1',
   [TranslationKey.PLAYER_2]: 'Player 2',
   [TranslationKey.LABEL_LANGUAGE]: 'Language:',
-  
-  [TranslationKey.MSG_PLAYER_WINS]: '{player} wins!',
-  [TranslationKey.MSG_TIC_TAC_TOE_NOT_IMPLEMENTED]: 'Tic-Tac-Toe selected. (Not implemented yet)',
-  [TranslationKey.MSG_MINESWEEPER_NOT_IMPLEMENTED]: 'Minesweeper selected. (Not implemented yet)',
-  [TranslationKey.MSG_PLAYERS_REGISTERED]: 'Registered {count} players for the tournament.',
-  [TranslationKey.MSG_MIN_PLAYERS_ERROR]: 'Number of players must be 2 or more.',
-  [TranslationKey.MSG_ALIAS_SET]: 'Alias "{alias}" set. Please enter alias for player {next}.',
-  [TranslationKey.MSG_ALL_PLAYERS_REGISTERED]: 'All {count} players registered: {players}. Proceeding to game start.',
-  [TranslationKey.MSG_VALID_ALIAS_ERROR]: 'Please enter a valid alias.',
-  [TranslationKey.MSG_STARTING_ONLINE_MULTIPLAYER]: 'Starting Online Multiplayer Game',
-  [TranslationKey.MSG_STARTING_ONLINE_TOURNAMENT]: 'Starting Online Tournament',
-  [TranslationKey.MSG_STARTING_SINGLEPLAYER]: 'Starting Singleplayer Game',
-  [TranslationKey.MSG_STARTING_GAME_WITH_PLAYERS]: 'Starting {mode} with {count} players',
-  
-  [TranslationKey.WS_CONNECTED]: 'WS connected',
-  [TranslationKey.WS_ERROR]: 'WS error',
-  [TranslationKey.WS_MESSAGE]: 'WS message',
-  [TranslationKey.WS_ROLE]: 'role:',
   
   [TranslationKey.TTT_TITLE]: 'Play Tic-Tac-Toe',
   [TranslationKey.TTT_PLAY_AS_X]: 'Play as X',
@@ -193,18 +128,6 @@ export const en = {
   [TranslationKey.MINE_LOST]: 'Lost',
   [TranslationKey.MINE_WON]: 'Won',
 
-  [TranslationKey.SOCIALS_OPEN]: 'Socials',
-  [TranslationKey.SOCIALS_SAY_HI]: 'Say Hi',
-  [TranslationKey.SOCIALS_BROADCAST]: 'Broadcast to all logged-in users',
-  [TranslationKey.SOCIALS_USERS]: 'Users',
-  [TranslationKey.SOCIALS_CHAT_WITH]: 'Chat with logged-in users',
-  [TranslationKey.SOCIALS_FRIENDS]: 'Friends',
-  [TranslationKey.SOCIALS_PLAY]: 'Play with your friends',
-  [TranslationKey.SOCIALS_CLOSE]: 'X',
-  [TranslationKey.SOCIALS_SEND]: 'Send',
-  [TranslationKey.SOCIALS_LIST]: 'Friends list goes here',
-  [TranslationKey.SOCIALS_TYPE_HERE]: 'Type a message...',
-  
   // Routes / Pages
   [TranslationKey.ONLINE_TITLE]: 'Online Game',
   [TranslationKey.ONLINE_CREATE_GAME]: 'Create Game',
@@ -213,14 +136,8 @@ export const en = {
 
   [TranslationKey.TOURNAMENT_TITLE]: 'Tournament',
   [TranslationKey.TOURNAMENT_START]: 'Start Tournament',
-  [TranslationKey.TOURNAMENT_BACK]: 'Back',
   [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'Players',
   [TranslationKey.TOURNAMENT_REFRESH]: 'Refresh Games',
-
-  [TranslationKey.PONG_LOCAL]: 'Local Game',
-  [TranslationKey.PONG_AI]: 'AI Opponent Game',
-  [TranslationKey.PONG_TOURNAMENT]: 'Tournament',
-  [TranslationKey.PONG_ONLINE]: 'Online Game',
 
   // Stats page
   [TranslationKey.STATS_TITLE]: 'Statistics',
@@ -245,12 +162,8 @@ export const en = {
   [TranslationKey.STATS_COULD_NOT_LOAD]: '...',
 
   // User Management
-  [TranslationKey.UM_USER]: 'User',
   [TranslationKey.UM_LOGIN_TITLE]: 'Login',
-  [TranslationKey.UM_LOGIN_BTN]: 'Login',
-  [TranslationKey.UM_LOGGED_IN]: 'Logged in',
   [TranslationKey.UM_REGISTER_TITLE]: 'Register',
-  [TranslationKey.UM_REGISTER_BTN]: 'Register',
   [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'username',
   [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'password',
   [TranslationKey.UM_SIGN_IN]: 'Sign in',
@@ -283,7 +196,6 @@ export const en = {
   [TranslationKey.PROFILE_ADD_BTN]: 'Add',
   [TranslationKey.PROFILE_PENDING_REQUESTS]: 'Pending Requests',
   [TranslationKey.PROFILE_FRIENDS]: 'Friends',
-  [TranslationKey.PROFILE_STATISTICS]: 'Statistics',
   [TranslationKey.PROFILE_LOGOUT]: 'Logout',
 
   // Tournament lobby
