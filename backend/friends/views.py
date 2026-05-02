@@ -188,6 +188,10 @@ def block_user(request):
 			return JsonResponse({'error': 'Cannot block yourself'}, status=400)
 		target = User.objects.get(id=target_id)
 		Block.objects.get_or_create(blocker=user, blocked_user=target)
+		FriendRequest.objects.filter(
+			Q(from_user=user, to_user=target) | Q(from_user=target, to_user=user),
+			status='accepted'
+		).delete()
 		return JsonResponse({'success': True, 'message': f'You have blocked {target.username}'})
 	except User.DoesNotExist:
 		return JsonResponse({'error': 'User does not exist'}, status=404)
