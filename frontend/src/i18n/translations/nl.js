@@ -1,8 +1,6 @@
 import { TranslationKey } from '../keys.js';
 
 export const nl = {
-  [TranslationKey.TOURNAMENT_START_GAME]: 'Start spel',
-  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'Geen spellen voor jou beschikbaar.',
   [TranslationKey.TOURNAMENT_NO_ONGOING_GAMES]: 'Geen lopende spellen',
   [TranslationKey.TOURNAMENT_NO_COMPLETED_GAMES]: 'Geen voltooide spellen',
   [TranslationKey.TOURNAMENT_ROUND]: 'Ronde',
@@ -32,25 +30,6 @@ export const nl = {
   [TranslationKey.TABLE_NO_DATA_YET]: 'Nog geen gegevens.',
   [TranslationKey.TABLE_COULD_NOT_LOAD]: 'Kon niet laden.',
   [TranslationKey.TABLE_NO_GAMES_YET]: 'Nog geen spellen.',
-  [TranslationKey.CHAT_GUEST]: 'Gast',
-  [TranslationKey.CHAT_UNKNOWN]: 'onbekend',
-  [TranslationKey.CHAT_CONNECTED]: 'Chat WebSocket verbonden',
-  [TranslationKey.CHAT_DISCONNECTED]: 'Chat WebSocket verbroken',
-  [TranslationKey.CHAT_ERROR]: 'Chat WebSocket fout:',
-  [TranslationKey.CHAT_SENT_TO_TARGET]: 'Ik heb dit verzonden - channelId ingesteld op target:',
-  [TranslationKey.CHAT_SENT_TO_SENDER]: 'Iemand stuurde naar mij - channelId ingesteld op afzender:',
-  [TranslationKey.CHAT_GLOBAL_CHANNEL]: 'Globaal bericht - channelId ingesteld op:',
-  [TranslationKey.CHAT_ONLINE_USERS_RECEIVED]: 'Ontvangen online_users bericht:',
-  [TranslationKey.CHAT_CONVERSATIONS_RECEIVED]: 'conversaties ontvangen:',
-  [TranslationKey.CHAT_WS_NOT_READY]: 'sendChatMessage: WebSocket niet klaar (staat:',
-  [TranslationKey.CHAT_NO_INPUT]: 'initTyping: geen chatInput element opgegeven',
-  [TranslationKey.CHAT_SOCKET_NOT_READY]: 'Typing init: chatSocket nog niet klaar',
-  [TranslationKey.CHAT_UNKNOWN_TYPE]: 'Onbekend chatberichttype:',
-  [TranslationKey.PROFILE_TH_YOU]: 'Jij',
-  [TranslationKey.PROFILE_TH_OPPONENT]: 'Tegenstander',
-  [TranslationKey.PROFILE_TH_SCORE]: 'Score',
-  [TranslationKey.PROFILE_TH_RESULT]: 'Resultaat',
-  [TranslationKey.PROFILE_TH_DATE]: 'Datum',
   // Terms of Service & Privacy Policy
   [TranslationKey.TOS_TITLE]: 'Gebruiksvoorwaarden',
   [TranslationKey.TOS_LAST_UPDATED]: 'Laatst bijgewerkt:',
@@ -121,57 +100,13 @@ export const nl = {
   [TranslationKey.CHESS_WHITE_WINS]: 'Wit wint',
   [TranslationKey.CHESS_BLACK_WINS]: 'Zwart wint',
   [TranslationKey.GAME_RESULT_DRAW]: 'Gelijkspel',
-  // Chess statistics
-  [TranslationKey.CHESS_STATS_ELO]: 'ELO',
-  [TranslationKey.CHESS_STATS_WINS]: 'Overwinningen',
-  [TranslationKey.CHESS_STATS_LOSSES]: 'Verliezen',
-  [TranslationKey.CHESS_STATS_LEADERBOARD]: 'Scorebord',
-  [TranslationKey.CHESS_STATS_ACHIEVEMENTS]: 'Prestaties',
-  [TranslationKey.CHESS_STATS_HISTORY]: 'Geschiedenis',
-  [TranslationKey.CHESS_STATS_STREAK]: 'Reeks',
-  [TranslationKey.CHESS_STATS_SCORE]: 'Score',
-  [TranslationKey.CHESS_STATS_OPPONENT]: 'Tegenstander',
-  [TranslationKey.CHESS_STATS_DATE]: 'Datum',
-  [TranslationKey.PAGE_TITLE]: 'Pong',
-  [TranslationKey.MAIN_TITLE]: 'Pong',
-  
-  [TranslationKey.BTN_TIC_TAC_TOE]: 'Boter-Kaas-Eieren',
-  [TranslationKey.BTN_MINESWEEPER]: 'Mijnenveger',
   [TranslationKey.BTN_PONG]: 'Pong',
   
-  [TranslationKey.BTN_LOCAL]: 'LOKAAL',
-  [TranslationKey.BTN_ONLINE]: 'ONLINE',
-  [TranslationKey.BTN_SINGLEPLAYER]: 'ENKELE SPELER',
-  [TranslationKey.BTN_MULTIPLAYER]: 'MEERDERE SPELERS',
-  [TranslationKey.BTN_TOURNAMENT]: 'TOERNOOI',
-  
-  [TranslationKey.LABEL_PLAYER_COUNT]: 'Voer aantal spelers in:',
   [TranslationKey.BTN_START_GAME]: 'START SPEL',
-  [TranslationKey.BTN_REGISTER_PLAYERS]: 'REGISTREER SPELERS',
-  [TranslationKey.LABEL_PLAYER_ALIAS]: 'Voer je alias in:',
-  [TranslationKey.BTN_SET_ALIAS]: 'ALIAS INSTELLEN',
   
   [TranslationKey.PLAYER_1]: 'Speler 1',
   [TranslationKey.PLAYER_2]: 'Speler 2',
   [TranslationKey.LABEL_LANGUAGE]: 'Taal:',
-  
-  [TranslationKey.MSG_PLAYER_WINS]: '{player} wint!',
-  [TranslationKey.MSG_TIC_TAC_TOE_NOT_IMPLEMENTED]: 'Boter-Kaas-Eieren geselecteerd. (Nog niet geïmplementeerd)',
-  [TranslationKey.MSG_MINESWEEPER_NOT_IMPLEMENTED]: 'Mijnenveger geselecteerd. (Nog niet geïmplementeerd)',
-  [TranslationKey.MSG_PLAYERS_REGISTERED]: '{count} spelers geregistreerd voor het toernooi.',
-  [TranslationKey.MSG_MIN_PLAYERS_ERROR]: 'Aantal spelers moet 2 of meer zijn.',
-  [TranslationKey.MSG_ALIAS_SET]: 'Alias "{alias}" ingesteld. Voer alias in voor speler {next}.',
-  [TranslationKey.MSG_ALL_PLAYERS_REGISTERED]: 'Alle {count} spelers geregistreerd: {players}. Spel wordt gestart.',
-  [TranslationKey.MSG_VALID_ALIAS_ERROR]: 'Voer een geldige alias in.',
-  [TranslationKey.MSG_STARTING_ONLINE_MULTIPLAYER]: 'Online Multiplayer Spel Starten',
-  [TranslationKey.MSG_STARTING_ONLINE_TOURNAMENT]: 'Online Toernooi Starten',
-  [TranslationKey.MSG_STARTING_SINGLEPLAYER]: 'Enkele Speler Spel Starten',
-  [TranslationKey.MSG_STARTING_GAME_WITH_PLAYERS]: '{mode} starten met {count} spelers',
-  
-  [TranslationKey.WS_CONNECTED]: 'WS verbonden',
-  [TranslationKey.WS_ERROR]: 'WS fout',
-  [TranslationKey.WS_MESSAGE]: 'WS bericht',
-  [TranslationKey.WS_ROLE]: 'rol:',
   
   [TranslationKey.TTT_TITLE]: 'Boter-Kaas-Eieren Spelen',
   [TranslationKey.TTT_PLAY_AS_X]: 'Spelen als X',
@@ -192,18 +127,6 @@ export const nl = {
   [TranslationKey.MINE_LOST]: 'Verloren',
   [TranslationKey.MINE_WON]: 'Gewonnen',
 
-  [TranslationKey.SOCIALS_OPEN]: 'Sociaal',
-  [TranslationKey.SOCIALS_SAY_HI]: 'Zeg Hoi',
-  [TranslationKey.SOCIALS_BROADCAST]: 'Uitzenden naar alle ingelogde gebruikers',
-  [TranslationKey.SOCIALS_USERS]: 'Gebruikers',
-  [TranslationKey.SOCIALS_CHAT_WITH]: 'Chat met ingelogde gebruikers',
-  [TranslationKey.SOCIALS_FRIENDS]: 'Vrienden',
-  [TranslationKey.SOCIALS_PLAY]: 'Speel met je vrienden',
-  [TranslationKey.SOCIALS_CLOSE]: 'X',
-  [TranslationKey.SOCIALS_SEND]: 'Verstuur',
-  [TranslationKey.SOCIALS_LIST]: 'Vriendenlijst komt hier',
-  [TranslationKey.SOCIALS_TYPE_HERE]: 'Typ een bericht...',
-  
   // Routes / Pages
   [TranslationKey.ONLINE_TITLE]: 'Online Spel',
   [TranslationKey.ONLINE_CREATE_GAME]: 'Maak Spel',
@@ -212,14 +135,8 @@ export const nl = {
 
   [TranslationKey.TOURNAMENT_TITLE]: 'Toernooi',
   [TranslationKey.TOURNAMENT_START]: 'Start Toernooi',
-  [TranslationKey.TOURNAMENT_BACK]: 'Terug',
   [TranslationKey.TOURNAMENT_PLAYERS_PLACEHOLDER]: 'Spelers',
   [TranslationKey.TOURNAMENT_REFRESH]: 'Spellen Vernieuwen',
-
-  [TranslationKey.PONG_LOCAL]: 'Lokaal Spel',
-  [TranslationKey.PONG_AI]: 'AI Tegenstander Spel',
-  [TranslationKey.PONG_TOURNAMENT]: 'Toernooi',
-  [TranslationKey.PONG_ONLINE]: 'Online Spel',
 
   // Stats page
   [TranslationKey.STATS_TITLE]: 'Statistieken',
@@ -244,12 +161,8 @@ export const nl = {
   [TranslationKey.STATS_COULD_NOT_LOAD]: '...',
 
   // User Management
-  [TranslationKey.UM_USER]: 'Gebruiker',
   [TranslationKey.UM_LOGIN_TITLE]: 'Inloggen',
-  [TranslationKey.UM_LOGIN_BTN]: 'Inloggen',
-  [TranslationKey.UM_LOGGED_IN]: 'Ingelogd',
   [TranslationKey.UM_REGISTER_TITLE]: 'Registreren',
-  [TranslationKey.UM_REGISTER_BTN]: 'Registreren',
   [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'gebruikersnaam',
   [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'wachtwoord',
   [TranslationKey.UM_SIGN_IN]: 'Inloggen',
@@ -282,7 +195,6 @@ export const nl = {
   [TranslationKey.PROFILE_ADD_BTN]: 'Toevoegen',
   [TranslationKey.PROFILE_PENDING_REQUESTS]: 'Openstaande Verzoeken',
   [TranslationKey.PROFILE_FRIENDS]: 'Vrienden',
-  [TranslationKey.PROFILE_STATISTICS]: 'Statistieken',
   [TranslationKey.PROFILE_LOGOUT]: 'Uitloggen',
 
   // Tournament lobby
