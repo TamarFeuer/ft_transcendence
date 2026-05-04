@@ -119,6 +119,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		msg_type = data.get("type")
 
+		logger.debug(f"[receive] type={msg_type} user={self.username}({self.user_id})")
+
 		if msg_type == "chat":
 			message = data.get("message", "")
 			if len(message) > 300:
@@ -157,6 +159,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			other_id = data.get("target")
 			if not other_id:
 				return
+			logger.debug(f"[fetch_history] user={self.username}({self.user_id}) → target={other_id}")
 			messages, seen = await self.get_dm_history(self.user_id, other_id)
 			await self.send(text_data=json.dumps({
 				"type": "dm_history",
@@ -175,6 +178,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		elif msg_type == "open_conversation":
 			other_id = data.get("target")
+			logger.debug(f"[open_conversation] user={self.username}({self.user_id}) → target={other_id}")
 			if other_id:
 				# Track that this user is now actively viewing this DM tab.
 				# Used in save_dm to skip the unread increment for active viewers.
@@ -201,6 +205,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			other_id = data.get("target")
 			if not other_id:
 				return
+			logger.debug(f"[close_conversation] user={self.username}({self.user_id}) → target={other_id}")
 			# Mark this conversation as closed in the database.
 			await self.close_conversation(self.user_id, other_id)
 
@@ -234,6 +239,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			game_id = data.get("game_id")
 			if not target or not game_id:
 				return
+			logger.debug(f"[game_invite_expired] user={self.username}({self.user_id}) → target={target} game_id={game_id}")
 			await self.delete_invite(game_id)
 			payload = {
 				"type": "game.invite.expired",
@@ -243,6 +249,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		elif msg_type == "delete_invite":
 			game_id = data.get("game_id")
+			logger.debug(f"[delete_invite] user={self.username}({self.user_id}) game_id={game_id}")
 			if game_id:
 				sender_id = await self.delete_invite(game_id)
 				if sender_id:
@@ -257,6 +264,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		elif msg_type == "user_blocked":
 			target = data.get("target")
+			logger.debug(f"[user_blocked] user={self.username}({self.user_id}) → target={target}")
 			if target:
 				invite_ids = await self.get_invite_ids_with(target)
 				for gid in invite_ids:
@@ -280,6 +288,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		elif msg_type in ["typing", "stop_typing"]:
 			target = data.get("target")
+			logger.debug(f"[{msg_type}] user={self.username}({self.user_id}) → target={target}")
 			group = f"user_{target}" if target else self.group_name
 			await self.channel_layer.group_send(
 				group,
