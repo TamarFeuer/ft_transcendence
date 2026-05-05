@@ -13,7 +13,7 @@ const defaultPhysics = {
     tableHalfLength: 5.9,
     tableHalfWidth: 2.95,
     // Table is slightly higher at center and lower toward each end.
-    tableInclinePerUnitX: 0.01,
+    tableInclinePerUnitX: 0.11,
     tableDownhillAcceleration: 0.0016,
     tableBounceRestitution: 0.9,
     tableBounceFriction: 0.985,
