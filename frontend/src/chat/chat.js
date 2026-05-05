@@ -1,6 +1,7 @@
 // Handles WebSocket chat: connection, messaging, typing, online users.
 // The chat panel is a persistent overlay in index.html — it is NOT a route.
 // It stays alive across SPA navigation because it lives outside #app-root.
+import { t, TranslationKey } from '../i18n/index.js';
 
 //chatSocket.readyState is a number. The WebSocket API defines four possible values:
 // javascriptWebSocket.CONNECTING  // 0 - still connecting
@@ -17,6 +18,22 @@ let verifiedUserName = null;
 export let onlineUsers = {};
 // Set of user IDs who have blocked the current user
 export let blockedMeIds = new Set();
+
+function formatGameResultMessage(data) {
+	const { winner, loser, draw_players, game_type = 'game' } = data;
+	const gameNameKeyMap = {
+		chess: TranslationKey.GAME_NAME_CHESS,
+		pong: TranslationKey.GAME_NAME_PONG,
+	};
+	const game = gameNameKeyMap[game_type] ? t(gameNameKeyMap[game_type]) : game_type;
+	if (winner && loser)
+		return t(TranslationKey.CHAT_GAME_RESULT_WIN_LOSS, { winner, loser, game });
+	if (winner)
+		return t(TranslationKey.CHAT_GAME_RESULT_WIN_ONLY, { winner, game });
+	if (draw_players && draw_players[0] && draw_players[1])
+		return t(TranslationKey.CHAT_GAME_RESULT_DRAW, { player1: draw_players[0], player2: draw_players[1], game });
+	return t(TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN, { game });
+}
 
 export function initChat() {
 	
@@ -168,8 +185,8 @@ export function initChat() {
 						channelId: "global",
 						message: {
 							senderId: null,
-							senderName: "🏆 Game Result",
-							message: data.message
+							senderName: t('CHAT_GAME_RESULT_TITLE'),
+							message: formatGameResultMessage(data)
 						}
 					}
 				}));

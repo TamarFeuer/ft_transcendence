@@ -80,7 +80,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		if pending:
 			await self.send(text_data=json.dumps({
 				"type": "game_result",
-				"message": self.format_game_result_message(pending),
+				"winner": pending.get("winner"),
+				"loser": pending.get("loser"),
+				"draw_players": pending.get("draw_players"),
+				"game_type": pending.get("game_type", "game"),
 			}))
 
 		# Broadcast updated online users list to everyone.
@@ -349,7 +352,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def game_result(self, event):
 		await self.send(text_data=json.dumps({
 			"type": "game_result",
-			"message": self.format_game_result_message(event),
+			"winner": event.get("winner"),
+			"loser": event.get("loser"),
+			"draw_players": event.get("draw_players"),
+			"game_type": event.get("game_type", "game"),
 		}))
 
 	async def trigger_online_users_broadcast(self, event):

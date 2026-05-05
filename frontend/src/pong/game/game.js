@@ -172,10 +172,10 @@ export function joinOnlineGame(gameId, IsTournament) {
       </div>
       <div id="waitingModal" class="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 pointer-events-auto">
         <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-8 text-center">
-          <h2 class="text-white text-2xl font-bold mb-4">Waiting for opponent...</h2>
-          <p class="text-gray-300 mb-2">Game will start soon</p>
+          <h2 class="text-white text-2xl font-bold mb-4">${t('PONG_WAITING')}</h2>
+          <p class="text-gray-300 mb-2">${t('PONG_GAME_STARTING')}</p>
           <button id="leaveWaitingBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
-            Leave Game
+            ${t('PONG_LEAVE_GAME')}
           </button>
         </div>
       </div>

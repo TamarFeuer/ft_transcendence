@@ -224,7 +224,7 @@ export function initChatUI() {
 					});
 					msgDiv.appendChild(acceptBtn);
 					const rejectBtn = document.createElement("button");
-					rejectBtn.textContent = 'Reject';
+					rejectBtn.textContent = t('CHAT_REJECT');
 					rejectBtn.className = "ml-2 px-2 py-0.5 text-xs bg-gray-500 hover:bg-gray-400 rounded font-semibold";
 					rejectBtn.addEventListener("click", () => {
 						msgDiv.remove();

@@ -36,7 +36,7 @@ export async function loadCompletedTournaments() {
     if (!listEl) return;
     
     if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = '<p class="text-gray-400 text-sm">None</p>';
+    listEl.innerHTML = `<p class="text-gray-400 text-sm" data-i18n="TOURNAMENT_NONE">${t('TOURNAMENT_NONE')}</p>`;
     return;
     }
     
@@ -46,9 +46,9 @@ export async function loadCompletedTournaments() {
     div.className = 'bg-gray-800 rounded p-2 text-sm';
     div.innerHTML = `
         <div class="text-white font-semibold">${tournament.name}</div>
-        <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} players</div>
+        <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} ${t('TOURNAMENT_PLAYERS_PLACEHOLDER')}</div>
         <button class="view-games-btn mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold w-full" data-tournament-id="${tournament.id}">
-        View Games
+        ${t('TOURNAMENT_VIEW_GAMES')}
         </button>
     `;
     fragment.appendChild(div);
@@ -71,7 +71,7 @@ export async function loadUpcomingTournaments() {
     if (!listEl) return;
     
     if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = '<p class="text-gray-400 text-sm">None</p>';
+    listEl.innerHTML = `<p class="text-gray-400 text-sm" data-i18n="TOURNAMENT_NONE">${t('TOURNAMENT_NONE')}</p>`;
     return;
     }
     
@@ -81,7 +81,7 @@ export async function loadUpcomingTournaments() {
     div.className = 'bg-gray-800 rounded p-2 text-sm';
     div.innerHTML = `
         <div class="text-white font-semibold">${tournament.name}</div>
-        <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} players</div>
+        <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} ${t('TOURNAMENT_PLAYERS_PLACEHOLDER')}</div>
     `;
     fragment.appendChild(div);
     });
@@ -95,7 +95,7 @@ export async function loadOngoingTournaments() {
     if (!listEl) return;
     
     if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = '<p class="text-gray-400 text-sm">None</p>';
+    listEl.innerHTML = `<p class="text-gray-400 text-sm" data-i18n="TOURNAMENT_NONE">${t('TOURNAMENT_NONE')}</p>`;
     return;
     }
     
@@ -131,7 +131,7 @@ async function loadRegistrationTournaments() {
     if (!listEl) return;
     
     if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = '<p class="text-gray-400">No tournaments available for registration.</p>';
+    listEl.innerHTML = `<p class="text-gray-400" data-i18n="TOURNAMENT_NO_REGISTRATION">${t('TOURNAMENT_NO_REGISTRATION')}</p>`;
     return;
     }
     console.log("Registration tournaments:", result.data);
@@ -156,30 +156,30 @@ async function loadRegistrationTournaments() {
             <div class="flex gap-4 mt-2 text-sm">
             <span class="text-gray-300">👤 ${tournament.participant_count}/${tournament.max_players}</span>
             <span class="text-gray-300">👑 ${tournament.creator_username}</span>
-            <span class="text-yellow-400">⏳ ${tournament.status}</span>
+            <span class="text-yellow-400">⏳ ${t('TOURNAMENT_STATUS_' + tournament.status.toUpperCase())}</span>
             </div>
         </div>
         <div class="flex gap-2">
             ${!isCreator && !isFull && !isRegistered ? `
             <button class="join-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                Join
+                ${t('TOURNAMENT_JOIN')}
             </button>
             ` : ''}
             ${isRegistered && !isCreator ? `
             <div class="px-4 py-2 bg-blue-500 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                Joined
+                ${t('TOURNAMENT_JOINED')}
             </div>
             ` : ''}
             ${isCreator ? `
             <button class="start-btn px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                Start
+                ${t('TOURNAMENT_START')}
             </button>
             <button class="cancel-btn px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                Cancel
+                ${t('TOURNAMENT_CANCEL')}
             </button>
             ` : ''}
             ${isFull && !isCreator ? `
-            <span class="px-4 py-2 bg-gray-600 text-gray-300 rounded text-sm">Full</span>
+            <span class="px-4 py-2 bg-gray-600 text-gray-300 rounded text-sm">${t('TOURNAMENT_FULL')}</span>
             ` : ''}
         </div>
         </div>
@@ -194,7 +194,7 @@ async function loadRegistrationTournaments() {
     btn.addEventListener('click', async (e) => {
         const tournamentId = e.target.dataset.id;
         btn.disabled = true;
-        btn.textContent = 'Joining...';
+        btn.textContent = t('TOURNAMENT_JOINING');
         
         const result = await tournamentAPI.joinTournament(tournamentId);
         if (result.ok) {
@@ -203,7 +203,7 @@ async function loadRegistrationTournaments() {
         } else {
         showMessage(result.data?.error || t('TOURN_JOIN_FAILED'), 'error');
         btn.disabled = false;
-        btn.textContent = 'Join';
+        btn.textContent = t('TOURNAMENT_JOIN');
         }
     });
     });
@@ -211,10 +211,10 @@ async function loadRegistrationTournaments() {
     listEl.querySelectorAll('.start-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         const tournamentId = e.target.dataset.id;
-        if (!confirm('Start this tournament? All registered players will begin competing.')) return;
+        if (!confirm(t('TOURNAMENT_CONFIRM_START'))) return;
         
         btn.disabled = true;
-        btn.textContent = 'Starting...';
+        btn.textContent = t('TOURNAMENT_STARTING');
         
         const result = await tournamentAPI.startTournament(tournamentId);
         // result.ok = false; // TEMPORARY DISABLE STARTING TO PREVENT ISSUES WHILE TESTING
@@ -224,7 +224,7 @@ async function loadRegistrationTournaments() {
         } else {
         showMessage(result.data?.error || t('TOURN_START_FAILED'), 'error');
         btn.disabled = false;
-        btn.textContent = 'Start';
+        btn.textContent = t('TOURNAMENT_START');
         }
     });
     });
@@ -232,10 +232,10 @@ async function loadRegistrationTournaments() {
     listEl.querySelectorAll('.cancel-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         const tournamentId = e.target.dataset.id;
-        if (!confirm('Cancel this tournament? This cannot be undone.')) return;
+        if (!confirm(t('TOURNAMENT_CONFIRM_CANCEL'))) return;
         
         btn.disabled = true;
-        btn.textContent = 'Cancelling...';
+        btn.textContent = t('TOURNAMENT_CANCELLING');
         
         const result = await tournamentAPI.cancelTournament(tournamentId);
         if (result.ok) {
@@ -244,7 +244,7 @@ async function loadRegistrationTournaments() {
         } else {
         showMessage(result.data?.error || t('TOURN_CANCEL_FAILED'), 'error');
         btn.disabled = false;
-        btn.textContent = 'Cancel';
+        btn.textContent = t('TOURNAMENT_CANCEL');
         }
     });
     });

@@ -3,6 +3,7 @@ import { renderBoard } from './chess.js'
 import { showChessResultModal } from './chess-modal.js'
 import { navigate } from '../routes/route_helpers.js'
 import { arrowHomeButton } from '../utils/utils.js'
+import { t } from '../i18n/index.js';
 
 let _chessWs = null;
 
@@ -16,21 +17,21 @@ export function closeChessConnection(){
 function subtitleFromResult(result) {
 	if (!result) return '';
 	const r = String(result).toLowerCase();
-	if (r === 'abandonment')        return 'Your opponent left the game.';
-	if (r === '1-0')                return 'White wins';
-	if (r === '0-1')                return 'Black wins';
-	if (r === '1/2-1/2' || r === '1/2') return 'Game drawn';
-	if (r.includes('checkmate'))    return 'Checkmate';
-	if (r.includes('stalemate'))    return 'Stalemate';
-	if (r.includes('insufficient')) return 'Insufficient material';
-	if (r.includes('repetition'))   return 'Threefold repetition';
-	if (r.includes('fifty'))        return 'Fifty-move rule';
+	if (r === 'abandonment')        return t('CHESS_OPPONENT_LEFT');
+	if (r === '1-0')                return t('CHESS_WHITE_WINS');
+	if (r === '0-1')                return t('CHESS_BLACK_WINS');
+	if (r === '1/2-1/2' || r === '1/2') return t('CHESS_GAME_DRAWN');
+	if (r.includes('checkmate'))    return t('CHESS_CHECKMATE');
+	if (r.includes('stalemate'))    return t('CHESS_STALEMATE');
+	if (r.includes('insufficient')) return t('CHESS_INSUFFICIENT_MATERIAL');
+	if (r.includes('repetition'))   return t('CHESS_THREEFOLD_REPETITION');
+	if (r.includes('fifty'))        return t('CHESS_FIFTY_MOVE_RULE');
 	return String(result);
 }
 
 function updateStatus(statusEl, myTurn) {
 	if (!statusEl) return;
-	statusEl.textContent = myTurn ? 'Your turn' : "Opponent's turn";
+	statusEl.textContent = myTurn ? t('CHESS_YOUR_TURN') : t('CHESS_OPPONENT_TURN');
 }
 
 function handleOnlinePromotion(fromSquare, toSquare, ws, onSent) {
@@ -93,32 +94,32 @@ export async function initOnlineChessGame(gameId = null){
 	let gameActive = false;
 
 	//if no gameId was passed in, ask the server for one (normal matchmaking flow)
-	if (!gameId) {
-		try {
-			const res = await fetch('/api/chess/join/', {
-				method: 'POST',
-				credentials: 'include',
-			});
-			if (!res.ok) {
-				const text = await res.text();
-				console.error('Chess join failed:', res.status, text);
-				if (waitingEl) waitingEl.classList.add('hidden');
-				if (statusEl) {
-					statusEl.textContent = res.status === 401
-						? 'Please log in to play online.'
-						: 'Could not join a game. Please try again.';
-				}
-				return;
-			}
-			const data = await res.json();
-			gameId = data.gameId;
-		} catch (err) {
-			console.error('Failed to join chess game:', err);
-			if (waitingEl) waitingEl.classList.add('hidden');
-			if (statusEl) statusEl.textContent = 'Failed to connect. Please try again.';
-			return;
-		}
-	}
+	   if (!gameId) {
+		   try {
+			   const res = await fetch('/api/chess/join/', {
+				   method: 'POST',
+				   credentials: 'include',
+			   });
+			   if (!res.ok) {
+				   const text = await res.text();
+				   console.error('Chess join failed:', res.status, text);
+				   if (waitingEl) waitingEl.classList.add('hidden');
+				   if (statusEl) {
+					   statusEl.textContent = res.status === 401
+						   ? t('CHESS_LOGIN_REQUIRED')
+						   : t('CHESS_JOIN_FAILED');
+				   }
+				   return;
+			   }
+			   const data = await res.json();
+			   gameId = data.gameId;
+		   } catch (err) {
+			   console.error('Failed to join chess game:', err);
+			   if (waitingEl) waitingEl.classList.add('hidden');
+			   if (statusEl) statusEl.textContent = t('CHESS_CONNECT_FAILED');
+			   return;
+		   }
+	   }
 
 	const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 	const ws = new WebSocket(`${proto}//${location.host}/ws/chess/${gameId}`);
@@ -127,10 +128,10 @@ export async function initOnlineChessGame(gameId = null){
 	ws.onmessage = (event) => {
 		const data = JSON.parse(event.data);
 
-		if (data.type === 'assign') {
-			myColor = data.color;
-			if (statusEl) statusEl.textContent = `You are ${myColor}. Waiting for opponent...`;
-		}
+		   if (data.type === 'assign') {
+			   myColor = data.color;
+			   if (statusEl) statusEl.textContent = t('CHESS_WAITING_FOR_OPPONENT', { color: myColor });
+		   }
 
 		else if (data.type === 'gameStart') {
 			gameActive = true;
@@ -161,11 +162,11 @@ export async function initOnlineChessGame(gameId = null){
 			const sub = subtitleFromResult(data.result);
 			const goToHub = () => navigate('/chess-hub');
 			if (data.winner === null) {
-				showChessResultModal({ outcome: 'draw', title: 'Draw', subtitle: sub || 'The game is a draw.', onClose: goToHub });
+				showChessResultModal({ outcome: 'draw', title: t('GAME_RESULT_DRAW'), subtitle: sub || t('CHESS_GAME_DRAWN'), onClose: goToHub });
 			} else if (myColor && data.winner === myColor) {
-				showChessResultModal({ outcome: 'win', title: 'Victory', subtitle: sub || 'You won the game.', onClose: goToHub });
+				showChessResultModal({ outcome: 'win', title: t('GAME_VICTORY'), subtitle: sub || t('GAME_YOU_WON'), onClose: goToHub });
 			} else {
-				showChessResultModal({ outcome: 'loss', title: 'Defeat', subtitle: sub || 'You lost the game.', onClose: goToHub });
+				showChessResultModal({ outcome: 'loss', title: t('GAME_DEFEAT'), subtitle: sub || t('GAME_YOU_LOST'), onClose: goToHub });
 			}
 		}
 	};

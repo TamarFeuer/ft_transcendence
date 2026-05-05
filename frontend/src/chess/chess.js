@@ -1,5 +1,6 @@
 import { Chess } from 'chess.js'
 import { showChessResultModal } from './chess-modal.js'
+import { t } from '../i18n/index.js';
 
 let selectedSquare = null;
 
@@ -20,22 +21,22 @@ function appendPieceImage(square, color, type) {
 
 function checkGameEnd(game){
 	if (game.isCheckmate()) {
-		const winner = game.turn() === 'w' ? 'Black' : 'White';
+		const winner = game.turn() === 'w' ? t('CHESS_BLACK') : t('CHESS_WHITE');
 		showChessResultModal({
 			outcome: 'neutral',
-			title: 'Checkmate',
-			subtitle: `${winner} wins`,
+			title: t('CHESS_CHECKMATE'),
+			subtitle: '${winner}' + t('CHESS_WINS'),
 		});
 		return;
 	}
 	if (game.isDraw()) {
-		let subtitle = 'Game drawn';
-		if (game.isStalemate()) subtitle = 'Stalemate';
-		else if (game.isThreefoldRepetition()) subtitle = 'Threefold repetition';
-		else if (game.isInsufficientMaterial()) subtitle = 'Insufficient material';
+		let subtitle = t('CHESS_GAME_DRAWN');
+		if (game.isStalemate()) subtitle = t('CHESS_STALEMATE');
+		else if (game.isThreefoldRepetition()) subtitle = t('CHESS_THREEFOLD_REPETITION');
+		else if (game.isInsufficientMaterial()) subtitle = t('CHESS_INSUFFICIENT_MATERIAL');
 		showChessResultModal({
 			outcome: 'draw',
-			title: 'Draw',
+			title: t('GAME_RESULT_DRAW'),
 			subtitle,
 		});
 	}
