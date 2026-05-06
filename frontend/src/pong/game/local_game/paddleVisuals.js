@@ -6,8 +6,8 @@ export function createPaddleVisual(paddle, faceColor, scene) {
     faceMat.diffuseColor = faceColor instanceof Color3 ? faceColor : new Color3(1, 1, 1);
 
     const paddleFace = MeshBuilder.CreateBox(`${paddle.name}Face`, {
-        width: 0.55,
-        height: 1.55,
+        width: 0.65,
+        height: 1.45,
         depth: 0.12,
     }, scene);
     paddleFace.rotation.y = Math.PI / 2;

@@ -21,6 +21,8 @@ export function createGameLoop(gameState, gameObjects, scene, physics, arenaMesh
         ballPhysics.updateBallPosition(gameState, gameObjects, dt);
         ballPhysics.applyBallDrag(gameState, dt);
         ballPhysics.handleSideWallCollision(gameState, gameObjects);
+        ballPhysics.handleRoofCollision(gameState, gameObjects);
+        ballPhysics.handleEndWallCollision(gameState, gameObjects);
         ballPhysics.handleNetCollision(gameState, gameObjects);
         ballPhysics.handleTableCollision(gameState, gameObjects);
         ballPhysics.updateBallSpin(gameState, gameObjects, dt);
@@ -97,18 +99,23 @@ function handleLeftPaddleCollision(gameState, gameObjects, physics, paddleLeftVe
 
         gameObjects.ball.position.x =
             gameObjects.paddleLeft.position.x + physics.paddleCollisionDepth;
+        
+        // Velocity-aware swing boost: more boost on slow balls, less on fast balls
+        const normalizedSpeedLeft = Math.min(1, Math.abs(ball.vx) / (physics.speedMax * 0.4));
+        const slowBoostFactorLeft = 0.8 + 0.3 * (1 - normalizedSpeedLeft);
+        
         ball.vx =
             Math.abs(ball.vx) *
             physics.paddleBounceBoost *
             impactFactorLeft *
-            (1 + paddles.left.swingIntensity * 0.75);
+            (1 + paddles.left.swingIntensity * slowBoostFactorLeft);
         ball.spinY =
             paddleLeftVelZ * physics.spinTransferCoefficient * impactFactorLeft;
         ball.vz +=
             paddleLeftVelZ *
             physics.velocityTransfer *
             impactFactorLeft *
-            (1 + paddles.left.swingIntensity * 0.35);
+            (1 + paddles.left.swingIntensity * 0.25);
 
         ball.vy +=
             Math.sin(paddles.left.rotationZ) *
@@ -174,18 +181,23 @@ function handleRightPaddleCollision(gameState, gameObjects, physics, paddleRight
 
         gameObjects.ball.position.x =
             gameObjects.paddleRight.position.x - physics.paddleCollisionDepth;
+        
+        // Velocity-aware swing boost: more boost on slow balls, less on fast balls
+        const normalizedSpeedRight = Math.min(1, Math.abs(ball.vx) / (physics.speedMax * 0.4));
+        const slowBoostFactorRight = 0.8 + 0.3 * (1 - normalizedSpeedRight);
+        
         ball.vx =
             -Math.abs(ball.vx) *
             physics.paddleBounceBoost *
             impactFactorRight *
-            (1 + paddles.right.swingIntensity * 0.75);
+            (1 + paddles.right.swingIntensity * slowBoostFactorRight);
         ball.spinY =
             paddleRightVelZ * physics.spinTransferCoefficient * impactFactorRight;
         ball.vz +=
             paddleRightVelZ *
             physics.velocityTransfer *
             impactFactorRight *
-            (1 + paddles.right.swingIntensity * 0.35);
+            (1 + paddles.right.swingIntensity * 0.25);
 
         ball.vy +=
             Math.sin(paddles.right.rotationZ) *

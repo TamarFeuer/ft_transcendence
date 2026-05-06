@@ -1,7 +1,7 @@
-import "../../styles.css";
-import { showMessage } from "../../utils/utils.js";
-import { handleRoute, navigate } from "../../routes/route_helpers.js";
-import { currentEngine, disposeCurrentEngine, resizeListener } from "../../routes/routes.js";
+import "../../../styles.css";
+import { showMessage } from "../../../utils/utils.js";
+import { handleRoute, navigate } from "../../../routes/route_helpers.js";
+import { currentEngine, disposeCurrentEngine, resizeListener } from "../../../routes/routes.js";
 import { Color3, Vector3 } from "@babylonjs/core";
 
 // Game modules

@@ -2,7 +2,7 @@ import { routes } from '../main.js';
 import { initAIGame } from '../pong/ai/ai.js';
 import { navigate } from "./route_helpers.js";
 import { joinOnlineGame } from '../pong/game/game.js';
-import { initOfflineGame } from '../pong/game/local_game.js';
+import { initOfflineGame } from '../pong/game/local_game/local_game.js';
 import { startLocalTournament } from '../pong/tournament/local_tournament.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "../pong/game/game.js";

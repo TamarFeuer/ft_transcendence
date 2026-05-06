@@ -58,7 +58,32 @@ export function createTableArena(scene, physics) {
     floor.position.y = physics.floorY;
     floor.material = floorMat;
 
-    return { table, centerLine, sideLineLeft, sideLineRight, net, floor };
+    const roof = MeshBuilder.CreateBox("localPongRoof", {
+        width: physics.tableHalfLength * 2,
+        height: 0.02,
+        depth: physics.tableHalfWidth * 2,
+    }, scene);
+    roof.position = new Vector3(0, physics.roofY, 0);
+    roof.isVisible = false;
+
+    const endWallHeight = physics.roofY - physics.endWallStartY;
+    const endWallLeft = MeshBuilder.CreateBox("localPongEndWallLeft", {
+        width: 0.04,
+        height: endWallHeight,
+        depth: physics.tableHalfWidth * 2,
+    }, scene);
+    endWallLeft.position = new Vector3(-physics.goalX, physics.endWallStartY + endWallHeight / 2, 0);
+    endWallLeft.isVisible = false;
+
+    const endWallRight = MeshBuilder.CreateBox("localPongEndWallRight", {
+        width: 0.04,
+        height: endWallHeight,
+        depth: physics.tableHalfWidth * 2,
+    }, scene);
+    endWallRight.position = new Vector3(physics.goalX, physics.endWallStartY + endWallHeight / 2, 0);
+    endWallRight.isVisible = false;
+
+    return { table, centerLine, sideLineLeft, sideLineRight, net, floor, roof, endWallLeft, endWallRight };
 }
 
 export function positionPaddles(gameObjects, physics, paddleLeftBaseX, paddleRightBaseX) {
