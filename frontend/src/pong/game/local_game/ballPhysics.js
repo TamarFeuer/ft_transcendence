@@ -73,6 +73,40 @@ export function handleSideWallCollision(gameState, gameObjects) {
 }
 
 /**
+ * Handle ball collision with the invisible roof.
+ */
+export function handleRoofCollision(gameState, gameObjects) {
+    const { ball, physics } = gameState;
+    const ballRadius = 0.15;
+
+    if (gameObjects.ball.position.y + ballRadius >= physics.roofY && ball.vy > 0) {
+        gameObjects.ball.position.y = physics.roofY - ballRadius;
+        ball.vy = -ball.vy * physics.roofBounceRestitution;
+    }
+}
+
+/**
+ * Handle high balls hitting the invisible end wall near the scoring line.
+ */
+export function handleEndWallCollision(gameState, gameObjects) {
+    const { ball, physics } = gameState;
+    const ballRadius = 0.15;
+
+    const aboveWall = gameObjects.ball.position.y + ballRadius >= physics.endWallStartY;
+    const withinTableDepth = Math.abs(gameObjects.ball.position.z) <= physics.tableHalfWidth;
+
+    if (!aboveWall || !withinTableDepth) return;
+
+    if (gameObjects.ball.position.x >= physics.goalX && ball.vx > 0) {
+        gameObjects.ball.position.x = physics.goalX - ballRadius;
+        ball.vx = -ball.vx * physics.endWallBounceRestitution;
+    } else if (gameObjects.ball.position.x <= -physics.goalX && ball.vx < 0) {
+        gameObjects.ball.position.x = -physics.goalX + ballRadius;
+        ball.vx = -ball.vx * physics.endWallBounceRestitution;
+    }
+}
+
+/**
  * Handle ball collision with center net.
  */
 export function handleNetCollision(gameState, gameObjects) {
@@ -117,7 +151,7 @@ export function handleTableCollision(gameState, gameObjects) {
         ball.vz *= physics.tableBounceFriction;
     }
 
-    // Downhill roll assist
+    // Ball accelerates toward ends when on table
     if (
         overTableX &&
         overTableZ &&

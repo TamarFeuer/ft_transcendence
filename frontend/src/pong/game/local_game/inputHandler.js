@@ -70,13 +70,9 @@ export function setupInputHandlers(gameState, gameObjects, physics) {
     window.addEventListener("keyup", keyUpHandler);
     window.addEventListener("keydown", swingKeyHandler);
 
-    // Movement and rotation polling
+    // Movement polling (rotation controls removed)
     const keyboardInterval = setInterval(() => {
-        if (keys["w"]) gameState.paddles.left.rotationZ -= physics.paddleRotationStep;
-        if (keys["s"]) gameState.paddles.left.rotationZ += physics.paddleRotationStep;
-        if (keys["i"]) gameState.paddles.right.rotationZ -= physics.paddleRotationStep;
-        if (keys["k"]) gameState.paddles.right.rotationZ += physics.paddleRotationStep;
-
+        // Paddle sideways movement only (A/D for left, J/L for right)
         if (keys["d"]) gameObjects.paddleLeft.position.z -= physics.paddleStepZ;
         if (keys["a"]) gameObjects.paddleLeft.position.z += physics.paddleStepZ;
         if (keys["l"]) gameObjects.paddleRight.position.z -= physics.paddleStepZ;
