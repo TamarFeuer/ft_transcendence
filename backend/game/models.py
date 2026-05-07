@@ -35,6 +35,7 @@ class GameSession:
         self.last_tick = time.time()
         self.created_at = time.time()  # Track when game was created
         self.timeout_handled = False  # Flag to prevent timeout from being handled twice
+        self.invitee_id = None
 
     def get_players(self):
         """Return current players"""
