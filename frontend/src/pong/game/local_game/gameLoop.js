@@ -25,7 +25,7 @@ export function createGameLoop(gameState, gameObjects, scene, physics, arenaMesh
         ballPhysics.handleEndWallCollision(gameState, gameObjects);
         ballPhysics.handleNetCollision(gameState, gameObjects);
         ballPhysics.handleTableCollision(gameState, gameObjects);
-        ballPhysics.updateBallSpin(gameState, gameObjects, dt);
+        ballPhysics.updateBallSpin(gameState, gameObjects, dt); // vissualy
 
         // ============ PADDLE UPDATES ============
         paddleControl.updatePaddleVisuals(gameState, gameObjects, paddleLeftBaseX, paddleRightBaseX, physics);
