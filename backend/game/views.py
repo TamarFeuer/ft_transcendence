@@ -40,38 +40,6 @@ def create_game(request):
         'message': 'Game created. Waiting for players to join.'
     })
 
-@require_http_methods(["GET"])
-def get_game(request, game_id):
-    game = GameSession.get_game(game_id)
-    
-    if not game:
-        return JsonResponse({'error': 'Game not found'}, status=404)
-    
-    return JsonResponse({
-        'gameId': game.id,
-        'status': game.status,
-        'players': {
-            'left': 'connected' if game.players['left'] else 'empty',
-            'right': 'connected' if game.players['right'] else 'empty'
-        },
-        'score': game.state['score']
-    })
-
-@require_http_methods(["GET"])
-def list_games(request):
-    games = GameSession.list_games()
-    return JsonResponse({
-        'games': [
-            {
-                'id': g.id,
-                'status': g.status,
-                'playerCount': len(g.clients),
-                'isTournamentGame': g.isTournamentGame
-            }
-            for g in games
-        ]
-    })
-
 # a plain HTTP GET endpoint to return the current leaderboard
 @require_http_methods(["GET"])
 def get_leaderboard(request):
@@ -257,22 +225,6 @@ def player_achievements(request, username):
         ]
     })
     
-@require_http_methods(["GET"])
-def all_achievements(request):
-    achievements = PlayerAchievement.objects.select_related('player__user', 'achievement').order_by('-timestamp')[:10]
-    return JsonResponse({
-        'achievements': [
-            {
-                'player_name': pa.player.user.username,
-                'achievement_name': pa.achievement.name,
-                'requirement_type': pa.achievement.requirement_type,
-                'requirement_value': pa.achievement.requirement_value,
-                'timestamp': pa.timestamp.isoformat()
-            }
-            for pa in achievements
-        ]
-    })
-
 @require_http_methods(["GET"])
 def my_stats(request):
     user, err = get_authenticated_user(request)
