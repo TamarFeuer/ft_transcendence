@@ -177,11 +177,24 @@ class GameConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Headers: {headers}")
         logger.debug(f"Authorization: {headers.get(b'authorization')}")
 
-        # Reject if user is already in another game
-        if str(getattr(self.scope.get('user'), 'id', None)) in IN_GAME_USERS:
-            logger.debug(f"[pong connect] rejected {self.scope.get('user')} — already in IN_GAME_USERS")
-            await self.close(code=4003)
-            return
+        # Reject if user is already in an active game.
+        # If they are in a waiting game (e.g. matchmaking they just left to accept an invite),
+        # clean that up and allow this connection to proceed.
+        user_id_str = str(getattr(self.scope.get('user'), 'id', None))
+        if user_id_str in IN_GAME_USERS:
+            waiting_game = next(
+                (g for g in GameSession._games.values()
+                 if g.status == 'waiting' and user_id_str in [str(pid) for pid in g.players_ids.values() if pid]),
+                None
+            )
+            if waiting_game:
+                logger.debug(f"[pong connect] {self.scope.get('user')} leaving waiting game {waiting_game.id} to join invite game {self.game_id}")
+                IN_GAME_USERS.discard(user_id_str)
+                GameSession.delete_game(waiting_game.id)
+            else:
+                logger.debug(f"[pong connect] rejected {self.scope.get('user')} — already in active IN_GAME_USERS")
+                await self.close(code=4003)
+                return
 
         # Check for duplicate connections
         logger.debug(f"Scope: {self.scope}")
