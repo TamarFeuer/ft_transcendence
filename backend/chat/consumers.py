@@ -648,7 +648,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			ConversationParticipant.objects.filter(
 				conversation_id=shared_conv_id,
 				user_id=user_id
-			).update(unread_count=0, last_read_at=timezone.now())
+			).update(unread_count=0, last_read_at=timezone.now(), is_closed=False)
 
 	@database_sync_to_async
 	def close_conversation(self, user_id, other_id):
