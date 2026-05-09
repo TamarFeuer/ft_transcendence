@@ -184,7 +184,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         if user_id_str in IN_GAME_USERS:
             waiting_game = next(
                 (g for g in GameSession._games.values()
-                 if g.status == 'waiting' and user_id_str in [str(pid) for pid in g.players_ids.values() if pid]),
+                 if g.id != self.game_id and g.status == 'waiting' and user_id_str in [str(pid) for pid in g.players_ids.values() if pid]),
                 None
             )
             if waiting_game:

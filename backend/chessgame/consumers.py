@@ -27,7 +27,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		if user_id_str in IN_GAME_USERS:
 			waiting_game = next(
 				(g for g in ChessSession._games.values()
-				 if g.status == 'waiting' and user_id_str in [str(getattr(p, 'id', None)) for p in g.players.values() if p]),
+				 if g.id != self.game_id and g.status == 'waiting' and user_id_str in [str(getattr(p, 'id', None)) for p in g.players.values() if p]),
 				None
 			)
 			if waiting_game:
