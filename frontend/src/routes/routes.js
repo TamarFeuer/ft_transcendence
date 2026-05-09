@@ -7,7 +7,7 @@ import { startLocalTournament } from '../pong/tournament/local_tournament.js';
 import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "../pong/game/game.js";
 import { checkAuthRequired, fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
-import { updatePageTranslations } from '../i18n/index.js';
+import { updatePageTranslations, t, TranslationKey } from '../i18n/index.js';
 import { verifiedUserId } from '../chat/chat.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
   loadUpcomingTournaments
@@ -28,14 +28,14 @@ export let resizeListener = null;
 async function loadLeaderboard() {
   const tbody = document.getElementById('leaderboardTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500">Loading...</td></tr>';
+  tbody.innerHTML = `<tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500" data-i18n="${TranslationKey.TABLE_LOADING}">${t(TranslationKey.TABLE_LOADING)}</td></tr>`;
   try {
     const response = await fetch('/api/leaderboard');
     if (!response.ok) throw new Error('Network response was not ok');
     const data = await response.json();
     const leaderboard = data.leaderboard;
     if (!Array.isArray(leaderboard) || leaderboard.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500">No results</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="3" class="py-2 px-2 text-center text-zinc-500" data-i18n="${TranslationKey.TABLE_NO_RESULTS}">${t(TranslationKey.TABLE_NO_RESULTS)}</td></tr>`;
       return;
     }
     tbody.innerHTML = '';
@@ -45,7 +45,7 @@ async function loadLeaderboard() {
       tbody.appendChild(tr);
     });
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="3" class="py-2 px-2 text-center text-red-500">Error loading leaderboard</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="3" class="py-2 px-2 text-center text-red-500" data-i18n="${TranslationKey.TABLE_ERROR_LOADING_LEADERBOARD}">${t(TranslationKey.TABLE_ERROR_LOADING_LEADERBOARD)}</td></tr>`;
   }
 }
 
@@ -288,7 +288,7 @@ export function setupRoutes() {
         const tbody = document.getElementById('stats-leaderboard-table');
         if (!tbody) return;
         if (!data.leaderboard || data.leaderboard.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500 pt-2">No data yet.</td></tr>';
+          tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500 pt-2">${t('STATS_NO_DATA')}</td></tr>`;
           return;
         }
         tbody.innerHTML = data.leaderboard
@@ -306,7 +306,7 @@ export function setupRoutes() {
       })
       .catch(() => {
         const tbody = document.getElementById('stats-leaderboard-table');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-zinc-500">Could not load.</td></tr>';
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500">${t('STATS_COULD_NOT_LOAD')}</td></tr>`;
       });
 
     fetchWithRefreshAuth('/api/auth/me')
@@ -318,7 +318,7 @@ export function setupRoutes() {
             const tbody = document.getElementById('stats-history-table');
             if (!tbody) return;
             if (!data.matches || data.matches.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="4" class="text-zinc-500 pt-2">No games yet.</td></tr>';
+              tbody.innerHTML = `<tr><td colspan="4" class="text-zinc-500 pt-2">${t('STATS_NO_GAMES')}</td></tr>`;
               return;
             }
             tbody.innerHTML = data.matches.slice(0, 20)
@@ -328,7 +328,7 @@ export function setupRoutes() {
                 const oppScore = m.player1 === me.username ? m.player2_score : m.player1_score;
                 const won = m.winner === me.username;
                 const result = m.winner
-                  ? (won ? '<span class="text-green-400">Win</span>' : '<span class="text-red-400">Loss</span>')
+                  ? (won ? `<span class="text-green-400">${t('PROFILE_WIN')}</span>` : `<span class="text-red-400">${t('PROFILE_LOSS')}</span>`)
                   : '<span class="text-zinc-400">-</span>';
                 const date = new Date(m.timestamp).toLocaleDateString();
                 return `<tr class="border-t border-zinc-700">
@@ -342,7 +342,7 @@ export function setupRoutes() {
           })
           .catch(() => {
             const tbody = document.getElementById('stats-history-table');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-zinc-500">Could not load.</td></tr>';
+            if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-zinc-500">${t('STATS_COULD_NOT_LOAD')}</td></tr>`;
           });
 
         fetchWithRefreshAuth(`/api/player/${me.username}/achievements`)
@@ -351,19 +351,122 @@ export function setupRoutes() {
             const list = document.getElementById('stats-achievements-list');
             if (!list) return;
             if (!data.achievements || data.achievements.length === 0) {
-              list.innerHTML = '<li class="text-zinc-500">No achievements yet.</li>';
+              list.innerHTML = `<li class="text-zinc-500">${t('STATS_NO_ACHIEVEMENTS')}</li>`;
               return;
             }
+            const achievementKeyMap = {
+              'First Game':        TranslationKey.ACHIEVEMENT_FIRST_GAME,
+              'Third Game':        TranslationKey.ACHIEVEMENT_THIRD_GAME,
+              'Tenth Game':        TranslationKey.ACHIEVEMENT_TENTH_GAME,
+              'Twentieth Game':    TranslationKey.ACHIEVEMENT_TWENTIETH_GAME,
+              'First Win':         TranslationKey.ACHIEVEMENT_FIRST_WIN,
+              'Winning Streak 1':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_1,
+              'Winning Streak 2':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_2,
+              'Winning Streak 3':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_3,
+              'Winning Streak 4':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_4,
+              'Pong Expert':       TranslationKey.ACHIEVEMENT_PONG_EXPERT,
+              'Pong Master':       TranslationKey.ACHIEVEMENT_PONG_MASTER,
+              'Pong Guru':         TranslationKey.ACHIEVEMENT_PONG_GURU,
+            };
             list.innerHTML = data.achievements
-              .map(a => `<li><b>${a.name}</b>: ${a.description}</li>`)
+              .map(a => {
+                const key = achievementKeyMap[a.name];
+                return key ? `<li>${t(key)}</li>` : `<li><b>${a.name}</b>: ${a.description}</li>`;
+              })
               .join('');
           })
           .catch(() => {
             const list = document.getElementById('stats-achievements-list');
-            if (list) list.innerHTML = '<li class="text-zinc-500">Could not load.</li>';
+            if (list) list.innerHTML = `<li class="text-zinc-500">${t('STATS_COULD_NOT_LOAD')}</li>`;
           });
       })
       .catch(() => {});
+  };
+
+  routes['/chess-stats'] = async () => {
+    stopTournamentAutoRefresh();
+    if (await redirectIfNotLoggedIn())
+      return;
+
+    await loadTemplate('stats_chess');
+
+    document.getElementById('stats-back-btn')?.addEventListener('click', () => navigate('/profile'));
+
+    fetchWithRefreshAuth('/api/chess/stats/')
+      .then(r => r.json())
+      .then(data => {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '-'; };
+        set('stats-total-games', data.total_games);
+        set('stats-wins', data.total_wins);
+        set('stats-losses', data.total_losses);
+        set('stats-elo', data.elo_rating);
+      })
+      .catch(() => {});
+
+    fetchWithRefreshAuth('/api/chess/leaderboard/')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('stats-leaderboard-table');
+        if (!tbody) return;
+        if (!data.leaderboard || data.leaderboard.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500 pt-2" data-i18n="${TranslationKey.TABLE_NO_DATA_YET}">${t(TranslationKey.TABLE_NO_DATA_YET)}</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = data.leaderboard
+          .map((p, i) => {
+            const medal = i === 0 ? '#1' : i === 1 ? '#2' : i === 2 ? '#3' : `#${i + 1}`;
+            return `<tr class="border-t border-zinc-700">
+              <td class="py-1 pr-3">${medal}</td>
+              <td class="py-1 pr-3 font-semibold">${p.username}</td>
+              <td class="py-1 pr-3 text-violet-400">${p.elo_rating}</td>
+              <td class="py-1 pr-3 text-green-400">${p.total_wins}</td>
+              <td class="py-1 text-yellow-400">${p.total_games}</td>
+            </tr>`;
+          })
+          .join('');
+      })
+      .catch(() => {
+        const tbody = document.getElementById('stats-leaderboard-table');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500" data-i18n="${TranslationKey.TABLE_COULD_NOT_LOAD}">${t(TranslationKey.TABLE_COULD_NOT_LOAD)}</td></tr>`;
+      });
+
+    fetchWithRefreshAuth('/api/chess/match-history/')
+      .then(r => r.json())
+      .then(data => {
+        const tbody = document.getElementById('stats-history-table');
+        if (!tbody) return;
+        if (!data.matches || data.matches.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-zinc-500 pt-2" data-i18n="${TranslationKey.TABLE_NO_GAMES_YET}">${t(TranslationKey.TABLE_NO_GAMES_YET)}</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = data.matches
+          .map(m => {
+            const resultLabel = m.result === '1/2-1/2'
+              ? `<span class="text-zinc-400">${t(TranslationKey.PROFILE_DRAW)}</span>`
+              : m.winner
+                ? (m.winner === m.opponent
+                    ? `<span class="text-red-400">${t(TranslationKey.PROFILE_LOSS)}</span>`
+                    : `<span class="text-green-400">${t(TranslationKey.PROFILE_WIN)}</span>`)
+                : '<span class="text-zinc-400">-</span>';
+            const colorDot = (color) => color === 'White'
+              ? '<span class="inline-block w-4 h-4 rounded-sm bg-white border border-zinc-400"></span>'
+              : '<span class="inline-block w-4 h-4 rounded-sm bg-zinc-900 border border-zinc-500"></span>';
+            const yourColor = m.white === m.opponent ? 'Black' : 'White';
+            const opponentColor = m.white === m.opponent ? 'White' : 'Black';
+            const date = new Date(m.timestamp).toLocaleDateString();
+            return `<tr class="border-t border-zinc-700">
+              <td class="py-1 pr-3">${colorDot(yourColor)}</td>
+              <td class="py-1 pr-3 flex items-center gap-2">${colorDot(opponentColor)} ${m.opponent}</td>
+              <td class="py-1 pr-3 font-semibold">${m.result}</td>
+              <td class="py-1 pr-3">${resultLabel}</td>
+              <td class="py-1 text-zinc-400">${date}</td>
+            </tr>`;
+          })
+          .join('');
+      })
+      .catch(() => {
+        const tbody = document.getElementById('stats-history-table');
+if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500" data-i18n="${TranslationKey.TABLE_COULD_NOT_LOAD}">${t(TranslationKey.TABLE_COULD_NOT_LOAD)}</td></tr>`;      });
   };
 
   routes['/tournament/:tournamentId'] = async (tournamentId) => {

@@ -8,7 +8,6 @@ class UserProfile(models.Model):
 	# related_name='profile' adds a shortcut going the other direction, we can now write some_user.profile
 	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
 	avatar = models.URLField(blank=True)  # URL to profile picture, empty by default
-	bio = models.TextField(blank=True)    # free text bio, empty by default
 	
 	# defines how the object looks when printed or displayed as a string 
 	# Without it, printing a UserProfile object would show something unhelpful

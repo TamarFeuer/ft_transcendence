@@ -113,7 +113,10 @@ def join_pong(request):
         return error
     with GameSession._lock:
         for game in GameSession._games.values():
-            if game.status == 'waiting' and not game.isTournamentGame:
+            if game.status == 'waiting' and not game.isTournamentGame and game.invitee_id is not None:
+                logger.debug(f"[join_pong] skipping invite-only session {game.id} for open matchmaking user={user}")
+                continue
+            if game.status == 'waiting' and not game.isTournamentGame and game.invitee_id is None:
                 left_id = getattr(game.players['left'], 'id', None)
                 right_id = getattr(game.players['right'], 'id', None)
                 #if exactly one slot is filled
@@ -306,6 +309,23 @@ def player_profile(request, username):
         }
     except Player.DoesNotExist:
         pong_data = {'wins': 0, 'losses': 0, 'elo': 1000, 'total_games': 0}
+    
+    try:
+        pongAchievements = PlayerAchievement.objects.filter(player__user=user).select_related('achievement').order_by('-timestamp')[:5]
+        pong_achievements_data = {
+            'achievements': [
+                {
+                    'name': pa.achievement.name,
+                    'description': pa.achievement.description,
+                    'requirement_type': pa.achievement.requirement_type,
+                    'requirement_value': pa.achievement.requirement_value,
+                    'timestamp': pa.timestamp.isoformat()
+                }
+                for pa in pongAchievements
+            ]
+        }
+    except PlayerAchievement.DoesNotExist:
+        pong_achievements_data = {'achievements': []}
 
     try:
         chess = ChessPlayer.objects.get(user=user)
@@ -321,5 +341,6 @@ def player_profile(request, username):
     return JsonResponse({
         'username': user.username,
         'pong': pong_data,
+        # 'pong_achievements': pong_achievements_data['achievements'],
         'chess': chess_data,
     })

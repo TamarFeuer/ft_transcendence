@@ -4,7 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import ChessPlayer, ChessMatch
 from .models import ChessSession
-from chat.consumers import IN_GAME_USERS
+from chat.consumers import IN_GAME_USERS, PENDING_GAME_RESULTS
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			await self.close(code=4004)
 			return
 		
+		#reject if this user is already in another game
+		if str(self.scope['user'].id) in IN_GAME_USERS:
+			logger.debug(f"[chess connect] rejected {self.scope['user']} — already in IN_GAME_USERS")
+			await self.close(code=4003)
+			return
+
 		#try to seat this connection as white or black
 		self.color = self.game.add_player(self.scope['user'])
 		if not self.color:
@@ -58,12 +64,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				IN_GAME_USERS.add(pid)
 			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
 
-			# Expire any pending invites between these two players so the
-			# Accept buttons disappear from both DM windows once the game starts.
-			if len(player_ids) == 2:
-				invite_ids = await self.get_invite_ids_between(player_ids[0], player_ids[1])
-				for gid in invite_ids:
-					for uid in player_ids:
+			# Expire all pending invites for each player so Accept buttons
+			# disappear everywhere — including invites from third parties.
+			for pid in player_ids:
+				for sender_id, gid in await self.get_pending_invites_for_recipient(pid):
+					logger.debug(f"[chess] expiring third-party invite game_id={gid} for player={pid} sender={sender_id}")
+					for uid in [pid, str(sender_id)]:
 						await self.channel_layer.group_send(
 							f'user_{uid}',
 							{'type': 'game.invite.expired', 'game_id': gid}
@@ -99,13 +105,18 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				loser_color = 'black' if winner == 'white' else 'white'
 				winner_name = getattr(self.game.players[winner], 'username', winner)
 				loser_name = getattr(self.game.players[loser_color], 'username', None)
-				await self.channel_layer.group_send('global_chat', {
+				result_msg = {
 					'type': 'game_result',
 					'winner': winner_name,
 					'loser': loser_name,
 					'game_type': 'chess',
-					'is_tournament': False
-				})
+					'is_tournament': False,
+				}
+				await self.channel_layer.group_send('global_chat', result_msg)
+				# Store for the abandoning player — their chat WS closed with the tab,
+				# so the global_chat broadcast won't reach them. Deliver on reconnect.
+				loser_id = str(self.game.players[self.color].id)
+				PENDING_GAME_RESULTS[loser_id] = result_msg
 
 			elif self.game.status == 'waiting' and self.game.invitee_id is not None:
 				invitor_id = str(self.game.players[self.color].id)
@@ -149,6 +160,21 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		})
 
 		if over:
+			#read player names before deleting the game session
+			winner_color = over['winner']
+			if winner_color:
+				winner_name = getattr(self.game.players[winner_color], 'username', winner_color)
+				loser_color = 'black' if winner_color == 'white' else 'white'
+				loser_name = getattr(self.game.players[loser_color], 'username', None)
+				draw_players = None
+			else:
+				winner_name = None
+				loser_name = None
+				draw_players = [
+					getattr(self.game.players.get('white'), 'username', None),
+					getattr(self.game.players.get('black'), 'username', None),
+				]
+
 			#save result in db
 			await self.save_chess_result(self.game, over['winner'], over['result'])
 			for player in self.game.players.values():
@@ -163,19 +189,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'result': over['result']
 			})
 
-			#announce result to global chat
-			winner_color = over['winner']
-			if winner_color:
-				winner_name = getattr(self.game.players[winner_color], 'username', winner_color)
-				loser_color = 'black' if winner_color == 'white' else 'white'
-				loser_name = getattr(self.game.players[loser_color], 'username', None)
-			else:
-				winner_name = None
-				loser_name = None
 			await self.channel_layer.group_send('global_chat', {
 				'type': 'game_result',
 				'winner': winner_name,
 				'loser': loser_name,
+				'draw_players': draw_players,
 				'game_type': 'chess',
 				'is_tournament': False
 			})
@@ -205,20 +223,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		}))
 
 	@sync_to_async
-	def get_invite_ids_between(self, user1_id, user2_id):
-		from chat.models import GameInvite, ConversationParticipant
-		conv_ids = ConversationParticipant.objects.filter(
-			user_id=user1_id
-		).values_list('conversation_id', flat=True)
-		shared_conv_id = ConversationParticipant.objects.filter(
-			conversation_id__in=conv_ids,
-			user_id=user2_id
-		).values_list('conversation_id', flat=True).first()
-		if not shared_conv_id:
-			return []
+	def get_pending_invites_for_recipient(self, user_id):
+		from chat.models import GameInvite
 		return list(GameInvite.objects.filter(
-			conversation_id=shared_conv_id
-		).values_list('game_id', flat=True))
+			recipient_id=user_id
+		).values_list('sender_id', 'game_id'))
 
 	async def save_chess_result(self, game, winner, result_str):
 		white_user = game.players['white']
@@ -236,14 +245,24 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 			if winner == 'white':
 				white_result, black_result = 1, 0
+				result_str = '1-0'
+				white_cp.total_wins += 1
+				black_cp.total_losses += 1
 			elif winner == 'black':
 				white_result, black_result = 0, 1
+				result_str = '0-1'
+				white_cp.total_losses += 1
+				black_cp.total_wins += 1
 			else:
 				white_result, black_result = 0.5, 0.5
+				result_str = '1/2-1/2'
 			
 			#update players' elo
 			white_cp.update_elo(black_elo_before, white_result)
 			black_cp.update_elo(white_elo_before, black_result)
+
+			white_cp.total_games += 1
+			black_cp.total_games += 1
 
 			ChessMatch.objects.create(
 				white=white_cp,

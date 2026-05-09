@@ -3,6 +3,7 @@ import * as tournamentAPI from './tournament_api.js';
 import { showMessage } from "../../utils/utils.js"
 import { checkAuthRequired } from '../../users_friends/usermanagement.js';
 import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
+import { t } from '../../i18n/index.js';
 import { joinOnlineGame } from '../game/game.js';
 
 export async function loadTournamentGames() {
@@ -83,7 +84,7 @@ async function loadReadyGames() {
         listEl.querySelectorAll('.start-game-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             if (await checkAuthRequired()) {
-            showMessage('You need to be logged in to start games.', 'error');
+            showMessage(t('TOURN_LOGIN_REQUIRED'), 'error');
             return;
             }
 
@@ -93,12 +94,12 @@ async function loadReadyGames() {
 
             const result = await tournamentAPI.startTournamentGame(gameId);
             if (result.ok) {
-            showMessage('Game started!', 'success');
+            showMessage(t('TOURN_GAME_STARTED'), 'success');
             // Redirect to the game
             stopTournamentAutoRefresh();
             joinOnlineGame(result.data.game_id, true);
             } else {
-            showMessage(result.data?.error || 'Failed to start game', 'error');
+            showMessage(result.data?.error || t('TOURN_GAME_START_FAILED'), 'error');
             btn.disabled = false;
             btn.textContent = 'Start Game';
             }
@@ -126,7 +127,7 @@ async function loadAllGamesStatus() {
         const completedGames = allGamesResult.data.filter(g => g.status === 'completed');
         
         if (ongoingGames.length === 0) {
-        ongoingList.innerHTML = '<p class="text-gray-400">No ongoing games</p>';
+                ongoingList.innerHTML = `<p class="text-gray-400" data-i18n="TOURNAMENT_NO_ONGOING_GAMES">${t('TOURNAMENT_NO_ONGOING_GAMES')}</p>`;
         } else {
         ongoingGames.forEach(game => {
             const gameDiv = document.createElement('div');
@@ -134,7 +135,7 @@ async function loadAllGamesStatus() {
             gameDiv.innerHTML = `
             <div class="text-white">
                 <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-gray-400 text-sm">Round ${game.round} - Ongoing</div>
+                <div class="text-gray-400 text-sm">${t('TOURNAMENT_ROUND')} ${game.round} - ${t('TOURNAMENT_ONGOING')}</div>
             </div>
             `;
             ongoingList.appendChild(gameDiv);
@@ -142,7 +143,7 @@ async function loadAllGamesStatus() {
         }
         
         if (completedGames.length === 0) {
-        completedList.innerHTML = '<p class="text-gray-400">No completed games</p>';
+                completedList.innerHTML = `<p class="text-gray-400" data-i18n="TOURNAMENT_NO_COMPLETED_GAMES">${t('TOURNAMENT_NO_COMPLETED_GAMES')}</p>`;
         } else {
         completedGames.forEach(game => {
             const gameDiv = document.createElement('div');
@@ -150,8 +151,8 @@ async function loadAllGamesStatus() {
             gameDiv.innerHTML = `
             <div class="text-white">
                 <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-green-400 text-sm">🏆 Winner: ${game.winner_username ? game.winner_username : "no winner"}</div>
-                <div class="text-gray-400 text-sm">Round ${game.round}</div>
+                        <div class="text-green-400 text-sm">🏆 ${t('TOURNAMENT_WINNER')}: ${game.winner_username ? game.winner_username : t('TOURNAMENT_NO_WINNER')}</div>
+                        <div class="text-gray-400 text-sm">${t('TOURNAMENT_ROUND')} ${game.round}</div>
             </div>
             `;
             completedList.appendChild(gameDiv);

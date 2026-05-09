@@ -69,6 +69,9 @@ def send_friend_request(request):
 		to_user = get_recipient(request)
 		if from_user == to_user:
 			return JsonResponse({'error': 'Cannot make a friend request to yourself'}, status=400)
+		from .models import is_blocked
+		if is_blocked(from_user.id, to_user.id):
+			return JsonResponse({'error': 'Cannot send friend request'}, status=400)
 		if FriendRequest.objects.filter(
 			Q(from_user=from_user, to_user=to_user) | Q(from_user=to_user, to_user = from_user),
 			status='accepted').exists():
@@ -185,6 +188,10 @@ def block_user(request):
 			return JsonResponse({'error': 'Cannot block yourself'}, status=400)
 		target = User.objects.get(id=target_id)
 		Block.objects.get_or_create(blocker=user, blocked_user=target)
+		FriendRequest.objects.filter(
+			Q(from_user=user, to_user=target) | Q(from_user=target, to_user=user),
+			status='accepted'
+		).delete()
 		return JsonResponse({'success': True, 'message': f'You have blocked {target.username}'})
 	except User.DoesNotExist:
 		return JsonResponse({'error': 'User does not exist'}, status=404)

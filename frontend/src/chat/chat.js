@@ -1,6 +1,7 @@
 // Handles WebSocket chat: connection, messaging, typing, online users.
 // The chat panel is a persistent overlay in index.html — it is NOT a route.
 // It stays alive across SPA navigation because it lives outside #app-root.
+import { t, TranslationKey } from '../i18n/index.js';
 
 //chatSocket.readyState is a number. The WebSocket API defines four possible values:
 // javascriptWebSocket.CONNECTING  // 0 - still connecting
@@ -17,6 +18,22 @@ let verifiedUserName = null;
 export let onlineUsers = {};
 // Set of user IDs who have blocked the current user
 export let blockedMeIds = new Set();
+
+function formatGameResultMessage(data) {
+	const { winner, loser, draw_players, game_type = 'game' } = data;
+	const gameNameKeyMap = {
+		chess: TranslationKey.GAME_NAME_CHESS,
+		pong: TranslationKey.GAME_NAME_PONG,
+	};
+	const game = gameNameKeyMap[game_type] ? t(gameNameKeyMap[game_type]) : game_type;
+	if (winner && loser)
+		return t(TranslationKey.CHAT_GAME_RESULT_WIN_LOSS, { winner, loser, game });
+	if (winner)
+		return t(TranslationKey.CHAT_GAME_RESULT_WIN_ONLY, { winner, game });
+	if (draw_players && draw_players[0] && draw_players[1])
+		return t(TranslationKey.CHAT_GAME_RESULT_DRAW, { player1: draw_players[0], player2: draw_players[1], game });
+	return t(TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN, { game });
+}
 
 export function initChat() {
 	
@@ -104,7 +121,8 @@ export function initChat() {
 				window.dispatchEvent(new CustomEvent("dmHistoryReceived", {
 					detail: {
 						channelId: data.target,
-						messages: data.messages
+						messages: data.messages,
+						seen: data.seen,
 					}
 				}));
 				break;
@@ -113,6 +131,12 @@ export function initChat() {
 				console.log("conversations received:", data.conversations);
 				window.dispatchEvent(new CustomEvent("conversationsReceived", {
 					detail: { conversations: data.conversations }
+				}));
+				break;
+
+			case "messages_read":
+				window.dispatchEvent(new CustomEvent("messagesRead", {
+					detail: { by: data.by }
 				}));
 				break;
 
@@ -151,30 +175,37 @@ export function initChat() {
 				}));
 				break;
 
+			case "friendListChanged":
+				window.dispatchEvent(new CustomEvent("friendListChanged"));
+				break;
+
 			case "game_result":
 				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
 					detail: {
 						channelId: "global",
 						message: {
 							senderId: null,
-							senderName: "🏆 Game Result",
-							message: data.message
+							senderName: t('CHAT_GAME_RESULT_TITLE'),
+							message: formatGameResultMessage(data)
 						}
 					}
 				}));
 				break;
 
-			// Another user started typing — show indicator (TODO in UI)
-			case "typing":
-				console.log(`${data.name || data.user} is typing...`);
-				// TODO: dispatch "typingStarted" event and show indicator in UI
+			case "typing": {
+				const channelId = data.target ? data.user : "global";
+				window.dispatchEvent(new CustomEvent("typingStarted", {
+					detail: { userId: data.user, name: data.name, channelId }
+				}));
 				break;
-
-			// Another user stopped typing
-			case "stop_typing":
-				console.log(`${data.name || data.user} stopped typing`);
-				// TODO: dispatch "typingStopped" event and hide indicator in UI
+			}
+			case "stop_typing": {
+				const channelId = data.target ? data.user : "global";
+				window.dispatchEvent(new CustomEvent("typingStopped", {
+					detail: { userId: data.user, channelId }
+				}));
 				break;
+			}
 
 			default:
 				console.warn("Unknown chat message type:", data.type);
@@ -210,8 +241,9 @@ export function sendChatMessage(message, target = null) {
  * Attach typing indicator events to the chat textarea.
  * Sends "typing" on input, then "stop_typing" after 1s of inactivity.
  * @param {HTMLTextAreaElement} chatInput - The textarea element.
+ * @param {Function} getTarget - Returns the current DM target user ID, or null for global.
  */
-export function initTyping(chatInput) {
+export function initTyping(chatInput, getTarget = () => null) {
 	if (!chatInput) {
 		console.warn("initTyping: no chatInput element provided");
 		return;
@@ -235,24 +267,19 @@ export function initTyping(chatInput) {
 			if (chatSocket.readyState !== WebSocket.OPEN) return;
 
 			// Tell the server this user is typing
-			chatSocket.send(JSON.stringify({
-				type: "typing",
-				user: verifiedUserId,
-				name: verifiedUserName,
-			}));
-			
+			const target = getTarget();
+			const typingPayload = { type: "typing", user: verifiedUserId, name: verifiedUserName };
+			if (target) typingPayload.target = target;
+			chatSocket.send(JSON.stringify(typingPayload));
+
 			// Debounce: cancel the previous countdown and start a fresh one
 			// "stop_typing" only fires if the user stops typing for a full second
 			clearTimeout(typingTimeout);
-			// We don't care about the actual value of typingTimeout
-			// we only store it so we can pass it to clearTimeout on the next keystroke
 			typingTimeout = setTimeout(() => {
 				if (chatSocket.readyState === WebSocket.OPEN) {
-					chatSocket.send(JSON.stringify({
-						type: "stop_typing",
-						user: verifiedUserId,
-						name: verifiedUserName
-					}));
+					const stopPayload = { type: "stop_typing", user: verifiedUserId, name: verifiedUserName };
+					if (target) stopPayload.target = target;
+					chatSocket.send(JSON.stringify(stopPayload));
 				}
 			}, 1000);
 		});

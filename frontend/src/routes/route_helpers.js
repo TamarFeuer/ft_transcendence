@@ -25,6 +25,9 @@ export function navigate(path) {
 
 export function handleRoute(path) {
     // Check for tournament/:id route
+    
+    document.getElementById("back-btn")?.remove();
+    
     if (path.match(/^\/tournament\/\d+$/)) {
         handleTournamentRoute(path);
         return;

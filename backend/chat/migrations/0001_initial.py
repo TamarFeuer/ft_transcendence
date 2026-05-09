@@ -43,6 +43,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('unread_count', models.IntegerField(default=0)),
                 ('is_closed', models.BooleanField(default=False)),
+                ('last_read_at', models.DateTimeField(blank=True, null=True)),
                 ('conversation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='participants', to='chat.conversation')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='conversations', to=settings.AUTH_USER_MODEL)),
             ],

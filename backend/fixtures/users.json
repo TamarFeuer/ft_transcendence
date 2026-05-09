@@ -112,8 +112,7 @@
   "pk": 1,
   "fields": {
     "user": 1,
-    "avatar": "",
-    "bio": "Chat developer"
+    "avatar": ""
   }
 },
 {
@@ -121,8 +120,7 @@
   "pk": 2,
   "fields": {
     "user": 2,
-    "avatar": "",
-    "bio": "Game and auth developer"
+    "avatar": ""
   }
 },
 {
@@ -130,8 +128,7 @@
   "pk": 3,
   "fields": {
     "user": 3,
-    "avatar": "",
-    "bio": "Friends and chess developer"
+    "avatar": ""
   }
 },
 {
@@ -139,8 +136,7 @@
   "pk": 4,
   "fields": {
     "user": 4,
-    "avatar": "",
-    "bio": "Frontend developer"
+    "avatar": ""
   }
 },
 {
@@ -148,8 +144,7 @@
   "pk": 5,
   "fields": {
     "user": 5,
-    "avatar": "",
-    "bio": "Stats developer"
+    "avatar": ""
   }
 },
 {
@@ -157,8 +152,7 @@
   "pk": 6,
   "fields": {
     "user": 6,
-    "avatar": "",
-    "bio": "Servers maintainer in AlasCode"
+    "avatar": ""
   }
 },
 {
@@ -166,15 +160,15 @@
   "pk": 1,
   "fields": {
     "user": 1,
-    "total_games": 3,
-    "total_wins": 2,
+    "total_games": 2,
+    "total_wins": 1,
     "total_losses": 1,
     "elo_rating": 1003,
-    "total_win_points": 10,
-    "total_loss_points": 4,
-    "current_win_streak": 0,
-    "current_loss_streak": 1,
-    "best_win_streak": 2
+    "total_win_points": 5,
+    "total_loss_points": 3,
+    "current_win_streak": 1,
+    "current_loss_streak": 0,
+    "best_win_streak": 1
   }
 },
 {
@@ -183,14 +177,14 @@
   "fields": {
     "user": 2,
     "total_games": 3,
-    "total_wins": 1,
-    "total_losses": 2,
+    "total_wins": 2,
+    "total_losses": 1,
     "elo_rating": 995,
-    "total_win_points": 5,
-    "total_loss_points": 4,
-    "current_win_streak": 1,
-    "current_loss_streak": 0,
-    "best_win_streak": 1
+    "total_win_points": 10,
+    "total_loss_points": 1,
+    "current_win_streak": 0,
+    "current_loss_streak": 1,
+    "best_win_streak": 2
   }
 },
 {
@@ -198,15 +192,15 @@
   "pk": 3,
   "fields": {
     "user": 3,
-    "total_games": 6,
-    "total_wins": 4,
+    "total_games": 3,
+    "total_wins": 1,
     "total_losses": 2,
     "elo_rating": 1025,
-    "total_win_points": 21,
-    "total_loss_points": 5,
+    "total_win_points": 5,
+    "total_loss_points": 6,
     "current_win_streak": 1,
     "current_loss_streak": 0,
-    "best_win_streak": 3
+    "best_win_streak": 1
   }
 },
 {
@@ -246,14 +240,14 @@
   "pk": 6,
   "fields": {
     "user": 6,
-    "total_games": 4,
+    "total_games": 3,
     "total_wins": 2,
-    "total_losses": 2,
+    "total_losses": 1,
     "elo_rating": 1008,
-    "total_win_points": 11,
-    "total_loss_points": 6,
-    "current_win_streak": 1,
-    "current_loss_streak": 0,
+    "total_win_points": 10,
+    "total_loss_points": 4,
+    "current_win_streak": 0,
+    "current_loss_streak": 1,
     "best_win_streak": 2
   }
 },
@@ -479,15 +473,6 @@
 },
 {
   "model": "game.playerachievement",
-  "pk": 2,
-  "fields": {
-    "player": 1,
-    "achievement": 2,
-    "timestamp": "2026-03-22T10:15:34.123Z"
-  }
-},
-{
-  "model": "game.playerachievement",
   "pk": 3,
   "fields": {
     "player": 1,
@@ -551,15 +536,6 @@
 },
 {
   "model": "game.playerachievement",
-  "pk": 10,
-  "fields": {
-    "player": 3,
-    "achievement": 6,
-    "timestamp": "2026-03-28T12:00:00.000Z"
-  }
-},
-{
-  "model": "game.playerachievement",
   "pk": 11,
   "fields": {
     "player": 4,
@@ -610,6 +586,242 @@
     "player": 6,
     "achievement": 5,
     "timestamp": "2026-03-22T10:15:34.123Z"
+  }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 1,
+  "fields": { "from_user": 1, "to_user": 2, "status": "accepted", "created_at": "2026-03-01T10:00:00Z", "updated_at": "2026-03-01T10:00:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 2,
+  "fields": { "from_user": 1, "to_user": 3, "status": "accepted", "created_at": "2026-03-01T10:01:00Z", "updated_at": "2026-03-01T10:01:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 3,
+  "fields": { "from_user": 1, "to_user": 4, "status": "accepted", "created_at": "2026-03-01T10:02:00Z", "updated_at": "2026-03-01T10:02:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 4,
+  "fields": { "from_user": 1, "to_user": 5, "status": "accepted", "created_at": "2026-03-01T10:03:00Z", "updated_at": "2026-03-01T10:03:00Z" }
+},
+{
+  "model": "friends.friendrequest",
+  "pk": 5,
+  "fields": { "from_user": 4, "to_user": 3, "status": "accepted", "created_at": "2026-03-01T10:04:00Z", "updated_at": "2026-03-01T10:04:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 1,
+  "fields": { "blocker": 6, "blocked_user": 1, "created_at": "2026-03-02T10:00:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 2,
+  "fields": { "blocker": 6, "blocked_user": 2, "created_at": "2026-03-02T10:01:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 3,
+  "fields": { "blocker": 6, "blocked_user": 3, "created_at": "2026-03-02T10:02:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 4,
+  "fields": { "blocker": 6, "blocked_user": 4, "created_at": "2026-03-02T10:03:00Z" }
+},
+{
+  "model": "friends.block",
+  "pk": 5,
+  "fields": { "blocker": 6, "blocked_user": 5, "created_at": "2026-03-02T10:04:00Z" }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "elo_rating": 1240,
+    "total_games": 3,
+    "total_wins": 1,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 2,
+  "fields": {
+    "user": 2,
+    "elo_rating": 1185,
+    "total_games": 3,
+    "total_wins": 1,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 3,
+  "fields": {
+    "user": 3,
+    "elo_rating": 1310,
+    "total_games": 3,
+    "total_wins": 3,
+    "total_losses": 0
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 4,
+  "fields": {
+    "user": 4,
+    "elo_rating": 1160,
+    "total_games": 3,
+    "total_wins": 0,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 5,
+  "fields": {
+    "user": 5,
+    "elo_rating": 1275,
+    "total_games": 4,
+    "total_wins": 3,
+    "total_losses": 1
+  }
+},
+{
+  "model": "chessgame.chessplayer",
+  "pk": 6,
+  "fields": {
+    "user": 6,
+    "elo_rating": 1200,
+    "total_games": 4,
+    "total_wins": 1,
+    "total_losses": 2
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 1,
+  "fields": {
+    "white": 3,
+    "black": 2,
+    "result": "1-0",
+    "white_elo_before": 1280,
+    "black_elo_before": 1200,
+    "timestamp": "2026-03-18T10:00:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 2,
+  "fields": {
+    "white": 1,
+    "black": 4,
+    "result": "1-0",
+    "white_elo_before": 1200,
+    "black_elo_before": 1200,
+    "timestamp": "2026-03-19T14:30:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 3,
+  "fields": {
+    "white": 2,
+    "black": 5,
+    "result": "0-1",
+    "white_elo_before": 1215,
+    "black_elo_before": 1200,
+    "timestamp": "2026-03-20T09:15:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 4,
+  "fields": {
+    "white": 6,
+    "black": 3,
+    "result": "0-1",
+    "white_elo_before": 1200,
+    "black_elo_before": 1295,
+    "timestamp": "2026-03-21T16:00:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 5,
+  "fields": {
+    "white": 5,
+    "black": 1,
+    "result": "1-0",
+    "white_elo_before": 1220,
+    "black_elo_before": 1220,
+    "timestamp": "2026-03-22T11:45:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 6,
+  "fields": {
+    "white": 4,
+    "black": 6,
+    "result": "1/2-1/2",
+    "white_elo_before": 1185,
+    "black_elo_before": 1210,
+    "timestamp": "2026-03-23T08:30:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 7,
+  "fields": {
+    "white": 3,
+    "black": 5,
+    "result": "1-0",
+    "white_elo_before": 1300,
+    "black_elo_before": 1240,
+    "timestamp": "2026-03-24T15:20:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 8,
+  "fields": {
+    "white": 1,
+    "black": 6,
+    "result": "0-1",
+    "white_elo_before": 1230,
+    "black_elo_before": 1195,
+    "timestamp": "2026-03-25T13:00:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 9,
+  "fields": {
+    "white": 2,
+    "black": 4,
+    "result": "1-0",
+    "white_elo_before": 1175,
+    "black_elo_before": 1175,
+    "timestamp": "2026-03-26T10:10:00.000Z"
+  }
+},
+{
+  "model": "chessgame.chessmatch",
+  "pk": 10,
+  "fields": {
+    "white": 5,
+    "black": 6,
+    "result": "1-0",
+    "white_elo_before": 1255,
+    "black_elo_before": 1205,
+    "timestamp": "2026-03-27T17:45:00.000Z"
   }
 }
 ]
