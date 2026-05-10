@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.14.0/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #58a6ff;
+            font-size: 32px;
+        }
+        .diagram-section {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        .diagram-header {
+            color: #79c0ff;
+            font-size: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .zoom-controls button {
+            background: #238636;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        .zoom-controls button:hover {
+            background: #2ea043;
+        }
+        .zoom-level {
+            color: #8b949e;
+            font-size: 12px;
+            min-width: 50px;
+            text-align: center;
+        }
+        .mermaid-container {
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 800px;
+            position: relative;
+        }
+        .mermaid {
+            display: inline-flex;
+            justify-content: center;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease-out;
+            min-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Tournament System Flowcharts</h1>
+
+        <div class="diagram-section">
+            <div class="diagram-header">
+                <span>Diagram 1: Branch Changes Overview</span>
+                <div class="zoom-controls">
+                    <button onclick="zoomOut('diagram1')">−</button>
+                    <span class="zoom-level" id="zoom-level-1">100%</span>
+                    <button onclick="zoomIn('diagram1')">+</button>
+                    <button onclick="resetZoom('diagram1')">Reset</button>
+                </div>
+            </div>
+            <div class="mermaid-container" id="diagram1-container">
+                <div class="mermaid" id="diagram1">
+flowchart TD
+    A[Open tournament page] --> B[Load tournament games and leaderboard]
+    B --> C[Connect tournament websocket]
+    B --> D[Start slower lobby auto-refresh]
+    C --> E{Socket event}
+    E -->|timeUpdate| F[Update live timer list]
+    E -->|gameStart| G[Remove timer entry and reload tournament data]
+    E -->|gameOver| G
+    E -->|tournamentEvent| G
+    F --> H{Timer for same player pair exists?}
+    H -->|Yes| I[Reuse existing timer key or replace duplicate entry]
+    H -->|No| J[Create new timer entry]
+    I --> K[Render live match timer section]
+    J --> K
+    G --> L[Refresh ready ongoing future and completed game lists]
+    M[TournamentStartView] --> N[Create round 1 as waiting_active_round]
+    M --> O[Create later rounds as ready]
+    O --> P[When previous round completes promote ready to waiting_active_round]
+    Q[GameConsumer connect] --> R[Send gameStart to tournament websocket group]
+    Q --> S[Start join timeout only for active-round tournament games]
+    S --> T[Send timeUpdate every second to game and tournament groups]
+    T --> U{Timeout reached?}
+    U -->|Tie| V[Mark game completed as tie and broadcast gameOver]
+    U -->|One player joined| W[Mark winner and broadcast gameOver]
+    V --> X[Close all game sockets]
+    W --> X
+    Y[Frontend game.js] --> Z[Show waiting modal before game starts]
+    Z --> AA[Cancel modal if gameStart arrives quickly]
+    Z --> AB[Leave button returns to tournament or online page]
+    X --> AC[Auto navigate back after result screen]
+    AD[Vite proxy] --> AE[Proxy API and WS through configurable backend target]
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-header">
+                <span>Diagram 2: Full Tournament Stack Flow</span>
+                <div class="zoom-controls">
+                    <button onclick="zoomOut('diagram2')">−</button>
+                    <span class="zoom-level" id="zoom-level-2">100%</span>
+                    <button onclick="zoomIn('diagram2')">+</button>
+                    <button onclick="resetZoom('diagram2')">Reset</button>
+                </div>
+            </div>
+            <div class="mermaid-container" id="diagram2-container">
+                <div class="mermaid" id="diagram2">
+flowchart LR
+    subgraph FE1[Frontend - Tournament Page]
+        A[Open tournament/:id] --> B[Load tournament overview]
+        B --> C[Render leaderboard ready games ongoing games future games]
+        B --> D[Start tournament websocket]
+        B --> E[Start lobby auto-refresh]
+    end
+    subgraph BE1[Backend - Tournament APIs]
+        F[TournamentStartView] --> G[Create tournament rounds and games]
+        G --> H[Round 1 = waiting_active_round]
+        G --> I[Later rounds = ready]
+        J[Get tournament games / leaderboard / ready games] --> C
+        K[Promote next round after completion] --> L[ready to waiting_active_round]
+    end
+    subgraph BE2[Backend - Tournament Websocket]
+        M[TournamentConsumer] --> N[Authenticate user]
+        N --> O[Join tournament group ws/tournament/:id]
+        P[GameConsumer] --> Q[Send timeUpdate to tournament group]
+        P --> R[Send gameStart / gameOver to tournament group]
+        Q --> S[Broadcast live countdown data]
+        R --> T[Broadcast match state changes]
+    end
+    subgraph FE2[Frontend - Live Updates]
+        U[tournament_ws.js receives event] --> V{Event type?}
+        V -->|timeUpdate| W[Update timer map and timer section]
+        V -->|gameStart| X[Remove timer entry and reload tournament data]
+        V -->|gameOver| X
+        V -->|tournamentEvent| X
+    end
+    subgraph FE3[Frontend - Start Match]
+        Y[Click Start Game] --> Z[Call startTournamentGame API]
+        Z --> AA[Stop tournament auto-refresh and socket]
+        AA --> AB[joinOnlineGame game_id tournament=true]
+        AB --> AC[Show waiting modal]
+        AC --> AD{gameStart received?}
+        AD -->|Yes| AE[Hide waiting modal and enter match]
+        AD -->|No| AF[Keep countdown visible until timeout]
+    end
+    subgraph BE3[Backend - Game Lifecycle]
+        P --> AG[Check join timeout only for active round games]
+        AG --> AH[Emit timeUpdate every second]
+        AH --> AI{Timeout expired?}
+        AI -->|No players joined| AJ[Mark tie and complete game]
+        AI -->|One player joined| AK[Mark winner and complete game]
+        AJ --> T
+        AK --> T
+        P --> AL[On connect with both players broadcast gameStart]
+        P --> AM[On disconnect during active game award remaining player]
+        AM --> T
+    end
+    subgraph FE4[Frontend - Post Game]
+        T --> X
+        X --> C
+        AK --> AN[Return to tournament page after result screen]
+        AJ --> AN
+    end
+    H --> C
+    I --> C
+    L --> C
+    S --> W
+    T --> X
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <div class="diagram-header">
+                <span>Diagram 3: Full Project Architecture</span>
+                <div class="zoom-controls">
+                    <button onclick="zoomOut('diagram3')">−</button>
+                    <span class="zoom-level" id="zoom-level-3">100%</span>
+                    <button onclick="zoomIn('diagram3')">+</button>
+                    <button onclick="resetZoom('diagram3')">Reset</button>
+                </div>
+            </div>
+            <div class="mermaid-container" id="diagram3-container">
+                <div class="mermaid" id="diagram3">
+flowchart TB
+    subgraph CLIENT["🖥️ CLIENT LAYER - Browser"]
+        direction LR
+        FE1["Tournament Page<br/>tournament/:id"]
+        FE2["Pong Game<br/>game.js"]
+        FE3["Chat UI<br/>chat.js"]
+        FE4["Chess<br/>chess.js"]
+        FE5["User Profile<br/>profilePage.js"]
+    end
+
+    subgraph COMM["📡 COMMUNICATION LAYER"]
+        direction LR
+        WS1["tournament_ws.js<br/>ws/tournament/:id"]
+        WS2["Game WebSocket<br/>ws/:gameId"]
+        WS3["Chat WebSocket<br/>ws/chat"]
+        WS4["Chess WebSocket<br/>ws/chess"]
+        API["HTTP APIs<br/>/api/*"]
+    end
+
+    subgraph GATEWAY["🚪 GATEWAY LAYER - NGINX"]
+        direction LR
+        PROXY1["Static Files<br/>port 5173"]
+        PROXY2["HTTP Proxy<br/>:3000/api"]
+        PROXY3["WebSocket Proxy<br/>:3000/ws"]
+    end
+
+    subgraph APPS["⚙️ DJANGO APPS"]
+        direction LR
+        TOUR["Tournament App<br/>tournament/"]
+        GAME["Game App<br/>game/"]
+        CHAT["Chat App<br/>chat/"]
+        CHESS["Chess App<br/>chessgame/"]
+        USER["Users App<br/>users/"]
+        FRIENDS["Friends App<br/>friends/"]
+    end
+
+    subgraph CONSUMERS["🔄 WEBSOCKET CONSUMERS"]
+        direction LR
+        CON1["TournamentConsumer<br/>tournament/consumers.py"]
+        CON2["GameConsumer<br/>game/consumers.py"]
+        CON3["ChatConsumer<br/>chat/consumers.py"]
+        CON4["ChessConsumer<br/>chessgame/consumers.py"]
+    end
+
+    subgraph LOGIC["💡 BUSINESS LOGIC & SERVICES"]
+        direction LR
+        SV1["Tournament Logic<br/>tournament/services.py"]
+        SV2["Game Logic<br/>game/services.py"]
+        SV3["Game Session<br/>game/models.py"]
+        SV4["Match Engine<br/>game/consumers.py"]
+        SV5["Chess Engine<br/>chess/services.py"]
+    end
+
+    subgraph MODELS["📊 DATA MODELS"]
+        direction LR
+        M1["Tournament<br/>TournamentGame<br/>TournamentParticipant"]
+        M2["GameSession<br/>Player<br/>Match"]
+        M3["ChessPlayer<br/>ChessMatch"]
+        M4["Message<br/>Conversation"]
+        M5["User<br/>FriendRequest<br/>Block"]
+    end
+
+    subgraph DATABASE["🗄️ DATABASE LAYER - PostgreSQL"]
+        direction LR
+        DB1["Tournament Tables"]
+        DB2["Game Tables"]
+        DB3["Chess Tables"]
+        DB4["Chat Tables"]
+        DB5["User Tables"]
+    end
+
+    FE1 --> WS1
+    FE1 --> API
+    FE2 --> WS2
+    FE2 --> API
+    FE3 --> WS3
+    FE3 --> API
+    FE4 --> WS4
+    FE4 --> API
+    FE5 --> API
+
+    WS1 --> PROXY3
+    WS2 --> PROXY3
+    WS3 --> PROXY3
+    WS4 --> PROXY3
+    API --> PROXY2
+
+    PROXY3 --> CON1
+    PROXY3 --> CON2
+    PROXY3 --> CON3
+    PROXY3 --> CON4
+    PROXY2 --> TOUR
+    PROXY2 --> GAME
+    PROXY2 --> CHAT
+    PROXY2 --> CHESS
+    PROXY2 --> USER
+    PROXY2 --> FRIENDS
+
+    CON1 --> SV1
+    CON2 --> SV2
+    CON3 --> CHAT
+    CON4 --> SV5
+
+    SV1 --> SV2
+    SV2 --> SV3
+    SV3 --> SV4
+    SV4 --> SV2
+
+    TOUR --> M1
+    GAME --> M2
+    CHESS --> M3
+    CHAT --> M4
+    USER --> M5
+    FRIENDS --> M5
+
+    M1 --> DB1
+    M2 --> DB2
+    M3 --> DB3
+    M4 --> DB4
+    M5 --> DB5
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            logLevel: 'debug',
+            flowchart: { useMaxWidth: true, curve: 'linear' }
+        });
+        
+        let zoomLevels = { diagram1: 1, diagram2: 1, diagram3: 1 };
+
+        function zoomIn(diagramId) {
+            zoomLevels[diagramId] = Math.min(zoomLevels[diagramId] + 0.1, 3);
+            updateZoom(diagramId);
+        }
+
+        function zoomOut(diagramId) {
+            zoomLevels[diagramId] = Math.max(zoomLevels[diagramId] - 0.1, 0.5);
+            updateZoom(diagramId);
+        }
+
+        function resetZoom(diagramId) {
+            zoomLevels[diagramId] = 1;
+            updateZoom(diagramId);
+        }
+
+        function updateZoom(diagramId) {
+            const diagram = document.getElementById(diagramId);
+            const level = zoomLevels[diagramId];
+            diagram.style.transform = `scale(${level})`;
+            const num = diagramId.slice(-1);
+            document.getElementById(`zoom-level-${num}`).textContent = Math.round(level * 100) + '%';
+        }
+
+        // Mouse wheel zoom
+        document.querySelectorAll('[id$="-container"]').forEach(container => {
+            container.addEventListener('wheel', (e) => {
+                const diagramId = container.id.replace('-container', '');
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    if (e.deltaY < 0) {
+                        zoomIn(diagramId);
+                    } else {
+                        zoomOut(diagramId);
+                    }
+                }
+            });
+        });
+
+        mermaid.run();
+    </script>
+</body>
+</html>
