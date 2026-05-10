@@ -185,6 +185,21 @@ export function joinOnlineGame(gameId, IsTournament) {
     </div>
     `;
 
+    const leaveWaitingBtn = document.getElementById('leaveWaitingBtn');
+    if (leaveWaitingBtn) {
+      leaveWaitingBtn.addEventListener('click', () => {
+        suppressOnCloseNavigation = true;
+        closeGameConnection();
+        sessionStorage.removeItem('activeGameId');
+        sessionStorage.removeItem('activeTournamentId');
+        if (IsTournament) {
+          navigate(`/tournament/${window.currentTournamentId}`);
+        } else {
+          navigate('/online');
+        }
+      });
+    }
+
     // Delay waiting modal slightly so player 2 does not see a flash when gameStart arrives immediately.
     waitingModalTimer = setTimeout(() => {
       if (gameStarted) {
