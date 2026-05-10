@@ -95,7 +95,7 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
             if (showWinnerMessage && !tournament) {
                 const winner = scoreManager.getWinner(gameState);
-                showMessage(winner === "p1" ? "You win!" : "They win!");
+                showMessage(winner === "p1" ? "Red wins!" : "Blue wins!");
                 navigate("/pong");
             }
 
