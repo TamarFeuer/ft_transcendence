@@ -444,11 +444,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		)
 
 		# Only increment unread if the recipient doesn't currently have this conversation open.
-		# ACTIVE_CONVERSATION[recipient_id] == self.user_id means they are looking at our DM right now.
+		# ACTIVE_CONVERSATION[recipient_id] == sender_id means they are looking at our DM right now.
 		# F('unread_count') + 1 is a database-level increment — avoids race conditions
 		# if two messages arrive at the same time.
-		recipient_is_viewing = ACTIVE_CONVERSATION.get(recipient_id) == self.user_id
-		logger.info(f"[save_dm] sender={self.user_id} → recipient={recipient_id} | ACTIVE_CONVERSATION={dict(ACTIVE_CONVERSATION)} | recipient_is_viewing={recipient_is_viewing}")
+		sender_id = self.user_id
+		recipient_is_viewing = ACTIVE_CONVERSATION.get(recipient_id) == sender_id
+		logger.info(f"[save_dm] sender={sender_id} → recipient={recipient_id} | ACTIVE_CONVERSATION={dict(ACTIVE_CONVERSATION)} | recipient_is_viewing={recipient_is_viewing}")
 		if not recipient_is_viewing:
 			ConversationParticipant.objects.filter(
 				conversation=conversation,
@@ -558,7 +559,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		)
 		if not created:
 			return
-		recipient_is_viewing = ACTIVE_CONVERSATION.get(str(recipient_id)) == self.user_id
+		sender_id = self.user_id
+		recipient_is_viewing = ACTIVE_CONVERSATION.get(str(recipient_id)) == sender_id
 		if not recipient_is_viewing:
 			from chat.models import ConversationParticipant
 			ConversationParticipant.objects.filter(
@@ -648,7 +650,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			ConversationParticipant.objects.filter(
 				conversation_id=shared_conv_id,
 				user_id=user_id
-			).update(unread_count=0, last_read_at=timezone.now())
+			).update(unread_count=0, last_read_at=timezone.now(), is_closed=False)
 
 	@database_sync_to_async
 	def close_conversation(self, user_id, other_id):

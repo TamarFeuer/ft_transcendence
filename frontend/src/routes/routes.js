@@ -8,7 +8,6 @@ import { Engine, Scene } from "@babylonjs/core";
 import { initGameScene } from "../pong/game/game.js";
 import { checkAuthRequired, fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 import { updatePageTranslations, t, TranslationKey } from '../i18n/index.js';
-import { verifiedUserId } from '../chat/chat.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
   loadUpcomingTournaments
  } from '../pong/tournament/tournament_lobby_utils.js';

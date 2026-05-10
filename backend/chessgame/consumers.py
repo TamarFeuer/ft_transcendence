@@ -20,11 +20,24 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			await self.close(code=4004)
 			return
 		
-		#reject if this user is already in another game
-		if str(self.scope['user'].id) in IN_GAME_USERS:
-			logger.debug(f"[chess connect] rejected {self.scope['user']} — already in IN_GAME_USERS")
-			await self.close(code=4003)
-			return
+		#reject if this user is already in an active game.
+		#if they are in a waiting game (e.g. matchmaking they just left to accept an invite),
+		#clean that up and allow this connection to proceed.
+		user_id_str = str(self.scope['user'].id)
+		if user_id_str in IN_GAME_USERS:
+			waiting_game = next(
+				(g for g in ChessSession._games.values()
+				 if g.id != self.game_id and g.status == 'waiting' and user_id_str in [str(getattr(p, 'id', None)) for p in g.players.values() if p]),
+				None
+			)
+			if waiting_game:
+				logger.debug(f"[chess connect] {self.scope['user']} leaving waiting game {waiting_game.id} to join invite game {self.game_id}")
+				IN_GAME_USERS.discard(user_id_str)
+				ChessSession.delete_game(waiting_game.id)
+			else:
+				logger.debug(f"[chess connect] rejected {self.scope['user']} — already in active IN_GAME_USERS")
+				await self.close(code=4003)
+				return
 
 		#try to seat this connection as white or black
 		self.color = self.game.add_player(self.scope['user'])
