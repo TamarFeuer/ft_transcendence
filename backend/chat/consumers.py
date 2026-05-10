@@ -70,7 +70,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Tell the client their own user_id and username so the frontend
 		# knows who it is (used in chat.js to determine message ownership).
 		await self.send(text_data=json.dumps({
-			"type": "self_id",
+			"type": "selfId",
 			"user_id": self.user_id,
 			"name": self.username
 		}))
@@ -79,7 +79,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		pending = PENDING_GAME_RESULTS.pop(self.user_id, None)
 		if pending:
 			await self.send(text_data=json.dumps({
-				"type": "game_result",
+				"type": "gameResult",
 				"winner": pending.get("winner"),
 				"loser": pending.get("loser"),
 				"draw_players": pending.get("draw_players"),
@@ -124,7 +124,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		logger.debug(f"[receive] type={msg_type} user={self.username}({self.user_id})")
 
-		if msg_type == "chat":
+		if msg_type == "chat_message":
 			message = data.get("message", "")
 			if len(message) > 300:
 				return
@@ -165,7 +165,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			logger.debug(f"[fetch_history] user={self.username}({self.user_id}) → target={other_id}")
 			messages, seen = await self.get_dm_history(self.user_id, other_id)
 			await self.send(text_data=json.dumps({
-				"type": "dm_history",
+				"type": "dmHistory",
 				"target": other_id,
 				"messages": messages,
 				"seen": seen,
@@ -222,7 +222,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				return
 			if target in IN_GAME_USERS or self.user_id in IN_GAME_USERS:
 				await self.send(text_data=json.dumps({
-					"type": "game_invite_rejected",
+					"type": "gameInviteRejected",
 					"reason": "in_game",
 				}))
 				return
@@ -312,7 +312,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def chat_message(self, event):
 		# Deliver a chat message (global or DM) to this consumer's client.
 		await self.send(text_data=json.dumps({
-			"type": "chat",
+			"type": "chatMessage",
 			"message": event["message"],
 			"sender": event["sender"],
 			"name": event.get("name"),
@@ -322,13 +322,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def messages_read(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "messages_read",
+			"type": "messagesRead",
 			"by": event["by"],
 		}))
 
 	async def game_invite(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "game_invite",
+			"type": "gameInvite",
 			"sender": event["sender"],
 			"name": event["name"],
 			"game_type": event["game_type"],
@@ -351,7 +351,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def game_result(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "game_result",
+			"type": "gameResult",
 			"winner": event.get("winner"),
 			"loser": event.get("loser"),
 			"draw_players": event.get("draw_players"),
@@ -364,7 +364,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def game_invite_accepted(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "game_invite_accepted",
+			"type": "gameInviteAccepted",
 			"game_id": event["game_id"],
 		}))
 
@@ -372,7 +372,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		game_id = event["game_id"]
 		await self.delete_invite(game_id)
 		await self.send(text_data=json.dumps({
-			"type": "game_invite_blocked",
+			"type": "gameInviteBlocked",
 			"game_id": game_id,
 		}))
 
@@ -380,7 +380,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		game_id = event["game_id"]
 		await self.delete_invite(game_id)
 		await self.send(text_data=json.dumps({
-			"type": "game_invite_expired",
+			"type": "gameInviteExpired",
 			"game_id": game_id,
 		}))
 
@@ -389,8 +389,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def typing_notification(self, event):
 		# Deliver a typing indicator to this consumer's client.
+		action = "stopTyping" if event["action"] == "stop_typing" else "typing"
 		await self.send(text_data=json.dumps({
-			"type": event["action"],  # "typing" or "stop_typing"
+			"type": action,
 			"user": event["user"],
 			"name": event.get("name"),
 			"target": event.get("target"),
@@ -399,7 +400,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def online_users(self, event):
 		# Deliver the updated online users list to this consumer's client.
 		await self.send(text_data=json.dumps({
-			"type": "online_users",
+			"type": "onlineUsers",
 			"users": event["users"],
 			"blocked_by_me_ids": event.get("blocked_by_me_ids", []),
 			"blocked_me_ids": event.get("blocked_me_ids", []),

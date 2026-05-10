@@ -65,7 +65,7 @@ export function initChat() {
 		switch (data.type) {
 
 			// Server confirms our identity after connect
-			case "self_id":
+			case "selfId":
 					verifiedUserId = data.user_id;
 					verifiedUserName = data.name || "Guest";
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
@@ -77,7 +77,7 @@ export function initChat() {
 					break;
 
 			// Incoming chat message — either global or private DM
-			case "chat": {
+			case "chatMessage": {
 					// For private messages, the "channel" in the UI is the OTHER person.
 					// If I sent it: channel = target. If I received it: channel = sender.
 					// For global messages, channel is always "global";
@@ -114,8 +114,8 @@ export function initChat() {
 			}
 
 			// Server sends the full list of online users whenever someone joins/leaves
-			case "online_users":
-				console.log("Received online_users message:", data.users);
+			case "onlineUsers":
+				console.log("Received onlineUsers message:", data.users);
 				onlineUsers = data.users;
 				blockedByMeIds = new Set(data.blocked_by_me_ids || []);
 				blockedMeIds = new Set(data.blocked_me_ids || []);
@@ -123,7 +123,7 @@ export function initChat() {
 				window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 				break;
 
-			case "dm_history":
+			case "dmHistory":
 				window.dispatchEvent(new CustomEvent("dmHistoryReceived", {
 					detail: {
 						channelId: data.target,
@@ -140,13 +140,13 @@ export function initChat() {
 				}));
 				break;
 
-			case "messages_read":
+			case "messagesRead":
 				window.dispatchEvent(new CustomEvent("messagesRead", {
 					detail: { by: data.by }
 				}));
 				break;
 
-			case "game_invite":
+			case "gameInvite":
 				window.dispatchEvent(new CustomEvent("gameInviteReceived", {
 					detail: {
 						senderId: data.sender,
@@ -157,25 +157,25 @@ export function initChat() {
 				}));
 				break;
 
-			case "game_invite_expired":
+			case "gameInviteExpired":
 				window.dispatchEvent(new CustomEvent("gameInviteExpired", {
 					detail: { gameId: data.game_id }
 				}));
 				break;
 
-			case "game_invite_blocked":
+			case "gameInviteBlocked":
 				window.dispatchEvent(new CustomEvent("gameInviteBlocked", {
 					detail: { gameId: data.game_id }
 				}));
 				break;
 
-			case "game_invite_rejected":
+			case "gameInviteRejected":
 				window.dispatchEvent(new CustomEvent("gameInviteRejected", {
 					detail: { reason: data.reason }
 				}));
 				break;
 
-			case "game_invite_accepted":
+			case "gameInviteAccepted":
 				window.dispatchEvent(new CustomEvent("gameInviteAccepted", {
 					detail: { gameId: data.game_id }
 				}));
@@ -185,7 +185,7 @@ export function initChat() {
 				window.dispatchEvent(new CustomEvent("friendListChanged"));
 				break;
 
-			case "game_result":
+			case "gameResult":
 				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
 					detail: {
 						channelId: "global",
@@ -205,7 +205,7 @@ export function initChat() {
 				}));
 				break;
 			}
-			case "stop_typing": {
+			case "stopTyping": {
 				const channelId = data.target ? data.user : "global";
 				window.dispatchEvent(new CustomEvent("typingStopped", {
 					detail: { userId: data.user, channelId }
@@ -231,7 +231,7 @@ export function sendChatMessage(message, target = null) {
 	}
 
 	const payload = {
-		type: "chat",
+		type: "chat_message",
 		message 
 	};
 	
