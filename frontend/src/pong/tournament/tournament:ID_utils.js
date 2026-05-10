@@ -43,8 +43,23 @@ function updateTournamentTimer(gameId, remainingTime, _left_player, _right_playe
     const safeGameId = String(gameId || 'unknown');
     const safeRemaining = Number.isFinite(Number(remainingTime)) ? Number(remainingTime) : 0;
 
+    const existingEntry = Array.from(activeGameTimers.entries()).find(([id, data]) => {
+        const a = data.left_player;
+        const b = data.right_player;
+        return (a === _left_player && b === _right_player) || (a === _right_player && b === _left_player);
+    });
+
     if (safeRemaining <= 0) {
         activeGameTimers.delete(safeGameId);
+    } else if (existingEntry){
+        console.log("existing Entry; ", existingEntry);
+        const [existingId] = existingEntry;
+        activeGameTimers.delete(existingId);
+        activeGameTimers.set(safeGameId, {
+            remaining: safeRemaining,
+            right_player: _right_player,
+            left_player: _left_player,
+        });
     } else {
         activeGameTimers.set(safeGameId, {
             remaining: safeRemaining,
@@ -52,7 +67,6 @@ function updateTournamentTimer(gameId, remainingTime, _left_player, _right_playe
             left_player: _left_player,
         });
     }
-
     renderTournamentTimers();
 }
 
