@@ -119,7 +119,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				winner_name = getattr(self.game.players[winner], 'username', winner)
 				loser_name = getattr(self.game.players[loser_color], 'username', None)
 				result_msg = {
-					'type': 'game_result',
+					'type': 'game.result',
 					'winner': winner_name,
 					'loser': loser_name,
 					'game_type': 'chess',
@@ -203,7 +203,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			})
 
 			await self.channel_layer.group_send('global_chat', {
-				'type': 'game_result',
+				'type': 'game.result',
 				'winner': winner_name,
 				'loser': loser_name,
 				'draw_players': draw_players,

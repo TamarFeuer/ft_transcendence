@@ -342,7 +342,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 )
                 loser_name = getattr(departing_user, 'username', None)
                 result_msg = {
-                    "type": "game_result",
+                    "type": "game.result",
                     "winner": winner_name,
                     "loser": loser_name,
                     "game_type": "pong",
