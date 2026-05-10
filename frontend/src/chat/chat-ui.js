@@ -2,7 +2,7 @@
 // The WebSocket connection itself lives in chat.js —
 // this file reacts to events dispatched by chat.js and manages the DOM.
 
-import { onlineUsers, blockedMeIds, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked, sendGameInvite, sendGameInviteExpired, sendDeleteInvite } from './chat.js';
+import { onlineUsers, blockedByMeIds, blockedMeIds, inGameIds, sendChatMessage, initTyping, verifiedUserId, fetchDMHistory, markRead, closeConversation, openConversation, notifyBlocked, sendGameInvite, sendGameInviteExpired, sendDeleteInvite } from './chat.js';
 import { fetchWithRefreshAuth } from '../users_friends/usermanagement.js';
 import { navigate, handleRoute } from '../routes/route_helpers.js';
 import { showMessage } from '../utils/utils.js';
@@ -43,7 +43,7 @@ export function initChatUI() {
 			blockNotice.textContent = "";
 			return;
 		}
-		const blockedByMe = onlineUsers[channelId]?.blocked_by_me;
+		const blockedByMe = blockedByMeIds.has(channelId);
 		const blockedMe = blockedMeIds.has(channelId);
 		if (blockedByMe || blockedMe) {
 			chatInput.disabled = true;
@@ -74,7 +74,7 @@ export function initChatUI() {
 		if (channelId === "global") {
 			channelTitle.textContent = t('CHAT_GLOBAL_TITLE');
 		} else {
-			const name = onlineUsers[channelId]?.name
+			const name = onlineUsers[channelId]
 				|| activeTab?.querySelector("span:nth-child(2)")?.textContent;
 			channelTitle.textContent = name ? `@ ${name}` : `@ ${t('CHAT_DIRECT_MSG')}`;
 			markRead(channelId);
@@ -98,7 +98,7 @@ export function initChatUI() {
 		if (activeChannel === "global") {
 			titleEl.textContent = t('CHAT_GLOBAL_TITLE');
 		} else {
-			const name = onlineUsers[activeChannel]?.name;
+			const name = onlineUsers[activeChannel];
 			titleEl.textContent = name ? `@ ${name}` : `@ ${t('CHAT_DIRECT_MSG')}`;
 		}
 		renderOnlineUsers();
@@ -317,11 +317,10 @@ export function initChatUI() {
 
 		onlineUsersList.innerHTML = "";
 
-		Object.entries(onlineUsers).forEach(([id, data]) => {
+		// Sort alphabetically by username.
+		Object.entries(onlineUsers).sort(([, a], [, b]) => a < b ? -1 : 1).forEach(([id, name]) => {
 			// Skip yourself — every user past this point is someone else
 			if (id === verifiedUserId) return;
-
-			const { name, blocked_by_me } = data;
 
 			const div = document.createElement("div");
 			div.className = "user-item";
@@ -336,7 +335,7 @@ export function initChatUI() {
 			div.appendChild(statusDot);
 			div.appendChild(nameSpan);
 
-			if (blocked_by_me) {
+			if (blockedByMeIds.has(id)) {
 				// Show unblock button instead of normal click behavior
 				const unblockBtn = document.createElement("button");
 				unblockBtn.textContent = t('CHAT_UNBLOCK');
@@ -462,8 +461,8 @@ export function initChatUI() {
 
 		const inviteBtn = chatUserMenu.querySelector('[data-action="invite"]');
 		if (inviteBtn) {
-			const targetInGame = onlineUsers[user.id]?.in_game;
-			const senderInGame = onlineUsers[verifiedUserId]?.in_game;
+			const targetInGame = inGameIds.has(user.id);
+			const senderInGame = inGameIds.has(verifiedUserId);
 			inviteBtn.style.display = (targetInGame || senderInGame || pendingInvite) ? "none" : "";
 		}
 

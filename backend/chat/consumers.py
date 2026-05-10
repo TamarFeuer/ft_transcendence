@@ -401,29 +401,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": "online_users",
 			"users": event["users"],
-			"blocked_me_ids": event.get("blocked_me_ids", [])
+			"blocked_by_me_ids": event.get("blocked_by_me_ids", []),
+			"blocked_me_ids": event.get("blocked_me_ids", []),
+			"in_game_ids": event.get("in_game_ids", []),
 		}))
 
 	async def broadcast_online_users(self):
 		# Send each online user a personalized online users list.
-		# Each user sees a different list: users who blocked them are hidden,
-		# and users they blocked appear with blocked_by_me: True for the unblock button.
+		# Each user sees a different list: users who blocked them are hidden.
 		# group_send to user_{id} reaches all their open tabs at once.
 		for user_id in list(ONLINE_USERS.keys()):
 			blocked_by_me, blocked_me = await self.get_block_info_for(user_id)
-			users = {}
-			for uid, name in list(ONLINE_USERS.items()):
-				if uid in blocked_me:
-					continue
-				users[uid] = {
-					"name": name,
-					"blocked_by_me": uid in blocked_by_me,
-					"in_game": uid in IN_GAME_USERS,
-				}
+			users = {
+				uid: name
+				for uid, name in list(ONLINE_USERS.items())
+				if uid not in blocked_me
+			}
 			await self.channel_layer.group_send(f"user_{user_id}", {
 				"type": "online.users",
 				"users": users,
-				"blocked_me_ids": list(blocked_me)
+				"blocked_by_me_ids": list(blocked_by_me),
+				"blocked_me_ids": list(blocked_me),
+				"in_game_ids": list(IN_GAME_USERS),
 			})
 
 	# ─── Database helpers ─────────────────────────────────────────────────────

@@ -16,8 +16,12 @@ let verifiedUserName = null;
 // Exported so other modules (e.g. main.js) can read the current online users
 // Shape: { user_id: username } e.g. { "42": "tamar", "7": "rik" }
 export let onlineUsers = {};
+// Set of user IDs the current user has blocked
+export let blockedByMeIds = new Set();
 // Set of user IDs who have blocked the current user
 export let blockedMeIds = new Set();
+// Set of user IDs currently in an active game
+export let inGameIds = new Set();
 
 function formatGameResultMessage(data) {
 	const { winner, loser, draw_players, game_type = 'game' } = data;
@@ -113,7 +117,9 @@ export function initChat() {
 			case "online_users":
 				console.log("Received online_users message:", data.users);
 				onlineUsers = data.users;
+				blockedByMeIds = new Set(data.blocked_by_me_ids || []);
 				blockedMeIds = new Set(data.blocked_me_ids || []);
+				inGameIds = new Set(data.in_game_ids || []);
 				window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 				break;
 
