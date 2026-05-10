@@ -227,22 +227,38 @@ flowchart LR
             <div class="mermaid-container" id="diagram3-container">
                 <div class="mermaid" id="diagram3">
 flowchart TB
-    subgraph CLIENT["🖥️ CLIENT LAYER - Browser"]
-        direction LR
-        FE1["Tournament Page<br/>tournament/:id"]
-        FE2["Pong Game<br/>game.js"]
-        FE3["Chat UI<br/>chat.js"]
-        FE4["Chess<br/>chess.js"]
-        FE5["User Profile<br/>profilePage.js"]
+    subgraph CLIENT["🖥️ CLIENT LAYER - Frontend Browser"]
+        direction TB
+        subgraph PAGES["Pages & Routes"]
+            FE1["Tournament Page<br/>tournament/:id"]
+            FE2["Pong Game<br/>game.js"]
+            FE3["Chat UI<br/>chat.js"]
+            FE4["Chess<br/>chess.js"]
+            FE5["User Profile<br/>profilePage.js"]
+            FE6["Login/Register<br/>usermanagement.js"]
+        end
+        subgraph UTILS["Utilities"]
+            UT1["i18n/index.js<br/>Internationalization"]
+            UT2["utils.js<br/>Helpers"]
+            UT3["route_helpers.js<br/>Navigation"]
+        end
     end
 
     subgraph COMM["📡 COMMUNICATION LAYER"]
-        direction LR
-        WS1["tournament_ws.js<br/>ws/tournament/:id"]
-        WS2["Game WebSocket<br/>ws/:gameId"]
-        WS3["Chat WebSocket<br/>ws/chat"]
-        WS4["Chess WebSocket<br/>ws/chess"]
-        API["HTTP APIs<br/>/api/*"]
+        direction TB
+        subgraph WS["WebSocket Connections"]
+            WS1["tournament_ws.js<br/>ws/tournament/:id"]
+            WS2["Game WS<br/>ws/:gameId"]
+            WS3["Chat WS<br/>ws/chat"]
+            WS4["Chess WS<br/>ws/chess"]
+        end
+        subgraph REST["REST APIs"]
+            API1["Tournament API<br/>/api/tournament/*"]
+            API2["Game API<br/>/api/game/*"]
+            API3["User API<br/>/api/auth/*"]
+            API4["Chat API<br/>/api/chat/*"]
+            API5["Friend API<br/>/api/friends/*"]
+        end
     end
 
     subgraph GATEWAY["🚪 GATEWAY LAYER - NGINX"]
@@ -252,100 +268,144 @@ flowchart TB
         PROXY3["WebSocket Proxy<br/>:3000/ws"]
     end
 
-    subgraph APPS["⚙️ DJANGO APPS"]
+    subgraph AUTH["🔐 AUTHENTICATION"]
         direction LR
-        TOUR["Tournament App<br/>tournament/"]
-        GAME["Game App<br/>game/"]
-        CHAT["Chat App<br/>chat/"]
-        CHESS["Chess App<br/>chessgame/"]
-        USER["Users App<br/>users/"]
-        FRIENDS["Friends App<br/>friends/"]
+        TOKEN["Token Auth<br/>token_auth.py"]
+        MIDDLEWARE["Middleware Stack<br/>AuthMiddlewareStack<br/>TokenAuthMiddleware"]
     end
 
-    subgraph CONSUMERS["🔄 WEBSOCKET CONSUMERS"]
+    subgraph APPS["⚙️ DJANGO APPS & ROUTING"]
+        direction TB
+        subgraph TOURNAMENT["Tournament App"]
+            TOUR1["Models: Tournament<br/>TournamentGame<br/>TournamentParticipant"]
+            TOUR2["Views: TournamentStartView<br/>UserReadyGamesView<br/>GameResultView"]
+            TOUR3["Routing: tournament/routing.py"]
+        end
+        subgraph GAMEAPP["Game App"]
+            GAME1["Models: GameSession<br/>Player<br/>Match<br/>Achievement"]
+            GAME2["Views: GameAPI<br/>LeaderboardView<br/>StatsView"]
+            GAME3["Services: Match Logic<br/>Game Logic<br/>Scoring"]
+        end
+        subgraph CHATAPP["Chat App"]
+            CHAT1["Models: Conversation<br/>Message<br/>GameInvite"]
+            CHAT2["Views: ChatAPI<br/>InviteView"]
+            CHAT3["Routing: chat/routing.py"]
+        end
+        subgraph CHESSAPP["Chess App"]
+            CHESS1["Models: ChessPlayer<br/>ChessMatch"]
+            CHESS2["Views: ChessAPI<br/>ELOView"]
+            CHESS3["Services: Chess Engine<br/>ELO Calculator"]
+        end
+        subgraph USEAPP["User App"]
+            USER1["Models: User<br/>FriendRequest<br/>Block"]
+            USER2["Views: AuthView<br/>ProfileView<br/>FriendsView"]
+            USER3["Services: Auth<br/>Friend Management"]
+        end
+    end
+
+    subgraph CONSUMERS["🔄 ASYNC WEBSOCKET CONSUMERS"]
         direction LR
-        CON1["TournamentConsumer<br/>tournament/consumers.py"]
-        CON2["GameConsumer<br/>game/consumers.py"]
-        CON3["ChatConsumer<br/>chat/consumers.py"]
-        CON4["ChessConsumer<br/>chessgame/consumers.py"]
+        CON1["TournamentConsumer<br/>tournament/consumers.py<br/>authenticate, join group<br/>broadcast events"]
+        CON2["GameConsumer<br/>game/consumers.py<br/>join, connect, disconnect<br/>game loop, timeouts"]
+        CON3["ChatConsumer<br/>chat/consumers.py<br/>message relay<br/>presence tracking"]
+        CON4["ChessConsumer<br/>chessgame/consumers.py<br/>move validation<br/>ELO updates"]
     end
 
     subgraph LOGIC["💡 BUSINESS LOGIC & SERVICES"]
-        direction LR
-        SV1["Tournament Logic<br/>tournament/services.py"]
-        SV2["Game Logic<br/>game/services.py"]
-        SV3["Game Session<br/>game/models.py"]
-        SV4["Match Engine<br/>game/consumers.py"]
-        SV5["Chess Engine<br/>chess/services.py"]
+        direction TB
+        subgraph SERVICES["Core Services"]
+            SV1["Tournament Service<br/>Round promotion<br/>Pairing logic<br/>Status management"]
+            SV2["Game Service<br/>Session creation<br/>Score tracking<br/>Timeout handling"]
+            SV3["Game Session<br/>GameSession class<br/>Player management<br/>State persistence"]
+        end
+        subgraph ENGINES["Game Engines"]
+            SV4["Match Engine<br/>Game loop<br/>Physics<br/>Collision detection"]
+            SV5["Chess Engine<br/>Move validation<br/>Checkmate detection<br/>PGN parsing"]
+        end
+        subgraph BACKGROUND["Background Tasks"]
+            BG1["Auto-promotion<br/>Round transitions"]
+            BG2["Cleanup<br/>Stale sessions"]
+        end
     end
 
-    subgraph MODELS["📊 DATA MODELS"]
-        direction LR
-        M1["Tournament<br/>TournamentGame<br/>TournamentParticipant"]
-        M2["GameSession<br/>Player<br/>Match"]
-        M3["ChessPlayer<br/>ChessMatch"]
-        M4["Message<br/>Conversation"]
-        M5["User<br/>FriendRequest<br/>Block"]
+    subgraph MODELS["📊 DATA MODELS & SERIALIZERS"]
+        direction TB
+        subgraph TABLES1["Tournament Tables"]
+            M1["Tournament<br/>TournamentGame<br/>TournamentParticipant"]
+        end
+        subgraph TABLES2["Game Tables"]
+            M2["GameSession<br/>Player<br/>Match<br/>PlayerAchievement<br/>Achievement"]
+        end
+        subgraph TABLES3["Chess Tables"]
+            M3["ChessPlayer<br/>ChessMatch"]
+        end
+        subgraph TABLES4["Communication Tables"]
+            M4["Conversation<br/>Message<br/>GameInvite"]
+        end
+        subgraph TABLES5["User Tables"]
+            M5["User<br/>FriendRequest<br/>Block"]
+        end
     end
 
     subgraph DATABASE["🗄️ DATABASE LAYER - PostgreSQL"]
-        direction LR
-        DB1["Tournament Tables"]
-        DB2["Game Tables"]
-        DB3["Chess Tables"]
-        DB4["Chat Tables"]
-        DB5["User Tables"]
+        direction TB
+        subgraph INDICES["Indexes & Migrations"]
+            IX1["tournament/migrations/*<br/>game/migrations/*<br/>chat/migrations/*<br/>users/migrations/*"]
+        end
+        subgraph CACHE["Caching Layer"]
+            REDIS["Redis<br/>Session cache<br/>Game state cache"]
+        end
     end
 
-    FE1 --> WS1
-    FE1 --> API
-    FE2 --> WS2
-    FE2 --> API
-    FE3 --> WS3
-    FE3 --> API
-    FE4 --> WS4
-    FE4 --> API
-    FE5 --> API
-
-    WS1 --> PROXY3
-    WS2 --> PROXY3
-    WS3 --> PROXY3
-    WS4 --> PROXY3
-    API --> PROXY2
-
-    PROXY3 --> CON1
-    PROXY3 --> CON2
-    PROXY3 --> CON3
-    PROXY3 --> CON4
-    PROXY2 --> TOUR
-    PROXY2 --> GAME
-    PROXY2 --> CHAT
-    PROXY2 --> CHESS
-    PROXY2 --> USER
-    PROXY2 --> FRIENDS
-
+    CLIENT --> COMM
+    PAGES --> WS
+    PAGES --> REST
+    UTILS --> PAGES
+    
+    WS --> GATEWAY
+    REST --> GATEWAY
+    
+    GATEWAY --> NGINX
+    NGINX --> DJANGO
+    DJANGO --> AUTH
+    AUTH --> MIDDLEWARE
+    
+    MIDDLEWARE --> TOURNAMENT
+    MIDDLEWARE --> GAMEAPP
+    MIDDLEWARE --> CHATAPP
+    MIDDLEWARE --> CHESSAPP
+    MIDDLEWARE --> USEAPP
+    
+    TOURNAMENT --> CON1
+    GAMEAPP --> CON2
+    CHATAPP --> CON3
+    CHESSAPP --> CON4
+    
     CON1 --> SV1
     CON2 --> SV2
-    CON3 --> CHAT
+    CON2 --> SV4
+    CON3 --> CHATAPP
     CON4 --> SV5
-
-    SV1 --> SV2
+    
+    SV1 --> SV3
     SV2 --> SV3
-    SV3 --> SV4
-    SV4 --> SV2
-
-    TOUR --> M1
-    GAME --> M2
-    CHESS --> M3
-    CHAT --> M4
-    USER --> M5
-    FRIENDS --> M5
-
-    M1 --> DB1
-    M2 --> DB2
-    M3 --> DB3
-    M4 --> DB4
-    M5 --> DB5
+    SV4 --> SV3
+    
+    TOURNAMENT --> M1
+    GAMEAPP --> M2
+    CHESSAPP --> M3
+    CHATAPP --> M4
+    USEAPP --> M5
+    
+    M1 --> IX1
+    M2 --> IX1
+    M3 --> IX1
+    M4 --> IX1
+    M5 --> IX1
+    
+    IX1 --> DATABASE
+    SV3 --> REDIS
+    REDIS --> DATABASE
                 </div>
             </div>
         </div>
