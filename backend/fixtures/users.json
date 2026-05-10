@@ -107,54 +107,7 @@
     "user_permissions": []
   }
 },
-{
-  "model": "profiles.userprofile",
-  "pk": 1,
-  "fields": {
-    "user": 1,
-    "avatar": ""
-  }
-},
-{
-  "model": "profiles.userprofile",
-  "pk": 2,
-  "fields": {
-    "user": 2,
-    "avatar": ""
-  }
-},
-{
-  "model": "profiles.userprofile",
-  "pk": 3,
-  "fields": {
-    "user": 3,
-    "avatar": ""
-  }
-},
-{
-  "model": "profiles.userprofile",
-  "pk": 4,
-  "fields": {
-    "user": 4,
-    "avatar": ""
-  }
-},
-{
-  "model": "profiles.userprofile",
-  "pk": 5,
-  "fields": {
-    "user": 5,
-    "avatar": ""
-  }
-},
-{
-  "model": "profiles.userprofile",
-  "pk": 6,
-  "fields": {
-    "user": 6,
-    "avatar": ""
-  }
-},
+
 {
   "model": "game.player",
   "pk": 1,

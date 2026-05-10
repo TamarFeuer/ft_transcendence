@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'users',
     'friends',
     'chessgame',
-    'profiles',
     'axes'
 ]
 
