@@ -317,11 +317,6 @@ export function initChatUI() {
 
 		onlineUsersList.innerHTML = "";
 
-		if (!onlineUsers || onlineUsers.length === 0) {
-			onlineUsersList.innerHTML = `<div class="text-xs text-gray-500 px-2">${t('CHAT_NO_USERS')}</div>`;
-			return;
-		}
-
 		Object.entries(onlineUsers).forEach(([id, data]) => {
 			// Skip yourself — every user past this point is someone else
 			if (id === verifiedUserId) return;
