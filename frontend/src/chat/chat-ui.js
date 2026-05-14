@@ -125,11 +125,20 @@ export function initChatUI() {
 		const tab = document.createElement("button");
 		tab.className = "channel-tab";
 		tab.dataset.channel = userId;
-		tab.innerHTML = `
-			<span class="font-bold opacity-80">@</span>
-			<span>${userName}</span>
-			<span class="close-tab" data-close="${userId}">  X</span>
-		`;
+
+		const atSpan = document.createElement("span");
+		atSpan.className = "font-bold opacity-80";
+		atSpan.textContent = "@";
+
+		const nameSpan = document.createElement("span");
+		nameSpan.textContent = userName;
+
+		const closeSpan = document.createElement("span");
+		closeSpan.className = "close-tab";
+		closeSpan.dataset.close = userId;
+		closeSpan.textContent = "  X";
+
+		tab.append(atSpan, nameSpan, closeSpan);
 
 		const globalTab = channelTabs.querySelector('[data-channel="global"]');
 		channelTabs.insertBefore(tab, globalTab.nextSibling);
