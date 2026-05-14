@@ -4,7 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import ChessPlayer, ChessMatch
 from .models import ChessSession
-from chat.consumers import IN_GAME_USERS, PENDING_GAME_RESULTS
+from chat.consumers import IN_GAME_USERS, PENDING_GAME_RESULTS, GLOBAL_CHAT_GROUP
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			player_ids = [str(p.id) for p in self.game.players.values() if p]
 			for pid in player_ids:
 				IN_GAME_USERS.add(pid)
-			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+			await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {'type': 'trigger.online.users.broadcast'})
 
 			# Expire all pending invites for each player so Accept buttons
 			# disappear everywhere — including invites from third parties.
@@ -97,7 +97,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'black_elo': black_elo,
 			})
 		else:
-			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+			await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {'type': 'trigger.online.users.broadcast'})
 	
 
 	async def disconnect(self, _close_code):
@@ -125,7 +125,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					'game_type': 'chess',
 					'is_tournament': False,
 				}
-				await self.channel_layer.group_send('global_chat', result_msg)
+				await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, result_msg)
 				# Store for the abandoning player — their chat WS closed with the tab,
 				# so the global_chat broadcast won't reach them. Deliver on reconnect.
 				loser_id = str(self.game.players[self.color].id)
@@ -143,7 +143,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			for player in self.game.players.values():
 				if player:
 					IN_GAME_USERS.discard(str(player.id))
-			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+			await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {'type': 'trigger.online.users.broadcast'})
 			ChessSession.delete_game(self.game_id)
 
 		if hasattr(self, 'game_group_name'):
@@ -193,7 +193,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			for player in self.game.players.values():
 				if player:
 					IN_GAME_USERS.discard(str(player.id))
-			await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+			await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {'type': 'trigger.online.users.broadcast'})
 			ChessSession.delete_game(self.game_id)
 
 			await self.channel_layer.group_send(self.game_group_name, {
@@ -202,7 +202,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'result': over['result']
 			})
 
-			await self.channel_layer.group_send('global_chat', {
+			await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {
 				'type': 'game.result',
 				'winner': winner_name,
 				'loser': loser_name,

@@ -3,6 +3,22 @@
 // It stays alive across SPA navigation because it lives outside #app-root.
 import { t, TranslationKey } from '../i18n/index.js';
 
+function formatGameResultMessage(data) {
+	const { winner, loser, draw_players, game_type = 'game' } = data;
+	const gameNameKeyMap = {
+		chess: TranslationKey.GAME_NAME_CHESS,
+		pong: TranslationKey.GAME_NAME_PONG,
+	};
+	const game = gameNameKeyMap[game_type] ? t(gameNameKeyMap[game_type]) : game_type;
+	if (winner && loser)
+		return t(TranslationKey.CHAT_GAME_RESULT_WIN_LOSS, { winner, loser, game });
+	if (winner)
+		return t(TranslationKey.CHAT_GAME_RESULT_WIN_ONLY, { winner, game });
+	if (draw_players && draw_players[0] && draw_players[1])
+		return t(TranslationKey.CHAT_GAME_RESULT_DRAW, { player1: draw_players[0], player2: draw_players[1], game });
+	return t(TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN, { game });
+}
+
 //chatSocket.readyState is a number. The WebSocket API defines four possible values:
 // javascriptWebSocket.CONNECTING  // 0 - still connecting
 // WebSocket.OPEN        // 1 - ready to use
@@ -23,21 +39,6 @@ export let blockedMeIds = new Set();
 // Set of user IDs currently in an active game
 export let inGameIds = new Set();
 
-function formatGameResultMessage(data) {
-	const { winner, loser, draw_players, game_type = 'game' } = data;
-	const gameNameKeyMap = {
-		chess: TranslationKey.GAME_NAME_CHESS,
-		pong: TranslationKey.GAME_NAME_PONG,
-	};
-	const game = gameNameKeyMap[game_type] ? t(gameNameKeyMap[game_type]) : game_type;
-	if (winner && loser)
-		return t(TranslationKey.CHAT_GAME_RESULT_WIN_LOSS, { winner, loser, game });
-	if (winner)
-		return t(TranslationKey.CHAT_GAME_RESULT_WIN_ONLY, { winner, game });
-	if (draw_players && draw_players[0] && draw_players[1])
-		return t(TranslationKey.CHAT_GAME_RESULT_DRAW, { player1: draw_players[0], player2: draw_players[1], game });
-	return t(TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN, { game });
-}
 
 export function initChat() {
 	
@@ -67,13 +68,13 @@ export function initChat() {
 			// Server confirms our identity after connect
 			case "selfId":
 					verifiedUserId = data.user_id;
-					verifiedUserName = data.name || "Guest";
+					verifiedUserName = data.user_name || "Guest";
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
 					window.dispatchEvent(new CustomEvent("userIdentified", {
 						detail: { userId: verifiedUserId }
 					}));
 					// Fetch previous DM conversations to restore tabs
-					chatSocket.send(JSON.stringify({ type: "get_conversations" }));
+					chatSocket.send(JSON.stringify({ type: "get_open_dms" }));
 					break;
 
 			// Incoming chat message — either global or private DM
@@ -81,31 +82,31 @@ export function initChat() {
 					// For private messages, the "channel" in the UI is the OTHER person.
 					// If I sent it: channel = target. If I received it: channel = sender.
 					// For global messages, channel is always "global";
-				let channelId;
+				let tabName;
 				
 				if (data.private) {
-					if (data.sender === verifiedUserId) {
-						// I sent this message - use the target's ID for the channel
-						channelId = data.target;
-						console.log("I sent this - channelId set to target:", channelId);
+					if (data.sender_id === verifiedUserId) {
+						// I sent this message - use the recipient's ID for the channel
+						tabName = data.recipient_id;
+						console.log("I sent this - tabName set to target:", tabName);
 					} else {
 						// Someone sent me a message - use their ID for the channel
-						channelId = data.sender;
-						console.log("Someone sent to me - channelId set to sender:", channelId);
+						tabName = data.sender_id;
+						console.log("Someone sent to me - tabName set to sender:", tabName);
 					}
 				} else {
 					// Global message
-					channelId = "global";
-					console.log("Global message - channelId set to:", channelId);
+					tabName = "global";
+					console.log("Global message - tabName set to:", tabName);
 				}
 
 				// Dispatch to main.js which owns the UI rendering
 				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
 					detail: {
-						channelId: channelId,
+						tabName: tabName,
 						message: {
-							senderId: data.sender,
-							senderName: data.name || "unknown",
+							senderId: data.sender_id,
+							senderName: data.sender_name || "unknown",
 							message: data.message
 						}
 					}
@@ -126,22 +127,22 @@ export function initChat() {
 			case "dmHistory":
 				window.dispatchEvent(new CustomEvent("dmHistoryReceived", {
 					detail: {
-						channelId: data.target,
+						tabName: data.dm_partner_id,
 						messages: data.messages,
 						seen: data.seen,
 					}
 				}));
 				break;
 				
-			case "conversations":
-				console.log("conversations received:", data.conversations);
-				window.dispatchEvent(new CustomEvent("conversationsReceived", {
-					detail: { conversations: data.conversations }
+			case "openDms":
+				console.log("openDms received:", data.dms);
+				window.dispatchEvent(new CustomEvent("openDmsReceived", {
+					detail: { dms: data.dms }
 				}));
 				break;
 
-			case "messagesRead":
-				window.dispatchEvent(new CustomEvent("messagesRead", {
+			case "messagesSeenByDmPartner":
+				window.dispatchEvent(new CustomEvent("messagesSeenByDmPartner", {
 					detail: { by: data.by }
 				}));
 				break;
@@ -149,8 +150,8 @@ export function initChat() {
 			case "gameInvite":
 				window.dispatchEvent(new CustomEvent("gameInviteReceived", {
 					detail: {
-						senderId: data.sender,
-						senderName: data.name,
+						senderId: data.sender_id,
+						senderName: data.sender_name,
 						gameType: data.game_type,
 						gameId: data.game_id,
 					}
@@ -188,7 +189,7 @@ export function initChat() {
 			case "gameResult":
 				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
 					detail: {
-						channelId: "global",
+						tabName: "global",
 						message: {
 							senderId: null,
 							senderName: t('CHAT_GAME_RESULT_TITLE'),
@@ -198,17 +199,17 @@ export function initChat() {
 				}));
 				break;
 
-			case "typing": {
-				const channelId = data.target ? data.user : "global";
+			case "otherTyping": {
+				const tabName = data.private ? data.typer_id : "global";
 				window.dispatchEvent(new CustomEvent("typingStarted", {
-					detail: { userId: data.user, name: data.name, channelId }
+					detail: { userId: data.typer_id, name: data.typer_name, tabName }
 				}));
 				break;
 			}
-			case "stopTyping": {
-				const channelId = data.target ? data.user : "global";
+			case "otherStoppedTyping": {
+				const tabName = data.private ? data.typer_id : "global";
 				window.dispatchEvent(new CustomEvent("typingStopped", {
-					detail: { userId: data.user, channelId }
+					detail: { userId: data.typer_id, tabName }
 				}));
 				break;
 			}
@@ -222,22 +223,22 @@ export function initChat() {
 /**
  * Send a chat message via the WebSocket, global or DM
  * @param {string} message - The text content to send
- * @param {string|null} target - User ID to send a private DM, or null for global chat
+ * @param {string|null} recipientId - User ID to send a private DM, or null for global chat
  */
-export function sendChatMessage(message, target = null) {
+export function sendChatMessage(message, recipientId = null) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
 		console.warn("sendChatMessage: WebSocket not ready (state:", chatSocket?.readyState, ")");
 		return;
 	}
 
 	const payload = {
-		type: "chat_message",
-		message 
+		type: "send_message",
+		message
 	};
-	
-	// Only add target if it's a private message — omitting it means global
-	if (target) {
-		payload.target = target;
+
+	// Only add recipient_id if it's a private message — omitting it means global
+	if (recipientId) {
+		payload.recipient_id = recipientId;
 	}
 
 	chatSocket.send(JSON.stringify(payload));
@@ -247,9 +248,9 @@ export function sendChatMessage(message, target = null) {
  * Attach typing indicator events to the chat textarea.
  * Sends "typing" on input, then "stop_typing" after 1s of inactivity.
  * @param {HTMLTextAreaElement} chatInput - The textarea element.
- * @param {Function} getTarget - Returns the current DM target user ID, or null for global.
+ * @param {Function} getDmPartnerId - Returns the current DM partner user ID, or null for global.
  */
-export function initTyping(chatInput, getTarget = () => null) {
+export function initTyping(chatInput, getDmPartnerId = () => null) {
 	if (!chatInput) {
 		console.warn("initTyping: no chatInput element provided");
 		return;
@@ -273,18 +274,18 @@ export function initTyping(chatInput, getTarget = () => null) {
 			if (chatSocket.readyState !== WebSocket.OPEN) return;
 
 			// Tell the server this user is typing
-			const target = getTarget();
-			const typingPayload = { type: "typing", user: verifiedUserId, name: verifiedUserName };
-			if (target) typingPayload.target = target;
+			const typingRecipientId = getDmPartnerId();
+			const typingPayload = { type: "notify_typing" };
+			if (typingRecipientId) typingPayload.typing_recipient_id = typingRecipientId;
 			chatSocket.send(JSON.stringify(typingPayload));
 
 			// Debounce: cancel the previous countdown and start a fresh one
-			// "stop_typing" only fires if the user stops typing for a full second
+			// "notify_stop_typing" only fires if the user stops typing for a full second
 			clearTimeout(typingTimeout);
 			typingTimeout = setTimeout(() => {
 				if (chatSocket.readyState === WebSocket.OPEN) {
-					const stopPayload = { type: "stop_typing", user: verifiedUserId, name: verifiedUserName };
-					if (target) stopPayload.target = target;
+					const stopPayload = { type: "notify_stop_typing" };
+					if (typingRecipientId) stopPayload.typing_recipient_id = typingRecipientId;
 					chatSocket.send(JSON.stringify(stopPayload));
 				}
 			}, 1000);
@@ -314,70 +315,70 @@ export function closeChat() {
 	if (openChatBtn) openChatBtn.style.display = "none";
 }
 
-export function fetchDMHistory(targetId) {
+export function fetchDMHistory(dmPartnerId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
 		type: "fetch_history",
-		target: targetId
+		dm_partner_id: dmPartnerId
 	}));
 }
 
-export function markRead(targetId) {
+export function markRead(dmPartnerId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
 		type: "mark_read",
-		target: targetId
+		dm_partner_id: dmPartnerId
 	}));
 }
 
-export function closeConversation(targetId) {
+export function hideDm(dmPartnerId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
-		type: "close_conversation",
-		target: targetId
+		type: "hide_dm",
+		dm_partner_id: dmPartnerId
 	}));
 }
 
-export function notifyBlocked(targetId = null) {
+export function reportBlockedUser(recipientId = null) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "user_blocked", target: targetId }));
+	chatSocket.send(JSON.stringify({ type: "report_blocked_user", recipient_id: recipientId }));
 }
 
-export function sendGameInvite(targetId, gameType, gameId) {
-	console.log('[invite] sendGameInvite — WS state:', chatSocket?.readyState, '(1=OPEN), gameId:', gameId, 'target:', targetId);
+export function sendGameInvite(inviteeId, gameType, gameId) {
+	console.log('[invite] sendGameInvite — WS state:', chatSocket?.readyState, '(1=OPEN), gameId:', gameId, 'invitee:', inviteeId);
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
 		console.warn('[invite] DROPPED — WS not open');
 		return;
 	}
 	chatSocket.send(JSON.stringify({
-		type: "game_invite",
-		target: targetId,
+		type: "send_game_invite",
+		invitee_id: inviteeId,
 		game_type: gameType,
 		game_id: gameId,
 	}));
 }
 
-export function sendGameInviteExpired(targetId, gameId) {
+export function cancelGameInvite(inviteeId, gameId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
-		type: "game_invite_expired",
-		target: targetId,
+		type: "cancel_game_invite",
+		invitee_id: inviteeId,
 		game_id: gameId,
 	}));
 }
 
-export function sendDeleteInvite(gameId) {
+export function acceptGameInvite(gameId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
-		type: "delete_invite",
+		type: "accept_game_invite",
 		game_id: gameId,
 	}));
 }
 
-export function openConversation(targetId) {
+export function setActiveConversation(partnerId) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
-		type: "open_conversation",
-		target: targetId
+		type: "set_active_conversation",
+		partner_id: partnerId
 	}));
 }
