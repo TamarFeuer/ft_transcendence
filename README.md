@@ -10,6 +10,10 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
 - [Resources](#resources)
 - [Team Information](#team-information)
 - [Project Management](#project-management)
+  - [Tools](#tools)
+  - [Process](#process)
+  - [Onboarding](#onboarding)
+  - [Communication Channels](#communication-channels)
 - [Technical Stack](#technical-stack)
 - [Database Schema](#database-schema)
 - [Feature List](#feature-list)
@@ -54,9 +58,31 @@ specifying for which tasks and which parts of the project>
 
 
 ### Project Management
-<◦ How the team organized the work (task distribution, meetings, etc.).
-◦ Tools used for project management (GitHub Issues, Trello, etc.).
-◦ Communication channels used (Discord, Slack, etc.)>
+
+The team's project management approach evolved over time, shaped in part by a LeanIT workshop given at Codam by Niels Loader from Eraneos, which introduced Agile and Scrum practices.
+
+#### Tools
+
+The backlog was initially set up on Trello and later migrated to GitHub Projects after the LeanIT workshop, so that issues, code, and project tracking would all live in the same place. User stories were written and maintained as GitHub Issues, with the initial backlog drafted and kept up to date by the PM.
+
+#### Process
+
+The team adopted a one-week sprint cadence, though in practice this was not always strictly followed. A weekly team meeting was scheduled for Mondays at 12:00 to sync on progress, surface blockers, and plan upcoming work.
+
+A code review policy was established early in the project: pull requests must receive at least one approving review before being merged into `main`. The intent was to ensure that no code reaches the main branch without a second pair of eyes, both as a quality safeguard and as a way to spread knowledge across the team.
+
+The structure of this README was also defined as part of the project management work, with individual sections then filled in by their respective owners.
+
+#### Onboarding
+
+As the team grew over the course of the project, onboarding new members was handled collaboratively: walking them through the existing codebase and project structure, explaining the team's processes (review policy, weekly meetings, project board), adding them to the relevant tools (Slack, GitHub repository, GitHub Projects), and pairing with them on their first issues or PRs.
+
+#### Communication Channels
+
+- **Slack** — primary channel for day-to-day discussion, decisions, and quick coordination
+- **GitHub issue comments** — for discussion tied to specific user stories or tasks
+- **GitHub PR comments** — for code review feedback and technical discussion
+- **Weekly meetings** — for synchronous discussion, planning, and decisions
 
 
 ### Technical Stack
