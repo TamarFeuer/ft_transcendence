@@ -37,10 +37,9 @@ PENDING_GAME_RESULTS = {}  # user_id -> game result message to deliver on next r
 class ChatConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
 
-		# Auth: read JWT from HTTP-only cookie set at login.
-		# If the token is missing or invalid, reject the connection immediately.
-		token = self.scope["cookies"].get("access_token")
-		user = await get_user_from_token(token)
+		# Reject unauthenticated connections — 
+		# TokenAuthMiddleware already resolved the user from the JWT cookie.
+		user = self.scope['user']
 
 		if not user or not user.is_authenticated:
 			await self.close()
