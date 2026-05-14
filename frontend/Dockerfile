@@ -1,7 +1,13 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+# we do install everything, including dev dependencies
+# but only in the builder stage, which never ships.
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+RUN npm run build
+
+# we only copy the built files to the production image, which is much smaller.
+FROM nginx:stable-alpine AS production
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
