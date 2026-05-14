@@ -134,7 +134,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 			if recipient_id:
 				# Block check: silently drop the message if either user has blocked the other.
-				from friends.models import is_blocked
+				from block.models import is_blocked
 				if await database_sync_to_async(is_blocked)(self.user_id, recipient_id):
 					return
 
@@ -671,7 +671,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	@database_sync_to_async
 	def get_block_info_for(self, user_id):
-		from friends.models import Block
+		from block.models import Block
 
 		# Returns two sets: users this user has blocked, and users who have blocked this user.
 		blocked_by_me = set(

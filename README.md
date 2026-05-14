@@ -23,7 +23,9 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Online Pong](#online-pong)
   - [AI Player](#ai-player)
   - [Tournaments](#tournaments)
-  - [Friends & Social Features](#friends--social-features)
+  - [Friends](#friends)
+  - [Block](#block)
+    - [Block REST API](#block-rest-api)
   - [Chat System](#chat-system)
     - [WebSocket Message Protocol](#websocket-message-protocol)
   - [Additional Games](#additional-games)
@@ -117,7 +119,29 @@ The following features are implemented:
 
 #### Tournaments
 
-#### Friends & Social Features
+#### Friends
+
+#### Block
+
+##### Block REST API
+
+All endpoints are under `/api/block/`. Authentication via JWT cookie (`access_token`).
+
+###### `POST /api/block/`
+Block a user by their user ID. Also removes any existing friendship between the two users.
+```json
+Request:  { "user_id": 7 }
+Response: { "success": true, "message": "You have blocked rik" }
+```
+
+###### `DELETE /api/block/unblock`
+Unblock a previously blocked user by their user ID.
+```json
+Request:  { "user_id": 7 }
+Response: { "success": true }
+```
+
+---
 
 #### Chat System
 

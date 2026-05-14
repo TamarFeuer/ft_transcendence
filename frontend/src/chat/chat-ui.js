@@ -351,7 +351,7 @@ export function initChatUI() {
 				unblockBtn.className = "ml-auto text-xs text-pink-400 hover:text-pink-200";
 				unblockBtn.addEventListener("click", (e) => {
 					e.stopPropagation();
-					fetchWithRefreshAuth('/api/friends/unblock', {
+					fetchWithRefreshAuth('/api/block/unblock', {
 						method: 'DELETE',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ user_id: id })
@@ -510,7 +510,7 @@ export function initChatUI() {
 			openDMChannel(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
 		} else if (action === "block") {
 			const blockedUserId = chatMenuUser.id;
-			fetchWithRefreshAuth('/api/friends/block', {
+			fetchWithRefreshAuth('/api/block/', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ user_id: blockedUserId })
