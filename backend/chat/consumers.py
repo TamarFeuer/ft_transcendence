@@ -71,6 +71,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"user_name": self.username
 		}))
 
+		# Delete stale game invites from before this connection — any invite that
+		# survived a server restart is invalid since the game session no longer exists.
+		await self._cleanup_stale_invites()
+
 		# Deliver any game result the user missed while their chat WS was down.
 		pending = PENDING_GAME_RESULTS.pop(self.user_id, None)
 		if pending:
@@ -421,7 +425,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"blocked_me_ids": list(blocked_me),
 				"in_game_ids": list(IN_GAME_USERS),
 			})
-
+	
 	# ─── Database helpers ─────────────────────────────────────────────────────
 	# All database access must be wrapped in database_sync_to_async because
 	# Django's ORM is synchronous but the consumer runs in an async context.
@@ -586,6 +590,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		sender_id = GameInvite.objects.filter(game_id=game_id).values_list('sender_id', flat=True).first()
 		GameInvite.objects.filter(game_id=game_id).delete()
 		return str(sender_id) if sender_id else None
+
+	@database_sync_to_async
+	def _cleanup_stale_invites(self):
+		from chat.models import GameInvite
+		from django.db.models import Q
+		GameInvite.objects.filter(
+			Q(sender_id=self.user_id) | Q(recipient_id=self.user_id)
+		).delete()
 
 	@database_sync_to_async
 	def get_open_dms(self, user_id):
