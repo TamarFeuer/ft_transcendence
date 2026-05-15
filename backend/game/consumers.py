@@ -8,7 +8,7 @@ from channels.db import database_sync_to_async
 from .models import GameSession, Player
 from .services import match_ends
 import logging
-from chat.consumers import IN_GAME_USERS, PENDING_GAME_RESULTS
+from chat.consumers import IN_GAME_USERS, PENDING_GAME_RESULTS, GLOBAL_CHAT_GROUP
 
 logger = logging.getLogger(__name__)
 
@@ -258,7 +258,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             player_ids = [str(pid) for pid in self.game.players_ids.values() if pid]
             for pid in player_ids:
                 IN_GAME_USERS.add(pid)
-            await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+            await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {'type': 'trigger.online.users.broadcast'})
 
             # Expire all pending invites for each player, including from third parties
             for pid in player_ids:
@@ -287,7 +287,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Start game loop
             asyncio.create_task(self.game_loop())
         else:
-            await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+            await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {'type': 'trigger.online.users.broadcast'})
             if self.game.isTournamentGame:
                 # Start timeout checker if this is a tournament game in waiting state
                 asyncio.create_task(self.check_join_timeout())
@@ -342,13 +342,13 @@ class GameConsumer(AsyncWebsocketConsumer):
                 )
                 loser_name = getattr(departing_user, 'username', None)
                 result_msg = {
-                    "type": "game_result",
+                    "type": "game.result",
                     "winner": winner_name,
                     "loser": loser_name,
                     "game_type": "pong",
                     "is_tournament": self.game.isTournamentGame
                 }
-                await self.channel_layer.group_send("global_chat", result_msg)
+                await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, result_msg)
                 for pid in [str(winner_id), str(getattr(departing_user, 'id', None))]:
                     if pid:
                         PENDING_GAME_RESULTS[pid] = result_msg
@@ -383,7 +383,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             for player_id in self.game.players_ids.values():
                 if player_id:
                     IN_GAME_USERS.discard(str(player_id))
-            await self.channel_layer.group_send('global_chat', {'type': 'trigger.online.users.broadcast'})
+            await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, {'type': 'trigger.online.users.broadcast'})
 
         if hasattr(self, 'game_group_name'):
             await self.channel_layer.group_discard(
@@ -459,7 +459,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'game_type': 'pong',
                         'is_tournament': self.game.isTournamentGame,
                     }
-                    await self.channel_layer.group_send('global_chat', result_msg)
+                    await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, result_msg)
                     for pid in [str(winner_id), str(getattr(loser_user, 'id', None))]:
                         if pid:
                             PENDING_GAME_RESULTS[pid] = result_msg

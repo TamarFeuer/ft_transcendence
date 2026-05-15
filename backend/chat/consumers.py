@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 # consumer instances. They survive as long as Daphne is running but are wiped
 # on restart. Online status is naturally ephemeral so in-memory is the right
 # place for it — there's no point persisting "was online before the server restarted".
+GLOBAL_CHAT_GROUP = "global_chat"  # arbitrary name for the Django Channels broadcast group
 ONLINE_USERS = {}          # user_id -> username
 USER_CONNECTION_COUNT = {}  # user_id -> number of open tabs; reaches 0 when last tab closes
 ACTIVE_CONVERSATION = {}   # user_id -> other_user_id they currently have open
@@ -28,7 +29,7 @@ PENDING_GAME_RESULTS = {}  # user_id -> game result message to deliver on next r
 # self.user    - the full Django User object
 # self.user_id - the authenticated user's ID as a string, like "42". Same across all their tabs
 # self.username - the authenticated user's username
-# self.group_name - the global chat group name ("global_chat")
+# GLOBAL_CHAT_GROUP - the Django Channels group that all connected users join
 
 # self.channel_name - a unique ID that Django Channels assigns to this specific WebSocket
 # connection, like "specific.abc123". Each browser tab gets a different one.
@@ -36,18 +37,13 @@ PENDING_GAME_RESULTS = {}  # user_id -> game result message to deliver on next r
 class ChatConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
 
-		# Auth: read JWT from HTTP-only cookie set at login.
-		# If the token is missing or invalid, reject the connection immediately.
-		token = self.scope["cookies"].get("access_token")
-		user = await get_user_from_token(token)
+		# Reject unauthenticated connections — 
+		# TokenAuthMiddleware already resolved the user from the JWT cookie.
+		user = self.scope['user']
 
 		if not user or not user.is_authenticated:
 			await self.close()
 			return
-
-		# Every user joins the global group so they receive global messages.
-		# DMs and invites are delivered via the personal user_{id} group joined below.
-		self.group_name = "global_chat"
 
 		# get_user_from_token returns Django's proper User model object,
 		# which has .id and .username as standard Django fields.
@@ -55,9 +51,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		self.user_id = str(user.id)
 		self.username = user.username
 
-		# Join the global group via the channel layer.
-		await self.channel_layer.group_add(self.group_name, self.channel_name)
-		# Join personal group so other consumers (e.g. chess) can send signals to this user.
+		# Every user joins the global group so they receive global messages.
+		# DMs and invites are delivered via the personal user_{id} group joined below.
+		await self.channel_layer.group_add(GLOBAL_CHAT_GROUP, self.channel_name)
 		await self.channel_layer.group_add(f"user_{self.user_id}", self.channel_name)
 		await self.accept()
 
@@ -70,16 +66,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Tell the client their own user_id and username so the frontend
 		# knows who it is (used in chat.js to determine message ownership).
 		await self.send(text_data=json.dumps({
-			"type": "self_id",
+			"type": "selfId",
 			"user_id": self.user_id,
-			"name": self.username
+			"user_name": self.username
 		}))
+
+		# Delete stale game invites from before this connection — any invite that
+		# survived a server restart is invalid since the game session no longer exists.
+		await self._cleanup_stale_invites()
 
 		# Deliver any game result the user missed while their chat WS was down.
 		pending = PENDING_GAME_RESULTS.pop(self.user_id, None)
 		if pending:
 			await self.send(text_data=json.dumps({
-				"type": "game_result",
+				"type": "gameResult",
 				"winner": pending.get("winner"),
 				"loser": pending.get("loser"),
 				"draw_players": pending.get("draw_players"),
@@ -90,28 +90,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.broadcast_online_users()
 
 	async def disconnect(self, close_code):
-		# Only leave the global group if we successfully joined it in connect().
-		# If connect() failed early (e.g. invalid token), group_name was never set.
-		if hasattr(self, "group_name"):
-			await self.channel_layer.group_discard(self.group_name, self.channel_name)
-			await self.channel_layer.group_discard(f"user_{self.user_id}", self.channel_name)
-
-		# Only clean up user data if we successfully authenticated in connect().
-		# getattr with default None avoids AttributeError if user_id was never set.
+		# Only run cleanup if connect() completed successfully — user_id is set only after auth.
 		user_id = getattr(self, "user_id", None)
-		if user_id:
-			count = USER_CONNECTION_COUNT.get(user_id, 1) - 1
-			if count <= 0:
-				# Last tab closed — user is fully offline.
-				USER_CONNECTION_COUNT.pop(user_id, None)
-				ONLINE_USERS.pop(user_id, None)
-				ACTIVE_CONVERSATION.pop(user_id, None)
-			else:
-				USER_CONNECTION_COUNT[user_id] = count
+		if not user_id:
+			return
 
-		# Only broadcast if group_name exists; if connect() failed early, it was never set.
-		if hasattr(self, "group_name"):
-			await self.broadcast_online_users()
+		# Leave the channel groups — remove this connection from GLOBAL_CHAT_GROUP and user_{id}.
+		await self.channel_layer.group_discard(GLOBAL_CHAT_GROUP, self.channel_name)
+		await self.channel_layer.group_discard(f"user_{self.user_id}", self.channel_name)
+
+		# Clean up in-memory data — decrement the connection count, remove from ONLINE_USERS if last tab.
+		count = USER_CONNECTION_COUNT.get(user_id, 1) - 1
+		if count <= 0:
+			USER_CONNECTION_COUNT.pop(user_id, None)
+			ONLINE_USERS.pop(user_id, None)
+			ACTIVE_CONVERSATION.pop(user_id, None)
+		else:
+			USER_CONNECTION_COUNT[user_id] = count
+
+		# Broadcast — tell everyone else this user went offline.
+		await self.broadcast_online_users()
 
 	async def receive(self, text_data):
 		try:
@@ -124,135 +122,135 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		logger.debug(f"[receive] type={msg_type} user={self.username}({self.user_id})")
 
-		if msg_type == "chat":
+		if msg_type == "send_message":
 			message = data.get("message", "")
 			if len(message) > 300:
 				return
 
-			target = data.get("target")
-			payload = {
+			recipient_id = data.get("recipient_id")
+			event = {
 				"type": "chat.message",
 				"message": message,
-				"sender": self.user_id,
-				"name": self.username,
+				"sender_id": self.user_id,
+				"sender_name": self.username,
 			}
 
-			if target:
+			if recipient_id:
 				# Block check: silently drop the message if either user has blocked the other.
-				from friends.models import is_blocked
-				if await database_sync_to_async(is_blocked)(self.user_id, target):
+				from block.models import is_blocked
+				if await database_sync_to_async(is_blocked)(self.user_id, recipient_id):
 					return
 
 				# Private message: deliver to all of the recipient's open tabs,
 				# and echo back to all of the sender's own tabs (so other tabs stay in sync).
 				# group_send reaches every connection in the group automatically.
-				payload["private"] = True
-				payload["target"] = target
-				await self.channel_layer.group_send(f"user_{target}", payload)
-				await self.channel_layer.group_send(f"user_{self.user_id}", payload)
+				event["private"] = True
+				event["recipient_id"] = recipient_id
+				await self.channel_layer.group_send(f"user_{recipient_id}", event)
+				await self.channel_layer.group_send(f"user_{self.user_id}", event)
 				# Persist the message and update conversation state in the database.
-				await self.save_dm(target, message)
+				await self.save_dm(recipient_id, message)
 			else:
 				# Global message: broadcast to everyone in the global group.
 				# Global messages are not saved to the database.
-				payload["private"] = False
-				await self.channel_layer.group_send(self.group_name, payload)
+				event["private"] = False
+				await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, event)
 
 		elif msg_type == "fetch_history":
-			other_id = data.get("target")
-			if not other_id:
+			dm_partner_id = data.get("dm_partner_id")
+			if not dm_partner_id:
 				return
-			logger.debug(f"[fetch_history] user={self.username}({self.user_id}) → target={other_id}")
-			messages, seen = await self.get_dm_history(self.user_id, other_id)
+			logger.debug(f"[fetch_history] user={self.username}({self.user_id}) → dm_partner_id={dm_partner_id}")
+			messages, seen = await self.get_dm_history(self.user_id, dm_partner_id)
 			await self.send(text_data=json.dumps({
-				"type": "dm_history",
-				"target": other_id,
+				"type": "dmHistory",
+				"dm_partner_id": dm_partner_id,
 				"messages": messages,
 				"seen": seen,
 			}))
 
-		elif msg_type == "get_conversations":
-			conversations = await self.get_conversations(self.user_id)
-			logger.info(f"[get_conversations] user={self.username}({self.user_id}) → {conversations}")
+		elif msg_type == "get_open_dms":
+			dms = await self.get_open_dms(self.user_id)
+			logger.info(f"[get_open_dms] user={self.username}({self.user_id}) → {dms}")
 			await self.send(text_data=json.dumps({
-				"type": "conversations",
-				"conversations": conversations
+				"type": "openDms",
+				"dms": dms
 			}))
 
-		elif msg_type == "open_conversation":
-			other_id = data.get("target")
-			logger.debug(f"[open_conversation] user={self.username}({self.user_id}) → target={other_id}")
-			if other_id:
+		elif msg_type == "set_active_conversation":
+			partner_id = data.get("partner_id")
+			logger.debug(f"[set_active_conversation] user={self.username}({self.user_id}) → partner_id={partner_id}")
+			if partner_id:
 				# Track that this user is now actively viewing this DM tab.
 				# Used in save_dm to skip the unread increment for active viewers.
-				ACTIVE_CONVERSATION[self.user_id] = other_id
+				ACTIVE_CONVERSATION[self.user_id] = partner_id
 			else:
-				# null target means the user switched away (e.g. to global) — clear so
+				# null partner_id means the user switched away (e.g. to global) — clear so
 				# save_dm doesn't keep skipping the unread increment for their old DM.
 				ACTIVE_CONVERSATION.pop(self.user_id, None)
 
 		elif msg_type == "mark_read":
-			other_id = data.get("target")
-			if not other_id:
+			dm_partner_id = data.get("dm_partner_id")
+			if not dm_partner_id:
 				return
-			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {other_id}")
+			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {dm_partner_id}")
 			# Reset the unread counter for this conversation in the database.
-			await self.mark_read(self.user_id, other_id)
+			await self.mark_read(self.user_id, dm_partner_id)
 			# Notify the other user that their messages were read.
 			await self.channel_layer.group_send(
-				f"user_{other_id}",
+				f"user_{dm_partner_id}",
 				{"type": "messages.read", "by": self.user_id}
 			)
 
-		elif msg_type == "close_conversation":
-			other_id = data.get("target")
-			if not other_id:
+		elif msg_type == "hide_dm":
+			dm_partner_id = data.get("dm_partner_id")
+			if not dm_partner_id:
 				return
-			logger.debug(f"[close_conversation] user={self.username}({self.user_id}) → target={other_id}")
-			# Mark this conversation as closed in the database.
-			await self.close_conversation(self.user_id, other_id)
+			logger.debug(f"[hide_dm] user={self.username}({self.user_id}) → dm_partner_id={dm_partner_id}")
+			# Mark this conversation as hidden in the database.
+			await self.hide_dm(self.user_id, dm_partner_id)
 
-		elif msg_type == "game_invite":
-			target = data.get("target")
+		elif msg_type == "send_game_invite":
+			invitee_id = data.get("invitee_id")
 			game_type = data.get("game_type")
 			game_id = data.get("game_id")
-			logger.debug(f"[invite] game_invite from {self.user_id} → target={target} game_id={game_id}")
-			if not target or not game_type or not game_id:
-				logger.warning(f"[invite] missing fields — target={target} game_type={game_type} game_id={game_id}")
+			logger.debug(f"[invite] send_game_invite from {self.user_id} → invitee_id={invitee_id} game_id={game_id}")
+			if not invitee_id or not game_type or not game_id:
+				logger.warning(f"[invite] missing fields — invitee_id={invitee_id} game_type={game_type} game_id={game_id}")
 				return
-			if target in IN_GAME_USERS or self.user_id in IN_GAME_USERS:
+			if invitee_id in IN_GAME_USERS or self.user_id in IN_GAME_USERS:
 				await self.send(text_data=json.dumps({
-					"type": "game_invite_rejected",
+					"type": "gameInviteRejected",
 					"reason": "in_game",
 				}))
 				return
 			payload = {
 				"type": "game.invite",
-				"sender": self.user_id,
-				"name": self.username,
+				"sender_id": self.user_id,
+				"sender_name": self.username,
 				"game_type": game_type,
 				"game_id": game_id,
 			}
-			# If the target has no open tabs the group_send is a no-op; the invite is still saved to DB.
-			await self.channel_layer.group_send(f"user_{target}", payload)
-			await self.save_invite(target, game_type, game_id)
+			# If the invitee has no open tabs the group_send is a no-op; the invite is still saved to DB.
+			await self.channel_layer.group_send(f"user_{invitee_id}", payload)
+			await self.save_invite(invitee_id, game_type, game_id)
 
-		elif msg_type == "game_invite_expired":
-			target = data.get("target")
+		elif msg_type == "cancel_game_invite":
+			invitee_id = data.get("invitee_id")
 			game_id = data.get("game_id")
-			if not target or not game_id:
+			if not invitee_id or not game_id:
 				return
-			logger.debug(f"[game_invite_expired] user={self.username}({self.user_id}) → target={target} game_id={game_id}")
+			logger.debug(f"[cancel_game_invite] user={self.username}({self.user_id}) → invitee_id={invitee_id} game_id={game_id}")
 			await self.delete_invite(game_id)
 			payload = {
 				"type": "game.invite.expired",
 				"game_id": game_id,
 			}
-			await self.channel_layer.group_send(f"user_{target}", payload)
+			await self.channel_layer.group_send(f"user_{invitee_id}", payload)
 
-		elif msg_type == "delete_invite":
+		elif msg_type == "accept_game_invite":
 			game_id = data.get("game_id")
-			logger.debug(f"[delete_invite] user={self.username}({self.user_id}) game_id={game_id}")
+			logger.debug(f"[accept_game_invite] user={self.username}({self.user_id}) game_id={game_id}")
 			if game_id:
 				sender_id = await self.delete_invite(game_id)
 				if sender_id:
@@ -265,18 +263,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
 						"game_id": game_id,
 					})
 
-		elif msg_type == "user_blocked":
-			target = data.get("target")
-			logger.debug(f"[user_blocked] user={self.username}({self.user_id}) → target={target}")
-			if target:
-				invite_ids = await self.get_invite_ids_with(target)
+		elif msg_type == "report_blocked_user":
+			recipient_id = data.get("recipient_id")
+			logger.debug(f"[report_blocked_user] user={self.username}({self.user_id}) → recipient_id={recipient_id}")
+			if recipient_id:
+				invite_ids = await self.get_invite_ids_with(recipient_id)
 				for gid in invite_ids:
 					await self.channel_layer.group_send(
 						f'user_{self.user_id}',
 						{'type': 'game.invite.blocked', 'game_id': gid}
 					)
 					await self.channel_layer.group_send(
-						f'user_{target}',
+						f'user_{recipient_id}',
 						{'type': 'game.invite.expired', 'game_id': gid}
 					)
 				await self.channel_layer.group_send(
@@ -284,23 +282,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
 					{'type': 'friend.list.changed'}
 				)
 				await self.channel_layer.group_send(
-					f'user_{target}',
+					f'user_{recipient_id}',
 					{'type': 'friend.list.changed'}
 				)
 			await self.broadcast_online_users()
 
-		elif msg_type in ["typing", "stop_typing"]:
-			target = data.get("target")
-			logger.debug(f"[{msg_type}] user={self.username}({self.user_id}) → target={target}")
-			group = f"user_{target}" if target else self.group_name
+		elif msg_type in ["notify_typing", "notify_stop_typing"]:
+			typing_recipient_id = data.get("typing_recipient_id")
+			action = "stop_typing" if msg_type == "notify_stop_typing" else "typing"
+			logger.debug(f"[{msg_type}] user={self.username}({self.user_id}) → typing_recipient_id={typing_recipient_id}")
+			# DM: notify only the typing recipient; global: broadcast to the global chat group
+			group = f"user_{typing_recipient_id}" if typing_recipient_id else GLOBAL_CHAT_GROUP
 			await self.channel_layer.group_send(
 				group,
 				{
 					"type": "typing.notification",
-					"action": msg_type,
-					"user": self.user_id,
-					"name": self.username,
-					"target": target,
+					"action": action,
+					"typer_id": self.user_id,
+					"typer_name": self.username,
+					"private": bool(typing_recipient_id),
 				}
 			)
 
@@ -312,25 +312,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def chat_message(self, event):
 		# Deliver a chat message (global or DM) to this consumer's client.
 		await self.send(text_data=json.dumps({
-			"type": "chat",
+			"type": "chatMessage",
 			"message": event["message"],
-			"sender": event["sender"],
-			"name": event.get("name"),
+			"sender_id": event["sender_id"],
+			"sender_name": event.get("sender_name"),
 			"private": event.get("private", False),  # True for DMs, False for global
-			"target": event.get("target")             # user_id of DM recipient, or None for global
+			"recipient_id": event.get("recipient_id")  # user_id of DM recipient, or None for global
 		}))
 
 	async def messages_read(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "messages_read",
+			"type": "messagesSeenByDmPartner",
 			"by": event["by"],
 		}))
 
 	async def game_invite(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "game_invite",
-			"sender": event["sender"],
-			"name": event["name"],
+			"type": "gameInvite",
+			"sender_id": event["sender_id"],
+			"sender_name": event["sender_name"],
 			"game_type": event["game_type"],
 			"game_id": event["game_id"],
 		}))
@@ -351,7 +351,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def game_result(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "game_result",
+			"type": "gameResult",
 			"winner": event.get("winner"),
 			"loser": event.get("loser"),
 			"draw_players": event.get("draw_players"),
@@ -364,7 +364,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def game_invite_accepted(self, event):
 		await self.send(text_data=json.dumps({
-			"type": "game_invite_accepted",
+			"type": "gameInviteAccepted",
 			"game_id": event["game_id"],
 		}))
 
@@ -372,7 +372,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		game_id = event["game_id"]
 		await self.delete_invite(game_id)
 		await self.send(text_data=json.dumps({
-			"type": "game_invite_blocked",
+			"type": "gameInviteBlocked",
 			"game_id": game_id,
 		}))
 
@@ -380,7 +380,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		game_id = event["game_id"]
 		await self.delete_invite(game_id)
 		await self.send(text_data=json.dumps({
-			"type": "game_invite_expired",
+			"type": "gameInviteExpired",
 			"game_id": game_id,
 		}))
 
@@ -389,41 +389,43 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	async def typing_notification(self, event):
 		# Deliver a typing indicator to this consumer's client.
+		action = "otherStoppedTyping" if event["action"] == "stop_typing" else "otherTyping"
 		await self.send(text_data=json.dumps({
-			"type": event["action"],  # "typing" or "stop_typing"
-			"user": event["user"],
-			"name": event.get("name"),
-			"target": event.get("target"),
+			"type": action,
+			"typer_id": event["typer_id"],
+			"typer_name": event.get("typer_name"),
+			"private": event.get("private"),
 		}))
 
 	async def online_users(self, event):
 		# Deliver the updated online users list to this consumer's client.
 		await self.send(text_data=json.dumps({
-			"type": "online_users",
+			"type": "onlineUsers",
 			"users": event["users"],
-			"blocked_me_ids": event.get("blocked_me_ids", [])
+			"blocked_by_me_ids": event.get("blocked_by_me_ids", []),
+			"blocked_me_ids": event.get("blocked_me_ids", []),
+			"in_game_ids": event.get("in_game_ids", []),
 		}))
+
+	# ─── Internal helpers ────────────────────────────────────────────────────
 
 	async def broadcast_online_users(self):
 		# Send each online user a personalized online users list.
-		# Each user sees a different list: users who blocked them are hidden,
-		# and users they blocked appear with blocked_by_me: True for the unblock button.
+		# Each user sees a different list: users who blocked them are hidden.
 		# group_send to user_{id} reaches all their open tabs at once.
 		for user_id in list(ONLINE_USERS.keys()):
 			blocked_by_me, blocked_me = await self.get_block_info_for(user_id)
-			users = {}
-			for uid, name in list(ONLINE_USERS.items()):
-				if uid in blocked_me:
-					continue
-				users[uid] = {
-					"name": name,
-					"blocked_by_me": uid in blocked_by_me,
-					"in_game": uid in IN_GAME_USERS,
-				}
+			users = {
+				uid: name
+				for uid, name in list(ONLINE_USERS.items())
+				if uid not in blocked_me
+			}
 			await self.channel_layer.group_send(f"user_{user_id}", {
 				"type": "online.users",
 				"users": users,
-				"blocked_me_ids": list(blocked_me)
+				"blocked_by_me_ids": list(blocked_by_me),
+				"blocked_me_ids": list(blocked_me),
+				"in_game_ids": list(IN_GAME_USERS),
 			})
 
 	# ─── Database helpers ─────────────────────────────────────────────────────
@@ -592,7 +594,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		return str(sender_id) if sender_id else None
 
 	@database_sync_to_async
-	def get_conversations(self, user_id):
+	def _cleanup_stale_invites(self):
+		from chat.models import GameInvite
+		from django.db.models import Q
+		GameInvite.objects.filter(
+			Q(sender_id=self.user_id) | Q(recipient_id=self.user_id)
+		).delete()
+
+	@database_sync_to_async
+	def get_open_dms(self, user_id):
 		from chat.models import ConversationParticipant
 
 		# Get all conversations this user is part of.
@@ -624,7 +634,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				if last_sent and other_part.last_read_at and other_part.last_read_at >= last_sent:
 					seen = True
 				result[str(other_part.user_id)] = {
-					"name": other_part.user.username,
+					"user_name": other_part.user.username,  # the other participant's username, used to label the DM tab
 					"unread": my_part.unread_count,
 					"seen": seen,
 				}
@@ -653,7 +663,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			).update(unread_count=0, last_read_at=timezone.now(), is_closed=False)
 
 	@database_sync_to_async
-	def close_conversation(self, user_id, other_id):
+	def hide_dm(self, user_id, other_id):
 		from chat.models import ConversationParticipant
 
 		# Find the shared conversation and mark it as closed for this user.
@@ -674,7 +684,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 	@database_sync_to_async
 	def get_block_info_for(self, user_id):
-		from friends.models import Block
+		from block.models import Block
 
 		# Returns two sets: users this user has blocked, and users who have blocked this user.
 		blocked_by_me = set(
