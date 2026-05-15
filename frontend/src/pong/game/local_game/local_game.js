@@ -49,15 +49,15 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
         // ============ UI AND INPUT SETUP ============
 
-        gameState.ui.physicsPanel = createPhysicsPanel(
-            gameState.physics,
-            defaultPhysics,
-            sliderConfigs,
-            makeValueFormatter,
-            highImpactKeys,
-            highImpactHints,
-            arenaMeshes
-        );
+        // gameState.ui.physicsPanel = createPhysicsPanel(
+        //     gameState.physics,
+        //     defaultPhysics,
+        //     sliderConfigs,
+        //     makeValueFormatter,
+        //     highImpactKeys,
+        //     highImpactHints,
+        //     arenaMeshes
+        // );
 
         const inputManager = setupInputHandlers(gameState, gameObjects, gameState.physics);
 
