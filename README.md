@@ -16,6 +16,9 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Communication Channels](#communication-channels)
 - [Technical Stack](#technical-stack)
 - [Database Schema](#database-schema)
+  - [Chat, Friends & Block](#chat-friends--block)
+  - [Pong Stats & Chess](#pong-stats--chess)
+  - [Tournament](#tournament)
 - [Feature List](#feature-list)
   - [Authentication & Security](#authentication--security)
   - [User Management](#user-management)
@@ -96,9 +99,26 @@ As the team grew over the course of the project, onboarding new members was hand
 
 
 ### Database Schema
-<◦ Visual representation or description of the database structure.
-◦ Tables/collections and their relationships.
-◦ Key fields and data types>
+
+The database is PostgreSQL. The schema is split into three diagrams by domain.
+
+#### Chat, Friends & Block
+
+Centres on `auth_user`. Friend requests and blocks are direct user-to-user relationships. Chat is built around a `Conversation` container — messages, participants, and game invites all hang off it. `ConversationParticipant` tracks per-user state (unread count, read timestamp, tab visibility).
+
+![Chat, Friends & Block](docs/images/chat_social.png)
+
+#### Pong Stats & Chess
+
+Each user gets a `stats_players` profile (auto-created on registration) that accumulates pong stats and ELO. Matches reference players, not users directly. Achievements are defined once in `stats_achievements` and linked to players via `stats_player_achievements`. Chess has its own parallel player and match tables with separate ELO tracking.
+
+![Pong Stats & Chess](docs/images/stats_chess.png)
+
+#### Tournament
+
+A `Tournament` is created by a user and has many `TournamentParticipant` rows (one per registered player) and many `TournamentGame` rows (one per match in the bracket). Games reference users directly and track round, status, and the external `game_id` used to link to the live pong session.
+
+![Tournament](docs/images/tournament.png)
 
 
 ### Feature List
