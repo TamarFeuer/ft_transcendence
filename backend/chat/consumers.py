@@ -463,6 +463,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Fetch the 50 most recent messages, then reverse so they're oldest-first.
 		messages = Message.objects.filter(
 			conversation_id=shared_conv_id
+		# select_related fetches the sender's User object in the same query (JOIN) — without it,
+		# accessing msg.sender.username would trigger a separate DB query per message.
 		).select_related('sender').order_by('-created_at')[:50]
 
 		result = [
@@ -495,11 +497,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		seen = False
 		last_msg_ts = None
 		if result:
+			# The most recent message that the current user sent. 
+			# It loops through the result backwards (newest-first) and stops at the first message where sender_id matches the current user.
+			# That timestamp is then used to check whether the recipient has read up to that point.
 			for item in reversed(result):
 				if item.get("sender_id") == user_id:
 					last_msg_ts = item.get("created_at")
 					break
 		if last_msg_ts:
+			# Fetch the other user's last_read_at timestamp to check if they've read our last message.
 			other_part = ConversationParticipant.objects.filter(
 				conversation_id=shared_conv_id,
 				user_id=other_id
