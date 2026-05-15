@@ -167,6 +167,23 @@ Response: { "success": true }
 
 The chat system is a persistent WebSocket overlay that stays alive across SPA navigation. It handles global chat, direct messages (with the last 50 messages persisted), online presence, game invites, typing indicators, read receipts, block events, game results broadcast to global chat, and profile viewing.
 
+##### UI
+
+![Chat UI](docs/images/chat-ui.png)
+
+The chat window is a fixed overlay rendered in `index.html`, outside the SPA's `#app-root`. It stays mounted and connected across all page navigations. Everything inside it is dynamically rendered by JavaScript:
+
+- **Online users list** — rebuilt every time someone connects, disconnects, or changes game status. Users who blocked you are hidden; users you blocked are still shown so you can unblock them.
+- **Channel tabs** — the Global tab is always present. DM tabs are created on the fly when you open a conversation or receive a message from someone you don't have a tab open for yet. Tabs persist across navigation and show an unread badge when new messages arrive.
+- **Messages** — kept in memory per channel for the session. DM history (last 50 messages) is fetched from the database when a tab is opened. Global messages are not persisted.
+- **Channel title** — updates dynamically when switching between Global and DM tabs.
+- **Typing indicator** — appears when the other person is typing, cleared automatically when they stop.
+- **Read receipts** — a checkmark or indicator updates when your DM partner has read your messages.
+- **Block notice** — replaces the input area when either user has blocked the other, preventing new messages.
+- **Character counter** — shows the current character count against the 300 character limit as you type.
+- **Game invite UI** — inline invite cards appear in the DM with accept/decline actions. Expired or cancelled invites are cleaned up automatically.
+- **Context menu** — clicking an online user opens a menu with four actions: View Profile, Chat, Invite to Game, and Block. Invite to Game opens a game picker submenu to choose between Pong and Chess.
+
 ##### WebSocket Message Protocol
 
 All messages are JSON. The `type` field determines the message kind.
@@ -176,9 +193,7 @@ All messages are JSON. The `type` field determines the message kind.
 - Backend → Frontend: `camelCase`
 - Internal Django Channels routing (`group_send`): `dot.separated` — never reaches the frontend
 
----
-
-##### Frontend → Backend
+**Frontend → Backend**
 
 ###### `send_message`
 Send a global or DM message. Omit `recipient_id` for global.
@@ -247,9 +262,7 @@ Notify that the current user started or stopped typing. Omit `typing_recipient_i
 { "type": "notify_stop_typing", "typing_recipient_id": "42" }
 ```
 
----
-
-##### Backend → Frontend
+**Backend → Frontend**
 
 ###### `selfId`
 Sent on connect to confirm the user's identity.

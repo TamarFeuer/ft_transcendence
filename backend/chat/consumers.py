@@ -264,25 +264,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
 					})
 
 		elif msg_type == "report_blocked_user":
-			recipient_id = data.get("recipient_id")
-			logger.debug(f"[report_blocked_user] user={self.username}({self.user_id}) → recipient_id={recipient_id}")
-			if recipient_id:
-				invite_ids = await self.get_invite_ids_with(recipient_id)
-				for gid in invite_ids:
+			blocked_user_id = data.get("blocked_user_id")
+			logger.debug(f"[report_blocked_user] user={self.username}({self.user_id}) → blocked_user_id={blocked_user_id}")
+			if blocked_user_id:
+				game_id = await self.get_invite_id_with(blocked_user_id)
+				if game_id:
 					await self.channel_layer.group_send(
 						f'user_{self.user_id}',
-						{'type': 'game.invite.blocked', 'game_id': gid}
+						{'type': 'game.invite.blocked', 'game_id': game_id}
 					)
 					await self.channel_layer.group_send(
-						f'user_{recipient_id}',
-						{'type': 'game.invite.expired', 'game_id': gid}
+						f'user_{blocked_user_id}',
+						{'type': 'game.invite.expired', 'game_id': game_id}
 					)
 				await self.channel_layer.group_send(
 					f'user_{self.user_id}',
 					{'type': 'friend.list.changed'}
 				)
 				await self.channel_layer.group_send(
-					f'user_{recipient_id}',
+					f'user_{blocked_user_id}',
 					{'type': 'friend.list.changed'}
 				)
 			await self.broadcast_online_users()
@@ -571,20 +571,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			).update(unread_count=F('unread_count') + 1, is_closed=False)
 
 	@database_sync_to_async
-	def get_invite_ids_with(self, other_id):
-		from chat.models import GameInvite, ConversationParticipant
-		my_conv_ids = ConversationParticipant.objects.filter(
-			user_id=self.user_id
-		).values_list('conversation_id', flat=True)
-		shared_conv_id = ConversationParticipant.objects.filter(
-			conversation_id__in=my_conv_ids,
-			user_id=other_id
-		).values_list('conversation_id', flat=True).first()
-		if not shared_conv_id:
-			return []
-		return list(GameInvite.objects.filter(
-			conversation_id=shared_conv_id
-		).values_list('game_id', flat=True))
+	def get_invite_id_with(self, other_id):
+		# .first() returns the GameInvite object or None if no invite exists between these two users
+		from chat.models import GameInvite
+		from django.db.models import Q
+		invite = GameInvite.objects.filter(
+			Q(sender_id=self.user_id, recipient_id=other_id) |
+			Q(sender_id=other_id, recipient_id=self.user_id)
+		).first()
+		return invite.game_id if invite else None
 
 	@database_sync_to_async
 	def delete_invite(self, game_id):

@@ -340,9 +340,12 @@ export function hideDm(dmPartnerId) {
 	}));
 }
 
-export function reportBlockedUser(recipientId = null) {
+// The HTTP block API only writes to the database — it has no connection to the WebSocket consumer.
+// This notifies the consumer separately so it can clean up pending game invites,
+// broadcast an updated online users list, and send friendListChanged to both users.
+export function reportBlockedUser(blockedUserId = null) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "report_blocked_user", recipient_id: recipientId }));
+	chatSocket.send(JSON.stringify({ type: "report_blocked_user", blocked_user_id: blockedUserId }));
 }
 
 export function sendGameInvite(inviteeId, gameType, gameId) {

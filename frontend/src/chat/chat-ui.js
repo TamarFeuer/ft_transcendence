@@ -66,7 +66,7 @@ export function initChatUI() {
 		document.querySelectorAll(".channel-tab").forEach(tab => {
 			tab.classList.remove("active");
 		});
-		const activeTab = document.querySelector(`[data-channel="${tabName}"]`);
+		const activeTab = document.querySelector(`[data-id="${tabName}"]`);
 		if (activeTab) activeTab.classList.add("active");
 
 		// Update channel title
@@ -110,7 +110,7 @@ export function initChatUI() {
 		if (userId === verifiedUserId) return;
 
 		// If tab already exists just switch to it
-		const existingTab = document.querySelector(`[data-channel="${userId}"]`);
+		const existingTab = document.querySelector(`[data-id="${userId}"]`);
 		if (existingTab) {
 			if (switchToChannel) switchChannel(userId);
 			return;
@@ -120,7 +120,7 @@ export function initChatUI() {
 
 		const tab = document.createElement("button");
 		tab.className = "channel-tab";
-		tab.dataset.channel = userId;
+		tab.dataset.id = userId;
 
 		const atSpan = document.createElement("span");
 		atSpan.className = "font-bold opacity-80";
@@ -136,7 +136,7 @@ export function initChatUI() {
 
 		tab.append(atSpan, nameSpan, closeSpan);
 
-		const globalTab = channelTabs.querySelector('[data-channel="global"]');
+		const globalTab = channelTabs.querySelector('[data-id="global"]');
 		channelTabs.insertBefore(tab, globalTab.nextSibling);
 		if(fetchHistory) fetchDMHistory(userId);
 
@@ -153,7 +153,7 @@ export function initChatUI() {
 	}
 
 	function closeDMChannel(userId) {
-		const tab = document.querySelector(`[data-channel="${userId}"]`);
+		const tab = document.querySelector(`[data-id="${userId}"]`);
 		if (tab) tab.remove();
 
 		// If we were viewing this channel, fall back to global
@@ -180,7 +180,7 @@ export function initChatUI() {
 			}
 		} else if (message.senderId !== verifiedUserId) {
 			// Only badge for messages from others — own messages echoed to other tabs shouldn't count as unread
-			const tab = document.querySelector(`[data-channel="${tabName}"]`);
+			const tab = document.querySelector(`[data-id="${tabName}"]`);
 			if (tab && !tab.querySelector(".unread-badge")) {
 				const badge = document.createElement("span");
 				badge.className = "unread-badge";
@@ -276,7 +276,7 @@ export function initChatUI() {
 
 		// Clear unread badge only when the user is actively viewing this channel
 		if (tabName === activeChannel) {
-			const tab = document.querySelector(`[data-channel="${tabName}"]`);
+			const tab = document.querySelector(`[data-id="${tabName}"]`);
 			if (tab) {
 				const badge = tab.querySelector(".unread-badge");
 				if (badge) badge.remove();
@@ -385,7 +385,7 @@ export function initChatUI() {
 
 		// If a DM arrives and the tab doesn't exist yet, create it silently
 		if (tabName !== "global") {
-			const existingTab = document.querySelector(`[data-channel="${tabName}"]`);
+			const existingTab = document.querySelector(`[data-id="${tabName}"]`);
 			if (!existingTab) {
 				// first false means don't switch to it 
 				// second false means don't fetch history
@@ -422,8 +422,10 @@ export function initChatUI() {
 		Object.entries(dms).forEach(([userId, data]) => {
 			createDMTab(userId, data.user_name, false, false);
 			if (data.unread > 0) {
-				const tab = document.querySelector(`[data-channel="${userId}"]`);
+				const tab = document.querySelector(`[data-id="${userId}"]`);
 				if (tab) {
+					// On WS reconnect the tab already exists — remove stale badge before adding the fresh one.
+					tab.querySelector(".unread-badge")?.remove();
 					const badge = document.createElement("span");
 					badge.className = "unread-badge";
 					badge.textContent = data.unread;
@@ -489,7 +491,7 @@ export function initChatUI() {
 	}
 
 	// Handle menu option clicks
-	chatUserMenu.addEventListener("click", (e) => {
+	chatUserMenu.addEventListener("click", async (e) => {
 		const action = e.target.dataset.action;
 		if (!action || !chatMenuUser) return;
 
@@ -498,26 +500,26 @@ export function initChatUI() {
 		} else if (action === "invite") {
 			// Show game picker below the context menu — keep chatMenuUser alive for when picker is clicked
 			e.stopPropagation();
-			const rect = chatUserMenu.getBoundingClientRect();
+			const rect = chatUserMenu.getBoundingClientRect(); // returns the element's position/size on screen
 			gamePickerMenu.style.left = chatUserMenu.style.left;
 			gamePickerMenu.style.top = `${rect.bottom + 4}px`;
 			gamePickerMenu.style.display = "block";
 			return; // skip hideChatUserMenu() at the bottom
 		} else if (action === "chat") {
-			createDMTab(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
+			createDMTab(chatMenuUser.id, chatMenuUser.name);
 		} else if (action === "block") {
 			const blockedUserId = chatMenuUser.id;
-			fetchWithRefreshAuth('/api/block/', {
+			const r = await fetchWithRefreshAuth('/api/block/', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ user_id: blockedUserId })
-			}).then(r => r.json()).then(data => {
-				if (data.success) {
-					reportBlockedUser(blockedUserId);
-				} else {
-					console.warn("Block failed:", data.error);
-				}
 			});
+			const data = await r.json();
+			if (data.success) {
+				reportBlockedUser(blockedUserId);
+			} else {
+				console.warn("Block failed:", data.error);
+			}
 		}
 
 		hideChatUserMenu();
@@ -613,7 +615,7 @@ export function initChatUI() {
 		const { senderId, senderName, gameType, gameId } = e.detail;
 		const tabName = senderId;
 
-		const existingTab = document.querySelector(`[data-channel="${tabName}"]`);
+		const existingTab = document.querySelector(`[data-id="${tabName}"]`);
 		if (!existingTab) {
 			createDMTab(tabName, senderName, false, false);
 		}
@@ -653,7 +655,7 @@ export function initChatUI() {
 			if (messageHistory[tabName].length < before) {
 				renderMessages(tabName);
 				if (tabName !== activeChannel && removedFromOther > 0) {
-					const tab = document.querySelector(`[data-channel="${tabName}"]`);
+					const tab = document.querySelector(`[data-id="${tabName}"]`);
 					if (tab) {
 						const badge = tab.querySelector(".unread-badge");
 						if (badge) {
@@ -760,7 +762,7 @@ export function initChatUI() {
 
 	// ── Global tab click ──────────────────────────────────────────────────────
 
-	const globalTab = document.querySelector('[data-channel="global"]');
+	const globalTab = document.querySelector('[data-id="global"]');
 	if (globalTab) {
 		globalTab.addEventListener("click", () => switchChannel("global"));
 	}
