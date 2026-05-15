@@ -54,7 +54,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		# Delete stale game invites from before this connection — any invite that
 		# survived a server restart is invalid since the game session no longer exists.
-		await self._cleanup_stale_invites()
+		await self.cleanup_stale_invites()
 
 		# Deliver any game result the user missed while their chat WS was down.
 		pending = PENDING_GAME_RESULTS.pop(self.user_id, None)
@@ -414,15 +414,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	# Django's ORM is synchronous but the consumer runs in an async context.
 	# database_sync_to_async runs the wrapped function in a thread pool executor.
 
+	# The sender's consumer saves the message — it's the one that received the send_message event from the browser.
 	@database_sync_to_async
 	def save_dm(self, recipient_id, content):
 		from chat.models import ConversationParticipant, Message
+		# F references a DB column directly so the increment happens in a single atomic DB operation,
+		# avoiding race conditions if two messages arrive at the same time.
 		from django.db.models import F
 
 		conversation = self.get_or_create_conversation(recipient_id)
-		msg = Message.objects.create(
+		Message.objects.create(
 			conversation=conversation,
-			sender=self.user,
+			sender_id=self.user_id,
 			content=content
 		)
 
@@ -431,11 +434,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# F('unread_count') + 1 is a database-level increment — avoids race conditions
 		# if two messages arrive at the same time.
 		sender_id = self.user_id
+		# ACTIVE_CONVERSATION.get(recipient_id) asks: "which conversation does the recipient currently have open?"
 		recipient_is_viewing = ACTIVE_CONVERSATION.get(recipient_id) == sender_id
 		logger.info(f"[save_dm] sender={sender_id} → recipient={recipient_id} | ACTIVE_CONVERSATION={dict(ACTIVE_CONVERSATION)} | recipient_is_viewing={recipient_is_viewing}")
 		if not recipient_is_viewing:
 			ConversationParticipant.objects.filter(
-				conversation=conversation,
+				conversation_id=conversation.id,
 				user_id=recipient_id
 			).update(unread_count=F('unread_count') + 1, is_closed=False)
 
@@ -573,7 +577,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		return str(sender_id) if sender_id else None
 
 	@database_sync_to_async
-	def _cleanup_stale_invites(self):
+	def cleanup_stale_invites(self):
 		from chat.models import GameInvite
 		from django.db.models import Q
 		GameInvite.objects.filter(

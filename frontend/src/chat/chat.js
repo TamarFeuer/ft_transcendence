@@ -64,6 +64,7 @@ export function initChat() {
 		console.error("Chat WebSocket error:", err);
 	};
 
+	// Fires whenever the backend sends a message over the WebSocket.
 	chatSocket.onmessage = (ev) => {
 		// All messages from the server are JSON
 		const data = JSON.parse(ev.data);
@@ -249,9 +250,9 @@ export function sendChatMessage(message, recipientId = null) {
  * Attach typing indicator events to the chat textarea.
  * Sends "typing" on input, then "stop_typing" after 1s of inactivity.
  * @param {HTMLTextAreaElement} chatInput - The textarea element.
- * @param {Function} getDmPartnerId - Returns the current DM partner user ID, or null for global.
+ * @param {Function} getActiveChannel - Returns the current DM partner user ID, or null for global.
  */
-export function initTyping(chatInput, getDmPartnerId = () => null) {
+export function initTyping(chatInput, getActiveChannel = () => null) {
 	if (!chatInput) {
 		console.warn("initTyping: no chatInput element provided");
 		return;
@@ -270,12 +271,13 @@ export function initTyping(chatInput, getDmPartnerId = () => null) {
 	// We wrap the listener setup in a function because we need to attach it
 	// in two different places below — either now if the socket is already open,
 	// or later when it opens.
-	 const attachTyping = () => {
+	const attachTyping = () => {
+		// The browser fires the input event once per keystroke (also on delete/paste).
 		chatInput.addEventListener("input", () => {
 			if (chatSocket.readyState !== WebSocket.OPEN) return;
 
 			// Tell the server this user is typing
-			const typingRecipientId = getDmPartnerId();
+			const typingRecipientId = getActiveChannel();
 			const typingPayload = { type: "notify_typing" };
 			if (typingRecipientId) typingPayload.typing_recipient_id = typingRecipientId;
 			chatSocket.send(JSON.stringify(typingPayload));
@@ -293,7 +295,7 @@ export function initTyping(chatInput, getDmPartnerId = () => null) {
 		});
 	};
 	
-	   if (chatSocket.readyState === WebSocket.OPEN) {
+	if (chatSocket.readyState === WebSocket.OPEN) {
 		// Socket is already open, attach the listener now
 		attachTyping();
 	} else {

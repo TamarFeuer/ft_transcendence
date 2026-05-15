@@ -443,6 +443,7 @@ export function initChatUI() {
 		openChatBtn.addEventListener("click", () => {
 			chatContainer.style.display = "flex";
 			openChatBtn.style.display = "none";
+			// Move cursor into the textarea so the user can start typing immediately.
 			chatInput.focus();
 			renderOnlineUsers();
 			if (activeChannel !== "global") markRead(activeChannel);
@@ -722,8 +723,9 @@ export function initChatUI() {
 		}
 	});
 
-	// initTyping attaches the typing indicator to the textarea (chat.js)
-	// Pass a getTarget callback so typing events include the active DM channel
+	// Called once at startup. Sets up the typing indicator by passing the textarea and a function that
+	// returns the current DM partner ID (or null for global). initTyping attaches a listener to the
+	// textarea so that on every keystroke it knows where to send the typing notification.
 	initTyping(chatInput, () => activeChannel === "global" ? null : activeChannel);
 
 	if (sendChatBtn && chatInput) {
@@ -732,11 +734,11 @@ export function initChatUI() {
 			if (!message) return;
 			if (message.length > MAX_CHARS) return;
 
-			// null target means global chat, otherwise it's a DM to that user ID
-			const target = activeChannel === "global" ? null : activeChannel;
+			// null recipient means global chat, otherwise it's a DM to that user ID
+			const recipient = activeChannel === "global" ? null : activeChannel;
 			// Clear "Seen" when we send a new message — it's no longer valid
-			if (target) seenBy[target] = false;
-			sendChatMessage(message, target);
+			if (recipient) seenBy[recipient] = false;
+			sendChatMessage(message, recipient);
 
 			chatInput.value = "";
 			// Reset counter after sending
@@ -744,6 +746,7 @@ export function initChatUI() {
 			charCounter.classList.remove("text-red-500");
 			charCounter.classList.add("text-gray-400");
 			sendChatBtn.disabled = false;
+			// Move cursor back into the textarea after sending so the user can keep typing.
 			chatInput.focus();
 		};
 
