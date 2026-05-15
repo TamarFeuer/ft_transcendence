@@ -5,6 +5,7 @@ import json
 import logging
 
 logger = logging.getLogger(__name__)
+from users import UserProfile, UserProfileManager
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -53,11 +54,13 @@ def register(request):
         data = json.loads(request.body.decode())
         username = data.get('username')
         password = data.get('password')
-        if not username or not password:
-            return JsonResponse({'error': 'username and password required'}, status=400)
-        if UserModel.objects.filter(username=username).exists():
-            return JsonResponse({'error': 'username taken'}, status=400)
-        user = UserModel.objects.create_user(username=username, password=password)
+        email = data.get('email')
+
+        if not username or not password or not email:
+            return JsonResponse({'error': 'username and password and email required'}, status=400)
+        if UserProfileManager.objects.filter(email=email).exists() or UserProfileManager.objects.filter(username=username).exists():
+            return JsonResponse({'error': 'email taken'}, status=400)
+        user = UserProfileManager.objects.create_user(email=email, username=username, password=password)
         access_token, refresh_token = generate_tokens(user)
         
         response = JsonResponse({
@@ -94,10 +97,15 @@ def register(request):
 def login_view(request):
     try:
         data = json.loads(request.body.decode())
-        username = data.get('email')
-        username = data.get('username')
+        # Accept either email or username (both come in 'identifier' or legacy 'username'/'email' fields)
+        identifier = (data.get('email') or data.get('username') or '').strip().lower()
         password = data.get('password')
-        user = authenticate(request, email=email, username=username, password=password)
+        
+        if not identifier or not password:
+            return JsonResponse({'error': 'identifier and password required'}, status=400)
+        
+        # Use custom backend that handles both email and username
+        user = authenticate(request, username=identifier, password=password)
         if user is None:
             return JsonResponse({'error': 'invalid credentials'}, status=401)
         access_token, refresh_token = generate_tokens(user)

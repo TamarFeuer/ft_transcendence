@@ -70,27 +70,35 @@ export async function fetchWithRefreshAuth(url, options = {}) {
 }
 
 // --- Auth helpers (Cookie-based JWT) ---
-export async function registerUser(username, password) {
+export async function registerUser(email, username, password) {
     const res = await fetch(`/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, username, password })
     });
     const data = await res.json();
     if (res.ok && data.username) {
+        localStorage.setItem('username', data.email);
         localStorage.setItem('username', data.username);
         localStorage.setItem('user_id', data.id);
     }
     return data;
 }
 
-export async function loginUser(email, username, password) {
+export async function loginUser(identifier, password) {
+    // Determine if identifier is an email or username
+    const isEmail = identifier.includes("@");
+    const payload = {
+        password,
+        [isEmail ? 'email' : 'username']: identifier
+    };
+    
     const res = await fetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, username, password })
+        body: JSON.stringify(payload)
     });
     const text = await res.text();
     if (!text) return { error: 'empty response from server' };
@@ -99,9 +107,8 @@ export async function loginUser(email, username, password) {
         return {error: 'Too many failed attempts. Try again in 3 minutes'};
     const data = JSON.parse(text);
     if (res.ok && data.username) {
-        localStorage.setItem('email', data.email);
         localStorage.setItem('username', data.username);
-        localStorage.setItem('user_id', data.id);
+        localStorage.setItem('user_id', data.user_id ?? data.id);
     }
     return data;
 }
