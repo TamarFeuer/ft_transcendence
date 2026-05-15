@@ -94,9 +94,10 @@ def register(request):
 def login_view(request):
     try:
         data = json.loads(request.body.decode())
+        username = data.get('email')
         username = data.get('username')
         password = data.get('password')
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, email=email, username=username, password=password)
         if user is None:
             return JsonResponse({'error': 'invalid credentials'}, status=401)
         access_token, refresh_token = generate_tokens(user)

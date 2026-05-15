@@ -85,12 +85,12 @@ export async function registerUser(username, password) {
     return data;
 }
 
-export async function loginUser(username, password) {
+export async function loginUser(email, username, password) {
     const res = await fetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email, username, password })
     });
     const text = await res.text();
     if (!text) return { error: 'empty response from server' };
@@ -99,6 +99,7 @@ export async function loginUser(username, password) {
         return {error: 'Too many failed attempts. Try again in 3 minutes'};
     const data = JSON.parse(text);
     if (res.ok && data.username) {
+        localStorage.setItem('email', data.email);
         localStorage.setItem('username', data.username);
         localStorage.setItem('user_id', data.id);
     }
