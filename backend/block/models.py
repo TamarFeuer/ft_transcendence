@@ -1,12 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class Block(models.Model):
     # blocker has blocked blocked_user.
     # The relationship is one-directional: A blocking B does not mean B blocked A.
-    blocker = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blocking')
-    blocked_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blocked_by')
+    blocker = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blocking')
+    blocked_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blocked_by')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

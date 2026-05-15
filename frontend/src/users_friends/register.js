@@ -14,15 +14,18 @@ export function registerPage(){
         const username = document.getElementById("register-username").value.trim();
         const password = document.getElementById("register-password").value.trim();
         const legalAccepted = document.getElementById("register-legal-accept")?.checked;
+            console.log("Hi0");
 
         if(!email|| !username || !password)
             return;
 
         const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const validUser = /^[a-zA-Z0-9_]+$/;
+            console.log("Hi1");
 
         if(!validEmail.test(email)){
             showError(t('REG_INVALID_EMAIL'));
+            console.log("Hi2");
             return;
         }
 
@@ -47,6 +50,7 @@ export function registerPage(){
             showError(t('REG_ACCEPT_TERMS'));
             return;
         }
+            console.log("Hi3");
 
         const result = await registerUser(email, username, password);
 

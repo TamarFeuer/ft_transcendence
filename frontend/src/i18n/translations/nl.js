@@ -274,6 +274,7 @@ export const nl = {
 
   [TranslationKey.LOGIN_INVALID]: 'Ongeldige gebruikersnaam of wachtwoord, probeer opnieuw.',
   [TranslationKey.LOGIN_TOO_MANY]: 'Te veel mislukte pogingen. Probeer over 3 minuten opnieuw.',
+  [TranslationKey.REG_INVALID_EMAIL]: 'E-mailadres moet het juiste formaat hebben, bijvoorbeeld: abc@abc.nl',
   [TranslationKey.REG_INVALID_CHARS]: 'Gebruikersnaam mag alleen letters, cijfers en underscores bevatten.',
   [TranslationKey.REG_USERNAME_LENGTH]: 'Gebruikersnaam moet tussen 3 en 20 tekens lang zijn.',
   [TranslationKey.REG_PASSWORD_LENGTH]: 'Wachtwoord moet tussen 3 en 72 tekens lang zijn.',

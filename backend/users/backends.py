@@ -46,3 +46,14 @@ class EmailOrUsernameBackend(ModelBackend):
             return user
         
         return None
+
+        password
+        passwordaaa ->saltation
+        qbtt... -> encodinf
+        stored
+        when we take back
+        decoding 
+        qbtt -> password
+        desaltaion
+        
+

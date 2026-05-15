@@ -1,13 +1,13 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class FriendRequest(models.Model):
 	"""Stores friend requests between users"""
-	from_user = models.ForeignKey(User,
+	from_user = models.ForeignKey(settings.AUTH_USER_MODEL,
 	related_name='sent_friend_requests',
 	on_delete=models.CASCADE
 	)
-	to_user = models.ForeignKey(User,
+	to_user = models.ForeignKey(settings.AUTH_USER_MODEL,
 	related_name='received_friend_requests',
 	on_delete = models.CASCADE
 	)

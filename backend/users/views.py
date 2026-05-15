@@ -5,9 +5,8 @@ import json
 import logging
 
 logger = logging.getLogger(__name__)
-from users import UserProfile, UserProfileManager
+from .models import UserProfile, UserProfileManager
 from django.contrib.auth import authenticate, get_user_model
-from django.contrib.auth.models import User
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.conf import settings
 import jwt
@@ -58,9 +57,9 @@ def register(request):
 
         if not username or not password or not email:
             return JsonResponse({'error': 'username and password and email required'}, status=400)
-        if UserProfileManager.objects.filter(email=email).exists() or UserProfileManager.objects.filter(username=username).exists():
+        if UserProfile.objects.filter(email=email).exists() or UserProfile.objects.filter(username=username).exists():
             return JsonResponse({'error': 'email taken'}, status=400)
-        user = UserProfileManager.objects.create_user(email=email, username=username, password=password)
+        user = UserProfile.objects.create_user(email=email, username=username, password=password)
         access_token, refresh_token = generate_tokens(user)
         
         response = JsonResponse({
@@ -239,8 +238,8 @@ def current_user_view(request):
             'authenticated': False,
             'error': 'username=None'}, status=404)
         try:
-            User.objects.get(pk=user_id)
-        except User.DoesNotExist:
+            UserProfile.objects.get(pk=user_id)
+        except UserProfile.DoesNotExist:
             return JsonResponse({
             'authenticated': False,
             'error': 'User.DoesNotExist'}, status=404)
