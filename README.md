@@ -145,7 +145,7 @@ Response: { "success": true }
 
 #### Chat System
 
-The chat system is a persistent WebSocket overlay that stays alive across SPA navigation. It handles global chat, direct messages, online presence, game invites, typing indicators, and friend/block events.
+The chat system is a persistent WebSocket overlay that stays alive across SPA navigation. It handles global chat, direct messages (with the last 50 messages persisted), online presence, game invites, typing indicators, read receipts, block events, game results broadcast to global chat, and profile viewing.
 
 ##### WebSocket Message Protocol
 
