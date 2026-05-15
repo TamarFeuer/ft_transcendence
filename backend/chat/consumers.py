@@ -128,10 +128,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				return
 
 			recipient_id = data.get("recipient_id")
-			payload = {
+			event = {
 				"type": "chat.message",
 				"message": message,
-				"sender": self.user_id,
+				"sender_id": self.user_id,
 				"sender_name": self.username,
 			}
 
@@ -144,17 +144,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				# Private message: deliver to all of the recipient's open tabs,
 				# and echo back to all of the sender's own tabs (so other tabs stay in sync).
 				# group_send reaches every connection in the group automatically.
-				payload["private"] = True
-				payload["recipient_id"] = recipient_id
-				await self.channel_layer.group_send(f"user_{recipient_id}", payload)
-				await self.channel_layer.group_send(f"user_{self.user_id}", payload)
+				event["private"] = True
+				event["recipient_id"] = recipient_id
+				await self.channel_layer.group_send(f"user_{recipient_id}", event)
+				await self.channel_layer.group_send(f"user_{self.user_id}", event)
 				# Persist the message and update conversation state in the database.
 				await self.save_dm(recipient_id, message)
 			else:
 				# Global message: broadcast to everyone in the global group.
 				# Global messages are not saved to the database.
-				payload["private"] = False
-				await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, payload)
+				event["private"] = False
+				await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, event)
 
 		elif msg_type == "fetch_history":
 			dm_partner_id = data.get("dm_partner_id")
@@ -314,7 +314,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps({
 			"type": "chatMessage",
 			"message": event["message"],
-			"sender_id": event["sender"],
+			"sender_id": event["sender_id"],
 			"sender_name": event.get("sender_name"),
 			"private": event.get("private", False),  # True for DMs, False for global
 			"recipient_id": event.get("recipient_id")  # user_id of DM recipient, or None for global
@@ -407,6 +407,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"in_game_ids": event.get("in_game_ids", []),
 		}))
 
+	# ─── Internal helpers ────────────────────────────────────────────────────
+
 	async def broadcast_online_users(self):
 		# Send each online user a personalized online users list.
 		# Each user sees a different list: users who blocked them are hidden.
@@ -425,7 +427,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"blocked_me_ids": list(blocked_me),
 				"in_game_ids": list(IN_GAME_USERS),
 			})
-	
+
 	# ─── Database helpers ─────────────────────────────────────────────────────
 	# All database access must be wrapped in database_sync_to_async because
 	# Django's ORM is synchronous but the consumer runs in an async context.

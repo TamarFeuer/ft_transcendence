@@ -40,21 +40,26 @@ export let blockedMeIds = new Set();
 export let inGameIds = new Set();
 
 
+let reconnectDelay = 1000;
+let reconnectTimer = null;
+
 export function initChat() {
-	
-	// Use wss:// in production (https), ws:// in development (http)
 	const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
 	chatSocket = new WebSocket(`${wsProtocol}//${location.host}/ws/chat/`);
 
 	chatSocket.onopen = () => {
 		console.log("Chat WebSocket connected");
-	}
-	
-	chatSocket.onclose = () => {
-		console.log("Chat WebSocket disconnected");
-		// TODO: implement reconnect with exponential backoff if needed
+		reconnectDelay = 1000;
 	};
-	
+
+	chatSocket.onclose = () => {
+		console.log(`Chat WebSocket disconnected — reconnecting in ${reconnectDelay / 1000}s`);
+		reconnectTimer = setTimeout(() => {
+			reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+			initChat();
+		}, reconnectDelay);
+	};
+
 	chatSocket.onerror = (err) => {
 		console.error("Chat WebSocket error:", err);
 	};
@@ -88,7 +93,7 @@ export function initChat() {
 					if (data.sender_id === verifiedUserId) {
 						// I sent this message - use the recipient's ID for the channel
 						tabName = data.recipient_id;
-						console.log("I sent this - tabName set to target:", tabName);
+						console.log("I sent this - tabName set to:", tabName);
 					} else {
 						// Someone sent me a message - use their ID for the channel
 						tabName = data.sender_id;
@@ -103,12 +108,10 @@ export function initChat() {
 				// Dispatch to main.js which owns the UI rendering
 				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
 					detail: {
-						tabName: tabName,
-						message: {
-							senderId: data.sender_id,
-							senderName: data.sender_name || "unknown",
-							message: data.message
-						}
+						tabName,
+						senderId: data.sender_id,
+						senderName: data.sender_name || "unknown",
+						message: data.message
 					}
 				}));
 				break;
@@ -190,11 +193,9 @@ export function initChat() {
 				window.dispatchEvent(new CustomEvent("chatMessageReceived", {
 					detail: {
 						tabName: "global",
-						message: {
-							senderId: null,
-							senderName: t('CHAT_GAME_RESULT_TITLE'),
-							message: formatGameResultMessage(data)
-						}
+						senderId: null,
+						senderName: t('CHAT_GAME_RESULT_TITLE'),
+						message: formatGameResultMessage(data)
 					}
 				}));
 				break;
