@@ -6,33 +6,14 @@ from channels.db import database_sync_to_async
 
 logger = logging.getLogger(__name__)
 
-# In-memory storage - these are module-level dictionaries shared across all
-# consumer instances. They survive as long as Daphne is running but are wiped
-# on restart. Online status is naturally ephemeral so in-memory is the right
-# place for it — there's no point persisting "was online before the server restarted".
 GLOBAL_CHAT_GROUP = "global_chat"  # arbitrary name for the Django Channels broadcast group
 ONLINE_USERS = {}          # user_id -> username
 USER_CONNECTION_COUNT = {}  # user_id -> number of open tabs; reaches 0 when last tab closes
 ACTIVE_CONVERSATION = {}   # user_id -> other_user_id they currently have open
 IN_GAME_USERS = set()      # user_ids currently in an active game (any game type)
 PENDING_GAME_RESULTS = {}  # user_id -> game result message to deliver on next reconnect
-# unread_count and is_closed are stored in ConversationParticipant in the database.
 # ACTIVE_CONVERSATION stays in-memory: it reflects the live UI state and resets
 # naturally when the user reconnects.
-
-# self is an instance of ChatConsumer, and ChatConsumer inherits from AsyncWebsocketConsumer,
-# so it has all the attributes that AsyncWebsocketConsumer provides by default:
-# self.channel_name - unique name Django Channels assigns to this specific connection
-# self.channel_layer - the in-memory channel layer
-# self.scope - info about the connection (cookies, headers, url route etc.)
-# And then we add our own attributes on top in connect():
-# self.user    - the full Django User object
-# self.user_id - the authenticated user's ID as a string, like "42". Same across all their tabs
-# self.username - the authenticated user's username
-# GLOBAL_CHAT_GROUP - the Django Channels group that all connected users join
-
-# self.channel_name - a unique ID that Django Channels assigns to this specific WebSocket
-# connection, like "specific.abc123". Each browser tab gets a different one.
 
 class ChatConsumer(AsyncWebsocketConsumer):
 	async def connect(self):
@@ -438,7 +419,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		from chat.models import ConversationParticipant, Message
 		from django.db.models import F
 
-		conversation = self._get_or_create_conversation(recipient_id)
+		conversation = self.get_or_create_conversation(recipient_id)
 		msg = Message.objects.create(
 			conversation=conversation,
 			sender=self.user,
@@ -526,20 +507,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		return result, seen
 
-	def _get_or_create_conversation(self, recipient_id):
+	def get_or_create_conversation(self, other_id):
 		from chat.models import Conversation, ConversationParticipant
-		sender_conv_ids = ConversationParticipant.objects.filter(
+		# Find all conversation IDs the current user is part of
+		my_conv_ids = ConversationParticipant.objects.filter(
 			user_id=self.user_id
 		).values_list('conversation_id', flat=True)
+		# Find a conversation that both the current user and the other user are part of
 		existing = ConversationParticipant.objects.filter(
-			conversation_id__in=sender_conv_ids,
-			user_id=recipient_id
+			conversation_id__in=my_conv_ids,  # SQL: WHERE conversation_id IN (...)
+			user_id=other_id
+		# select_related fetches the Conversation object in the same query (JOIN) so existing.conversation is available without an extra DB hit
 		).select_related('conversation').first()
 		if existing:
 			return existing.conversation
 		conversation = Conversation.objects.create()
-		ConversationParticipant.objects.create(conversation=conversation, user=self.user)
-		ConversationParticipant.objects.create(conversation=conversation, user_id=recipient_id)
+		ConversationParticipant.objects.create(conversation_id=conversation.id, user_id=self.user_id)
+		ConversationParticipant.objects.create(conversation_id=conversation.id, user_id=other_id)
 		return conversation
 
 	@database_sync_to_async
@@ -547,7 +531,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		from chat.models import GameInvite
 		from django.db.models import F
 
-		conversation = self._get_or_create_conversation(recipient_id)
+		conversation = self.get_or_create_conversation(recipient_id)
 		# get_or_create prevents IntegrityError when two players mutually invite each
 		# other before either accepts — both use the same gameId (same chess session).
 		_, created = GameInvite.objects.get_or_create(
