@@ -554,7 +554,7 @@ Request all open DM tabs (sent on connect to restore tabs).
 ```json
 { "type": "get_open_dms" }
 ```
-**Frontend:** sent automatically after `selfId` is received in `chat.js`  
+**Frontend:** `fetchOpenDms()` in `chat.js`, called automatically after `selfId` is received  
 **Backend:** `receive()` → `get_open_dms` branch → `get_open_dms()` in `db.py`
 
 ###### `set_active_conversation`

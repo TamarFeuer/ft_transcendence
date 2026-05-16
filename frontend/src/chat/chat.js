@@ -84,7 +84,7 @@ export function initChat() {
 						detail: { userId: verifiedUserId }
 					}));
 					// Fetch previous DM conversations to restore tabs
-					chatSocket.send(JSON.stringify({ type: "get_open_dms" }));
+					fetchOpenDms();
 					break;
 
 			// Incoming chat message — either global or private DM
@@ -324,6 +324,11 @@ export function closeChat() {
 	const openChatBtn = document.getElementById("openChatBtn");
 	if (chatContainer) chatContainer.style.display = "none";
 	if (openChatBtn) openChatBtn.style.display = "none";
+}
+
+function fetchOpenDms() {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({ type: "get_open_dms" }));
 }
 
 export function fetchDMHistory(dmPartnerId) {
