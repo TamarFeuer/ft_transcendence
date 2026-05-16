@@ -8,6 +8,27 @@ import { isGameActive } from './pong/game/game.js';
 import { initI18n, setLanguage, getCurrentLanguage, updatePageTranslations } from './i18n/index.js';
 import { closeChessConnection } from './chess/chess-online.js';
 
+// Ensure all API requests include the current UI language for backend localization.
+if (typeof window !== 'undefined' && !window.__languageFetchPatched) {
+	window.__languageFetchPatched = true;
+	const originalFetch = window.fetch.bind(window);
+	window.fetch = (input, init = {}) => {
+		const mergedHeaders = new Headers(input instanceof Request ? input.headers : undefined);
+		if (init && init.headers) {
+			new Headers(init.headers).forEach((value, key) => mergedHeaders.set(key, value));
+		}
+
+		if (!mergedHeaders.has('Accept-Language')) {
+			const lang = getCurrentLanguage();
+			if (lang) {
+				mergedHeaders.set('Accept-Language', lang);
+			}
+		}
+
+		return originalFetch(input, { ...init, headers: mergedHeaders });
+	};
+}
+
 // --- Game Variables ---
 let ws = null;
 let currentGameId = null;

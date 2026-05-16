@@ -1,0 +1,75 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tamar_transcendence\n"
+"POT-Creation-Date: 2026-05-16 00:00+0000\n"
+"PO-Revision-Date: 2026-05-16 00:00+0000\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "authentication required"
+msgstr "kimlik dogrulama gerekli"
+
+msgid "tournament_id required"
+msgstr "tournament_id gerekli"
+
+msgid "tournament registration closed"
+msgstr "turnuva kaydi kapandi"
+
+msgid "tournament is full"
+msgstr "turnuva dolu"
+
+msgid "already joined"
+msgstr "zaten katildiniz"
+
+msgid "only creator can start tournament"
+msgstr "turnuvayi sadece olusturan kisi baslatabilir"
+
+msgid "tournament already started or completed"
+msgstr "turnuva zaten baslamis veya tamamlanmis"
+
+msgid "need at least 2 participants"
+msgstr "en az 2 katilimci gerekli"
+
+msgid "only creator can cancel tournament"
+msgstr "turnuvayi sadece olusturan kisi iptal edebilir"
+
+msgid "cannot cancel completed tournament"
+msgstr "tamamlanmis turnuva iptal edilemez"
+
+msgid "game_id required"
+msgstr "game_id gerekli"
+
+msgid "you are not in this game"
+msgstr "bu oyunda degilsiniz"
+
+msgid "game session not found"
+msgstr "oyun oturumu bulunamadi"
+
+msgid "game is not ready"
+msgstr "oyun hazir degil"
+
+msgid "game_id and winner_id required"
+msgstr "game_id ve winner_id gerekli"
+
+msgid "invalid winner"
+msgstr "gecersiz kazanan"
+
+msgid "joined successfully"
+msgstr "basariyla katildiniz"
+
+msgid "tournament started"
+msgstr "turnuva basladi"
+
+msgid "tournament cancelled"
+msgstr "turnuva iptal edildi"
+
+msgid "game already started"
+msgstr "oyun zaten basladi"
+
+msgid "game started"
+msgstr "oyun basladi"
+
+msgid "game result updated"
+msgstr "oyun sonucu guncellendi"

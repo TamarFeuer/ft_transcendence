@@ -1,0 +1,75 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tamar_transcendence\n"
+"POT-Creation-Date: 2026-05-16 00:00+0000\n"
+"PO-Revision-Date: 2026-05-16 00:00+0000\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "authentication required"
+msgstr "authenticatie vereist"
+
+msgid "tournament_id required"
+msgstr "tournament_id vereist"
+
+msgid "tournament registration closed"
+msgstr "toernooiregistratie is gesloten"
+
+msgid "tournament is full"
+msgstr "toernooi is vol"
+
+msgid "already joined"
+msgstr "al deelgenomen"
+
+msgid "only creator can start tournament"
+msgstr "alleen de maker kan het toernooi starten"
+
+msgid "tournament already started or completed"
+msgstr "toernooi is al gestart of voltooid"
+
+msgid "need at least 2 participants"
+msgstr "minstens 2 deelnemers vereist"
+
+msgid "only creator can cancel tournament"
+msgstr "alleen de maker kan het toernooi annuleren"
+
+msgid "cannot cancel completed tournament"
+msgstr "kan voltooid toernooi niet annuleren"
+
+msgid "game_id required"
+msgstr "game_id vereist"
+
+msgid "you are not in this game"
+msgstr "je zit niet in dit spel"
+
+msgid "game session not found"
+msgstr "spelsessie niet gevonden"
+
+msgid "game is not ready"
+msgstr "spel is niet klaar"
+
+msgid "game_id and winner_id required"
+msgstr "game_id en winner_id zijn vereist"
+
+msgid "invalid winner"
+msgstr "ongeldige winnaar"
+
+msgid "joined successfully"
+msgstr "succesvol deelgenomen"
+
+msgid "tournament started"
+msgstr "toernooi gestart"
+
+msgid "tournament cancelled"
+msgstr "toernooi geannuleerd"
+
+msgid "game already started"
+msgstr "spel is al gestart"
+
+msgid "game started"
+msgstr "spel gestart"
+
+msgid "game result updated"
+msgstr "spelresultaat bijgewerkt"

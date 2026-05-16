@@ -245,6 +245,8 @@ export const nl = {
   [TranslationKey.GAME_WINS_SUFFIX]: 'wint',
   [TranslationKey.GAME_RESULT]: 'Resultaat',
   [TranslationKey.GAME_CONTINUE]: 'Doorgaan',
+  [TranslationKey.LOCAL_GAME_RED_WINS]: 'Rood wint!',
+  [TranslationKey.LOCAL_GAME_BLUE_WINS]: 'Blauw wint!',
 
   [TranslationKey.CHAT_OPEN_BTN]: 'Chat',
   [TranslationKey.CHAT_GLOBAL]: 'Globaal',
@@ -294,7 +296,7 @@ export const nl = {
   [TranslationKey.TOURN_START_FAILED]: 'Kon het toernooi niet starten',
   [TranslationKey.TOURN_CANCELLED]: 'Toernooi geannuleerd',
   [TranslationKey.TOURN_CANCEL_FAILED]: 'Kon het toernooi niet annuleren',
-  [TranslationKey.TOURN_NAME_REQUIRED]: 'Toernooinama is verplicht',
+  [TranslationKey.TOURN_NAME_REQUIRED]: 'Toernooinaam is verplicht',
   [TranslationKey.TOURN_CREATING]: 'Toernooi aanmaken...',
   [TranslationKey.TOURN_CREATED]: 'Toernooi succesvol aangemaakt!',
   [TranslationKey.TOURN_CREATE_FAILED]: 'Kon het toernooi niet aanmaken',

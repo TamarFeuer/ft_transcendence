@@ -245,6 +245,8 @@ export const tr = {
   [TranslationKey.GAME_WINS_SUFFIX]: 'kazandı',
   [TranslationKey.GAME_RESULT]: 'Sonuç',
   [TranslationKey.GAME_CONTINUE]: 'Devam',
+  [TranslationKey.LOCAL_GAME_RED_WINS]: 'Kırmızı kazandı!',
+  [TranslationKey.LOCAL_GAME_BLUE_WINS]: 'Mavi kazandı!',
 
   [TranslationKey.CHAT_OPEN_BTN]: 'Sohbet',
   [TranslationKey.CHAT_GLOBAL]: 'Genel',
