@@ -13,7 +13,7 @@ class Tournament(models.Model):
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
     ]
-    
+    all_players_in_tournament = None
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tournaments')
@@ -49,6 +49,7 @@ class TournamentGame(models.Model):
     GAME_STATUS = [
         ('pending', 'Pending'),
         ('ready', 'Ready'),
+        ('waiting_active_round', 'Waiting Active Round'),
         ('0/2 players ready', '0/2 Players Ready'),
         ('1/2 players ready', '1/2 Players Ready'),
         ('ongoing', 'Ongoing'),

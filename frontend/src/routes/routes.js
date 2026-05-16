@@ -11,7 +11,8 @@ import { updatePageTranslations, t, TranslationKey } from '../i18n/index.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
   loadUpcomingTournaments
  } from '../pong/tournament/tournament_lobby_utils.js';
-import { loadTournamentGames } from '../pong/tournament/tournament:ID_utils.js';
+import { loadTournamentGames, handleTournamentSocketEvent, resetTournamentTimers } from '../pong/tournament/tournament:ID_utils.js';
+import { startTournamentUpdatesSocket } from '../pong/tournament/tournament_ws.js';
 import { showMessage } from "../utils/utils.js";
 import { initChessGame } from '../chess/chess.js';
 import { initProfilePage } from "../users_friends/profilePage.js"
@@ -477,11 +478,19 @@ if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500" data-i18
     
     // Store tournament ID for use in callbacks
     window.currentTournamentId = tournamentId;
+    resetTournamentTimers();
     
     document.getElementById('backBtn')?.addEventListener('click', () => navigate('/tournament'));
     
     // Load tournament games and leaderboard
     await loadTournamentGames();
+
+    startTournamentUpdatesSocket(tournamentId, async (data) => {
+      if (!window.location.pathname.match(/^\/tournament\/\d+$/)) {
+        return;
+      }
+      await handleTournamentSocketEvent(data);
+    });
 
     let isRefreshingTournamentGames = false;
     startTournamentAutoRefresh(async () => {
@@ -494,7 +503,7 @@ if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500" data-i18
       } finally {
         isRefreshingTournamentGames = false;
       }
-    }, 3000);
+    }, 10000);
   };
 }
 
