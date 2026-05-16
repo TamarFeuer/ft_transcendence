@@ -74,9 +74,6 @@ export function initChat() {
 					verifiedUserId = data.user_id;
 					verifiedUserName = data.user_name || "Guest";
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
-					window.dispatchEvent(new CustomEvent("userIdentified", {
-						detail: { userId: verifiedUserId }
-					}));
 					// Fetch previous DM conversations to restore tabs
 					fetchOpenDms();
 					break;
