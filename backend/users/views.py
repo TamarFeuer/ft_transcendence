@@ -9,6 +9,7 @@ from .models import UserProfile, UserProfileManager
 from django.contrib.auth import authenticate, get_user_model
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.conf import settings
+from django.utils.translation import gettext as _
 import jwt
 from datetime import datetime, timedelta
 import uuid
@@ -56,9 +57,9 @@ def register(request):
         email = data.get('email')
 
         if not username or not password or not email:
-            return JsonResponse({'error': 'username and password and email required'}, status=400)
+            return JsonResponse({'error': _('username and password and email required')}, status=400)
         if UserProfile.objects.filter(email=email).exists() or UserProfile.objects.filter(username=username).exists():
-            return JsonResponse({'error': 'email taken'}, status=400)
+            return JsonResponse({'error': _('email taken')}, status=400)
         user = UserProfile.objects.create_user(email=email, username=username, password=password)
         access_token, refresh_token = generate_tokens(user)
         
@@ -89,7 +90,7 @@ def register(request):
         return response
     except Exception as e:
         logger.exception('Error in register')
-        return JsonResponse({'error': 'internal error'}, status=500)
+        return JsonResponse({'error': _('internal error')}, status=500)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -101,12 +102,12 @@ def login_view(request):
         password = data.get('password')
         
         if not identifier or not password:
-            return JsonResponse({'error': 'identifier and password required'}, status=400)
+            return JsonResponse({'error': _('identifier and password required')}, status=400)
         
         # Use custom backend that handles both email and username
         user = authenticate(request, username=identifier, password=password)
         if user is None:
-            return JsonResponse({'error': 'invalid credentials'}, status=401)
+            return JsonResponse({'error': _('invalid credentials')}, status=401)
         access_token, refresh_token = generate_tokens(user)
         
         response = JsonResponse({
@@ -136,7 +137,7 @@ def login_view(request):
         return response
     except Exception:
         logger.exception('Error in login')
-        return JsonResponse({'error': 'internal error'}, status=500)
+        return JsonResponse({'error': _('internal error')}, status=500)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -147,7 +148,7 @@ def refresh_token_view(request):
         refresh_token = request.COOKIES.get('refresh_token')
         
         if not refresh_token:
-            return JsonResponse({'error': 'refresh_token required'}, status=400)
+            return JsonResponse({'error': _('refresh_token required')}, status=400)
         
         try:
             # Decode and verify refresh token
@@ -155,7 +156,7 @@ def refresh_token_view(request):
             
             # Verify it's a refresh token
             if payload.get('type') != 'refresh':
-                return JsonResponse({'error': 'invalid token type'}, status=401)
+                return JsonResponse({'error': _('invalid token type')}, status=401)
             
             user_id = payload.get('user_id')
             user = UserModel.objects.get(id=user_id)
@@ -190,15 +191,15 @@ def refresh_token_view(request):
             return response
             
         except jwt.ExpiredSignatureError:
-            return JsonResponse({'error': 'refresh token expired'}, status=401)
+            return JsonResponse({'error': _('refresh token expired')}, status=401)
         except jwt.DecodeError:
-            return JsonResponse({'error': 'invalid refresh token'}, status=401)
+            return JsonResponse({'error': _('invalid refresh token')}, status=401)
         except UserModel.DoesNotExist:
-            return JsonResponse({'error': 'user not found'}, status=401)
+            return JsonResponse({'error': _('user not found')}, status=401)
             
     except Exception:
         logger.exception('Error in refresh_token')
-        return JsonResponse({'error': 'internal error'}, status=500)
+        return JsonResponse({'error': _('internal error')}, status=500)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -236,13 +237,13 @@ def current_user_view(request):
         if not user_id:
             return JsonResponse({
             'authenticated': False,
-            'error': 'username=None'}, status=404)
+            'error': _('username=None')}, status=404)
         try:
             UserProfile.objects.get(pk=user_id)
         except UserProfile.DoesNotExist:
             return JsonResponse({
             'authenticated': False,
-            'error': 'User.DoesNotExist'}, status=404)
+            'error': _('User.DoesNotExist')}, status=404)
 
         return JsonResponse({
             'authenticated': True,

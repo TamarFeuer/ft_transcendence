@@ -105,8 +105,8 @@ export const tr = {
   
   [TranslationKey.BTN_START_GAME]: 'OYUNU BAŞLAT',
   
-  [TranslationKey.RED_PADDLE_LOCAL_PLAYER]: 'Kırmızı pinpon sopası',
-  [TranslationKey.BLUE_PADDLE_LOCAL_PLAYER]: 'Mavi pinpon sopası',
+  [TranslationKey.RED_PADDLE_LOCAL_PLAYER]: 'Kırmızı oyuncu',
+  [TranslationKey.BLUE_PADDLE_LOCAL_PLAYER]: 'Mavi oyuncu',
 
   [TranslationKey.PLAYER_1]: 'Oyuncu 1',
   [TranslationKey.PLAYER_2]: 'Oyuncu 2',
@@ -245,6 +245,8 @@ export const tr = {
   [TranslationKey.GAME_WINS_SUFFIX]: 'kazandı',
   [TranslationKey.GAME_RESULT]: 'Sonuç',
   [TranslationKey.GAME_CONTINUE]: 'Devam',
+  [TranslationKey.LOCAL_GAME_RED_WINS]: 'Kırmızı kazandı!',
+  [TranslationKey.LOCAL_GAME_BLUE_WINS]: 'Mavi kazandı!',
 
   [TranslationKey.CHAT_OPEN_BTN]: 'Sohbet',
   [TranslationKey.CHAT_GLOBAL]: 'Genel',
