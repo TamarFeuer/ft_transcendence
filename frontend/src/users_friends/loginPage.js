@@ -9,13 +9,13 @@ export function initLoginPage(){
         return;
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const username = document.getElementById("login-username").value.trim();
+        const identifier = document.getElementById("login-username").value.trim();
         const password = document.getElementById("login-password").value.trim();
         
-        if(!username || !password)
+        if(!identifier || !password)
             return;
         
-        const result = await loginUser(username, password);
+        const result = await loginUser(identifier, password);
         if(result.username)
             window.location.href = "/";
         else if (result.error === 'Too many failed attempts. Try again in 3 minutes')

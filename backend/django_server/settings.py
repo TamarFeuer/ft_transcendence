@@ -56,14 +56,16 @@ MIDDLEWARE = [
 # Axes configuration
 AXES_FAILURE_LIMIT = 5          # lock after 5 failed attempts
 AXES_COOLOFF_TIME = timedelta(minutes=3)          # unlock after 3 minutes
-AXES_LOCKOUT_PARAMETERS = [["username", "user_agent"]]
+AXES_LOCKOUT_PARAMETERS = [["username", "user_agent", "ip_address"]]
 AXES_RESET_ON_SUCCESS = True    # reset counter on successful login
 
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',
+    'users.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+AUTH_USER_MODEL = 'users.UserProfile'
 ROOT_URLCONF = 'django_server.urls'
 WSGI_APPLICATION = 'django_server.wsgi.application'
 ASGI_APPLICATION = 'django_server.asgi.application'

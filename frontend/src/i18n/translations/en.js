@@ -275,6 +275,7 @@ export const en = {
 
   [TranslationKey.LOGIN_INVALID]: 'Invalid username or password, please try again.',
   [TranslationKey.LOGIN_TOO_MANY]: 'Too many failed attempts. Try again in 3 minutes.',
+  [TranslationKey.REG_INVALID_EMAIL]: 'Email must be in correct format for example; abc@abc.nl',
   [TranslationKey.REG_INVALID_CHARS]: 'Username may only contain letters, numbers, and underscores.',
   [TranslationKey.REG_USERNAME_LENGTH]: 'Username must be between 3 and 20 characters.',
   [TranslationKey.REG_PASSWORD_LENGTH]: 'Password must be between 3 and 72 characters.',

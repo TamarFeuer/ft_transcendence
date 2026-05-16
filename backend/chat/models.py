@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class Conversation(models.Model):
 	# A conversation is a container for messages between two users.
@@ -27,7 +27,7 @@ class ConversationParticipant(models.Model):
 	# and whether they have closed the conversation tab.
 
 	conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='participants')
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations')
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='conversations')
 
 	# Incremented when the other participant sends a message.
 	# Reset to 0 when this user opens the conversation (mark_read).
@@ -60,7 +60,7 @@ class Message(models.Model):
 
 	# null=True only to handle account deletion — a message always has a
 	# sender when created
-	sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_messages')
+	sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_messages')
 
 	content = models.TextField()
 	created_at = models.DateTimeField(auto_now_add=True)
@@ -76,8 +76,8 @@ class Message(models.Model):
 
 class GameInvite(models.Model):
 	conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='game_invites')
-	sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_game_invites')
-	recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='received_game_invites')
+	sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_game_invites')
+	recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='received_game_invites')
 	game_type = models.CharField(max_length=20)
 	game_id = models.CharField(max_length=100, unique=True)
 	created_at = models.DateTimeField(auto_now_add=True)

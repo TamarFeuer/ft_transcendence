@@ -6,6 +6,9 @@ import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
 import { t } from '../../i18n/index.js';
 import { joinOnlineGame } from '../game/game.js';
 
+const activeGameTimers = new Map();
+const ACTIVE_ROUND_TIMEOUT_SECONDS = 25;
+
 export async function loadTournamentGames() {
   
     loadLeaderBoard();
@@ -13,6 +16,87 @@ export async function loadTournamentGames() {
     loadReadyGames();
 
     loadAllGamesStatus();
+}
+
+export async function handleTournamentSocketEvent(data) {
+    if (!data || typeof data !== 'object') return;
+
+    if (data.type === 'timeUpdate') {
+        console.log('data handleTournamentSocketEvent: ', data);
+        updateTournamentTimer(data.game_id, data.remaining_time, data.player_left, data.player_right);
+        return;
+    }
+
+    if (data.type === 'gameOver' || data.type === 'gameStart' || data.type === 'tournamentEvent') {
+        if (data.game_id) {
+            activeGameTimers.delete(String(data.game_id));
+            renderTournamentTimers();
+        }
+        await loadTournamentGames();
+    }
+}
+
+function updateTournamentTimer(gameId, remainingTime, _left_player, _right_player) {
+    const section = document.getElementById('tournamentTimerSection');
+    if (!section) return;
+
+    const safeGameId = String(gameId || 'unknown');
+    const safeRemaining = Number.isFinite(Number(remainingTime)) ? Number(remainingTime) : 0;
+
+    const existingEntry = Array.from(activeGameTimers.entries()).find(([id, data]) => {
+        const a = data.left_player;
+        const b = data.right_player;
+        return (a === _left_player && b === _right_player) || (a === _right_player && b === _left_player);
+    });
+
+    if (safeRemaining <= 0) {
+        activeGameTimers.delete(safeGameId);
+    } else if (existingEntry){
+        console.log("existing Entry; ", existingEntry);
+        const [existingId] = existingEntry;
+        activeGameTimers.delete(existingId);
+        activeGameTimers.set(safeGameId, {
+            remaining: safeRemaining,
+            right_player: _right_player,
+            left_player: _left_player,
+        });
+    } else {
+        activeGameTimers.set(safeGameId, {
+            remaining: safeRemaining,
+            right_player: _right_player,
+            left_player: _left_player,
+        });
+    }
+    renderTournamentTimers();
+}
+
+function renderTournamentTimers() {
+    const section = document.getElementById('tournamentTimerSection');
+    const list = document.getElementById('tournamentTimerList');
+    if (!section || !list) return;
+
+    if (activeGameTimers.size === 0) {
+        section.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+    }
+
+    section.classList.remove('hidden');
+    const entries = Array.from(activeGameTimers.entries())
+        .sort((a, b) => a[1] - b[1])
+        .map(([id, timerData]) => `
+            <div class="bg-blue-950/50 border border-blue-700 rounded px-3 py-2 text-blue-100 text-sm">
+                Game: ${timerData.left_player} vs ${timerData.right_player}: <span class="font-bold text-white">${timerData.remaining}s</span> left to join
+            </div>
+        `)
+        .join('');
+
+    list.innerHTML = entries;
+}
+
+export function resetTournamentTimers() {
+    activeGameTimers.clear();
+    renderTournamentTimers();
 }
 
 // Tournament Util functions
@@ -119,11 +203,14 @@ async function loadAllGamesStatus() {
 
     if (allGamesResult.ok && allGamesResult.data) {
         const ongoingList = document.getElementById('ongoingGamesList');
+        const futureList = document.getElementById('futureGamesList');
         const completedList = document.getElementById('completedGamesList');
         ongoingList.innerHTML = '';
+        futureList.innerHTML = '';
         completedList.innerHTML = '';
         
         const ongoingGames = allGamesResult.data.filter(g => g.status === 'ongoing');
+        const futureGames = allGamesResult.data.filter(g => g.status === 'ready' || g.status === 'pending');
         const completedGames = allGamesResult.data.filter(g => g.status === 'completed');
         
         if (ongoingGames.length === 0) {
@@ -139,6 +226,24 @@ async function loadAllGamesStatus() {
             </div>
             `;
             ongoingList.appendChild(gameDiv);
+        });
+        }
+
+        if (futureGames.length === 0) {
+        futureList.innerHTML = '<p class="text-gray-400">No future round games</p>';
+        } else {
+        futureGames
+            .sort((a, b) => Number(a.round || 0) - Number(b.round || 0))
+            .forEach(game => {
+            const gameDiv = document.createElement('div');
+            gameDiv.className = 'bg-gray-800 rounded-lg p-4 border border-indigo-500';
+            gameDiv.innerHTML = `
+            <div class="text-white">
+                <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
+                <div class="text-indigo-300 text-sm">Round ${game.round} - ${game.status === 'ready' ? 'Scheduled' : 'Pending'}</div>
+            </div>
+            `;
+            futureList.appendChild(gameDiv);
         });
         }
         
