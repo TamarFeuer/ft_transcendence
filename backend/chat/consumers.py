@@ -117,6 +117,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				"dms_metadata": dms_metadata
 			}))
 
+		elif msg_type == "mark_read":
+			dm_partner_id = data.get("dm_partner_id")
+			if not dm_partner_id:
+				return
+			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {dm_partner_id}")
+			# Reset the unread counter for this conversation in the database and sets the last_read
+			await mark_read(self.user_id, dm_partner_id)
+			# Notify the other user that their messages were read.
+			await self.channel_layer.group_send(
+				f"user_{dm_partner_id}", # which group to send to
+				{"type": "messages.read", "read_by": self.user_id} # the event payload
+			)
+
 		elif msg_type == "fetch_history":
 			dm_partner_id = data.get("dm_partner_id")
 			if not dm_partner_id:
@@ -141,19 +154,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				# null partner_id means the user switched away (e.g. to global) — clear so
 				# save_dm doesn't keep skipping the unread increment for their old DM.
 				ACTIVE_CONVERSATION.pop(self.user_id, None)
-
-		elif msg_type == "mark_read":
-			dm_partner_id = data.get("dm_partner_id")
-			if not dm_partner_id:
-				return
-			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {dm_partner_id}")
-			# Reset the unread counter for this conversation in the database.
-			await mark_read(self.user_id, dm_partner_id)
-			# Notify the other user that their messages were read.
-			await self.channel_layer.group_send(
-				f"user_{dm_partner_id}",
-				{"type": "messages.read", "by": self.user_id}
-			)
 
 		elif msg_type == "send_message":
 			message = data.get("message", "")
@@ -323,7 +323,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	async def messages_read(self, event):
 		await self.send(text_data=json.dumps({
 			"type": "messagesSeenByDmPartner",
-			"by": event["by"],
+			"read_by": event["read_by"],
 		}))
 
 	async def typing_notification(self, event):

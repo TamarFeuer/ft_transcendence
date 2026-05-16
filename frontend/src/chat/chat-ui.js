@@ -26,7 +26,7 @@ export function initChatUI() {
 	// ── State ─────────────────────────────────────────────────────────────────
 	// activeChannel is either "global" or a user ID for DMs
 	let activeChannel = "global";
-	// messageHistory stores messages per channel — keyed by "global" or user ID
+	// messageHistory stores messages per channel, keyed by "global" or user ID
 	const messageHistory = { global: [] };
 	// tracks which DM channels have been read by the other person
 	const seenBy = {}; // tabName -> true/false
@@ -58,7 +58,8 @@ export function initChatUI() {
 			blockNotice.textContent = "";
 		}
 	}
-
+	
+	// tabName is either "global" (for the Global tab), or a user ID like "42"
 	function switchChannel(tabName) {
 		activeChannel = tabName;
 
@@ -75,6 +76,9 @@ export function initChatUI() {
 			channelTitle.textContent = t('CHAT_GLOBAL_TITLE');
 		} else {
 			const name = onlineUsers[tabName]
+				// activeTab? — optional chaining. If activeTab is null (no tab found), skip everything after and return undefined instead of crashing.
+				// tab.append(atSpan, nameSpan, closeSpan);
+				//            1st     2nd       3rd
 				|| activeTab?.querySelector("span:nth-child(2)")?.textContent;
 			channelTitle.textContent = name ? `@ ${name}` : `@ ${t('CHAT_DIRECT_MSG')}`;
 			markRead(tabName);
@@ -105,7 +109,7 @@ export function initChatUI() {
 		renderMessages(activeChannel);
 	});
 
-	function getOrCreateDMTab(userId, userName, switchToChannel = true, fetchHistory = true) {
+	function ensureDMTab(userId, userName, switchToChannel = true, fetchHistory = true) {
 		// Don't open DM with yourself
 		if (userId === verifiedUserId) return;
 
@@ -116,6 +120,7 @@ export function initChatUI() {
 			return;
 		}
 
+		// Otherwise, create it
 		if (!messageHistory[userId]) messageHistory[userId] = [];
 
 		const tab = document.createElement("button");
@@ -363,7 +368,7 @@ export function initChatUI() {
 				div.addEventListener("dblclick", (e) => {
 					e.stopPropagation();
 					hideChatUserMenu();
-					getOrCreateDMTab(id, name || id);
+					ensureDMTab(id, name || id);
 				});
 			}
 
@@ -389,7 +394,7 @@ export function initChatUI() {
 			if (!existingTab) {
 				// first false means don't switch to it 
 				// second false means don't fetch history
-				getOrCreateDMTab(tabName, senderName, false, false);
+				ensureDMTab(tabName, senderName, false, false);
 			}
 		}
 
@@ -418,9 +423,11 @@ export function initChatUI() {
 	
 	// Restore DM tabs from previous session on page load
 	window.addEventListener("openDmsMetadataReceived", (e) => {
-		const { dms_metadata } = e.detail;
+		const dms_metadata = e.detail.dms_metadata;
+		// entries turn the object into an array of [key, value] pairs
 		Object.entries(dms_metadata).forEach(([userId, data]) => {
-			getOrCreateDMTab(userId, data.user_name, false, false);
+			// don't switch to channel, don't fetch history
+			ensureDMTab(userId, data.user_name, false, false);
 			if (data.unread_count > 0) {
 				const tab = document.querySelector(`[data-id="${userId}"]`);
 				if (tab) {
@@ -507,7 +514,7 @@ export function initChatUI() {
 			gamePickerMenu.style.display = "block";
 			return; // skip hideChatUserMenu() at the bottom
 		} else if (action === "chat") {
-			getOrCreateDMTab(chatMenuUser.id, chatMenuUser.name);
+			ensureDMTab(chatMenuUser.id, chatMenuUser.name);
 		} else if (action === "block") {
 			const blockedUserId = chatMenuUser.id;
 			const r = await fetchWithRefreshAuth('/api/block/', {
@@ -573,7 +580,7 @@ export function initChatUI() {
 			const gameId = data.gameId;
 			console.log('[invite] gameId from response:', gameId);
 			sendGameInvite(inviteeId, "chess", gameId);
-			getOrCreateDMTab(inviteeId, inviteeName, true, false);
+			ensureDMTab(inviteeId, inviteeName, true, false);
 			addMessage(inviteeId, {
 				senderId: verifiedUserId,
 				senderName: null,
@@ -597,7 +604,7 @@ export function initChatUI() {
 			const data = await res.json();
 			const gameId = data.gameId;
 			sendGameInvite(inviteeId, "pong", gameId);
-			getOrCreateDMTab(inviteeId, inviteeName, true, false);
+			ensureDMTab(inviteeId, inviteeName, true, false);
 			addMessage(inviteeId, {
 				senderId: verifiedUserId,
 				senderName: null,
@@ -618,7 +625,7 @@ export function initChatUI() {
 
 		const existingTab = document.querySelector(`[data-id="${tabName}"]`);
 		if (!existingTab) {
-			getOrCreateDMTab(tabName, senderName, false, false);
+			ensureDMTab(tabName, senderName, false, false);
 		}
 
 		addMessage(tabName, {
@@ -671,7 +678,7 @@ export function initChatUI() {
 	}
 
 	window.addEventListener("messagesSeenByDmPartner", (e) => {
-		const tabName = e.detail.by;
+		const tabName = e.detail.read_by;
 		seenBy[tabName] = true;
 		if (activeChannel === tabName) renderMessages(tabName);
 	});

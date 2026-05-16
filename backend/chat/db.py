@@ -10,6 +10,67 @@ logger = logging.getLogger(__name__)
 # otherwise it would freeze the consumer while waiting for the database,
 # preventing it from handling any other messages during that time.
 
+@database_sync_to_async
+def get_open_dms_metadata(user_id):
+	from chat.models import ConversationParticipant, Message
+
+	my_participations = ConversationParticipant.objects.filter(
+		user_id=user_id
+	)
+
+	result = {}
+	for my_participation in my_participations:
+		# Skip conversations the user explicitly closed, unless there are unread messages —
+		# a new message should reopen the tab even if the user closed it.
+		if my_participation.is_closed and my_participation.unread_count == 0:
+			continue
+
+		# Find the other participant to get their participation and their username and user_id.
+		# Django will JOIN the UserProfile table upfront
+		other_participation = ConversationParticipant.objects.filter(
+			conversation_id=my_participation.conversation_id
+		).exclude(user_id=user_id).select_related('user').first()
+
+		if other_participation:
+			# most recent timestamp of my message
+			last_sent_by_me = Message.objects.filter(
+				conversation_id=my_participation.conversation_id,
+				sender_id=user_id
+			).order_by('-created_at').values_list('created_at', flat=True).first()
+			seen = False
+			if last_sent_by_me and other_participation.last_read_at and other_participation.last_read_at >= last_sent_by_me:
+				seen = True
+			result[str(other_participation.user_id)] = {
+				"user_name": other_participation.user.username,
+				"unread_count": my_participation.unread_count,
+				"seen": seen,
+			}
+
+	return result
+
+
+@database_sync_to_async
+def mark_read(user_id, other_id):
+	from chat.models import ConversationParticipant
+
+	my_conv_ids = ConversationParticipant.objects.filter(
+		user_id=user_id
+	).values_list('conversation_id', flat=True)
+	
+	# of those conversations, which one is the other user also in?
+	# zero if the two users have never messaged each other, otherwise one
+	shared_conv_id = ConversationParticipant.objects.filter(
+		conversation_id__in=my_conv_ids,
+		user_id=other_id
+	).values_list('conversation_id', flat=True).first()
+
+	if shared_conv_id:
+		from django.utils import timezone
+		ConversationParticipant.objects.filter(
+			conversation_id=shared_conv_id,
+			user_id=user_id
+		).update(unread_count=0, last_read_at=timezone.now(), is_closed=False)
+
 
 def _get_or_create_conversation(user_id, other_id):
 	"""Sync helper — must be called from within a database_sync_to_async context."""
@@ -185,66 +246,6 @@ def cleanup_stale_invites(user_id):
 	GameInvite.objects.filter(
 		Q(sender_id=user_id) | Q(recipient_id=user_id)
 	).delete()
-
-
-@database_sync_to_async
-def get_open_dms_metadata(user_id):
-	from chat.models import ConversationParticipant, Message
-
-	my_participations = ConversationParticipant.objects.filter(
-		user_id=user_id
-	)
-
-	result = {}
-	for my_participation in my_participations:
-		# Skip conversations the user explicitly closed, unless there are unread messages —
-		# a new message should reopen the tab even if the user closed it.
-		if my_participation.is_closed and my_participation.unread_count == 0:
-			continue
-
-		# Find the other participant to get their participation and their username and user_id.
-		# Django will JOIN the UserProfile table upfront
-		other_participation = ConversationParticipant.objects.filter(
-			conversation_id=my_participation.conversation_id
-		).exclude(user_id=user_id).select_related('user').first()
-
-		if other_participation:
-			# most recent timestamp of my message
-			last_sent_by_me = Message.objects.filter(
-				conversation_id=my_participation.conversation_id,
-				sender_id=user_id
-			).order_by('-created_at').values_list('created_at', flat=True).first()
-			seen = False
-			if last_sent_by_me and other_participation.last_read_at and other_participation.last_read_at >= last_sent_by_me:
-				seen = True
-			result[str(other_participation.user_id)] = {
-				"user_name": other_participation.user.username,
-				"unread_count": my_participation.unread_count,
-				"seen": seen,
-			}
-
-	return result
-
-
-@database_sync_to_async
-def mark_read(user_id, other_id):
-	from chat.models import ConversationParticipant
-
-	my_conv_ids = ConversationParticipant.objects.filter(
-		user_id=user_id
-	).values_list('conversation_id', flat=True)
-
-	shared_conv_id = ConversationParticipant.objects.filter(
-		conversation_id__in=my_conv_ids,
-		user_id=other_id
-	).values_list('conversation_id', flat=True).first()
-
-	if shared_conv_id:
-		from django.utils import timezone
-		ConversationParticipant.objects.filter(
-			conversation_id=shared_conv_id,
-			user_id=user_id
-		).update(unread_count=0, last_read_at=timezone.now(), is_closed=False)
 
 
 @database_sync_to_async

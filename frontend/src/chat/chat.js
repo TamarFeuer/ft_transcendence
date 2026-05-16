@@ -77,6 +77,13 @@ export function initChat() {
 					// Fetch previous DM conversations to restore tabs
 					fetchOpenDmsMetadata();
 					break;
+			
+			case "openDmsMetadata":
+				console.log("openDmsMetadata received:", data.dms_metadata);
+				window.dispatchEvent(new CustomEvent("openDmsMetadataReceived", {
+					detail: { dms_metadata: data.dms_metadata }
+				}));
+				break;
 
 			// Incoming chat message — either global or private DM
 			case "chatMessage": {
@@ -132,17 +139,10 @@ export function initChat() {
 					}
 				}));
 				break;
-				
-			case "openDmsMetadata":
-				console.log("openDmsMetadata received:", data.dms_metadata);
-				window.dispatchEvent(new CustomEvent("openDmsMetadataReceived", {
-					detail: { dms_metadata: data.dms_metadata }
-				}));
-				break;
 
 			case "messagesSeenByDmPartner":
 				window.dispatchEvent(new CustomEvent("messagesSeenByDmPartner", {
-					detail: { by: data.by }
+					detail: { read_by: data.read_by }
 				}));
 				break;
 

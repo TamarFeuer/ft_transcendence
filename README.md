@@ -647,7 +647,7 @@ Metadata for all open DM tabs — user_name, unread count, and seen status per t
 }
 ```
 **Backend:** `get_open_dms_metadata` branch → `get_open_dms_metadata()` in `db.py`  
-**Frontend:** `case "openDmsMetadata"` → dispatches `openDmsMetadataReceived` event → `getOrCreateDMTab()` in `chat-ui.js`
+**Frontend:** `case "openDmsMetadata"` → dispatches `openDmsMetadataReceived` event → `ensureDMTab()` in `chat-ui.js`
 
 ###### `onlineUsers`
 Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
@@ -682,7 +682,7 @@ Last 50 messages of a DM conversation, oldest first. `seen` indicates whether th
 ###### `messagesSeenByDmPartner`
 Your DM partner has read your messages.
 ```json
-{ "type": "messagesSeenByDmPartner", "by": "42" }
+{ "type": "messagesSeenByDmPartner", "read_by": "42" }
 ```
 **Backend:** `messages_read()` in `consumers.py`  
 **Frontend:** `case "messagesSeenByDmPartner"` in `chat.js`
