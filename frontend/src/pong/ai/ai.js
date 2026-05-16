@@ -3,10 +3,20 @@ import { t } from "../../i18n/index.js";
 import { disposeCurrentEngine } from "../../routes/routes.js";
 import { navigate } from "../../routes/route_helpers.js";
 
+const INITIAL_BALL_SPEED = 0.05;
+const BALL_SPEED_ACCEL = 1.00003;
+const AI_MAX_ERROR = 2.5;        // ~50/50 return rate at this paddle speed (see comment in loop)
+const AI_PADDLE_SPEED = 0.72;    // human uses 0.8 — AI slightly slower but strong prediction
+const PLAYER_PADDLE_SPEED = 0.8;
+
+function randomServeVelocity() {
+    const dir = () => (Math.random() > 0.5 ? 1 : -1);
+    return { vx: INITIAL_BALL_SPEED * dir(), vy: INITIAL_BALL_SPEED * dir() };
+}
+
 export function initAIGame(scene, gameObjects, tournament) {
     return new Promise((resolve) => {
-        let ballVX = 0.07;
-        let ballVY = 0.07;
+        let { vx: ballVX, vy: ballVY } = randomServeVelocity();
         let scoreP1int = 0;
         let scoreP2int = 0;
         let standartSpeed = 1000 / 15;
@@ -50,19 +60,18 @@ export function initAIGame(scene, gameObjects, tournament) {
                 if (predictedY > range) predictedY = range * 2 - predictedY; // reflect
                 predictedY = predictedY + bottomWall;       // shift back
 
-                // Add error: AI aims near the right spot but not perfectly
-                const maxError = 2.5; // higher = more misses (~50/50 at 2.5)
-                targetY = predictedY + (Math.random() * 2 - 1) * maxError;
+                // Imperfect aim — scales slightly with ball speed so late rallies stay playable
+                const ballSpeed = Math.hypot(ballVX, ballVY);
+                const errorScale = Math.min(1.35, 0.9 + ballSpeed * 6);
+                targetY = predictedY + (Math.random() * 2 - 1) * AI_MAX_ERROR * errorScale;
             } else {
-                // Ball moving away — drift back to center so AI is ready
                 targetY = 0;
             }
 
             const difference = targetY - paddleY;
-            const speed = 0.15;
 
-            if (Math.abs(difference) > 0.1) {
-                gameObjects.paddleLeft.position.y += Math.sign(difference) * Math.min(speed, Math.abs(difference));
+            if (Math.abs(difference) > 0.05) {
+                gameObjects.paddleLeft.position.y += Math.sign(difference) * Math.min(AI_PADDLE_SPEED, Math.abs(difference));
             }
 
             // Clamp AI paddle within bounds (fix #2 also applied here)
@@ -72,8 +81,8 @@ export function initAIGame(scene, gameObjects, tournament) {
         // Player 2 controls (Arrow keys)
         const keyboardIntervalP2 = setInterval(() => {
             let y = 0;
-            if (keys['ArrowUp']) y = 0.8;
-            if (keys['ArrowDown']) y = -0.8;
+            if (keys['ArrowUp']) y = PLAYER_PADDLE_SPEED;
+            if (keys['ArrowDown']) y = -PLAYER_PADDLE_SPEED;
             gameObjects.paddleRight.position.y += y;
 
             // Keep paddle within bounds
@@ -88,8 +97,8 @@ export function initAIGame(scene, gameObjects, tournament) {
         const renderObserver = scene.onBeforeRenderObservable.add(() => {
             gameObjects.ball.position.x += ballVX;
             gameObjects.ball.position.y += ballVY;
-            ballVX *= 1.00005; // Gradually speeds up
-            ballVY *= 1.00005;
+            ballVX *= BALL_SPEED_ACCEL;
+            ballVY *= BALL_SPEED_ACCEL;
 
             // Ball collision logic
             if (gameObjects.ball.position.y > 5 || gameObjects.ball.position.y < -5) {
@@ -114,11 +123,13 @@ export function initAIGame(scene, gameObjects, tournament) {
                 scoreP2.textContent = scoreP2int.toString();
                 gameObjects.ball.position.x = 0;
                 gameObjects.ball.position.y = 0;
+                ({ vx: ballVX, vy: ballVY } = randomServeVelocity());
             } else if (gameObjects.ball.position.x > 6) {
                 scoreP1int++;
                 scoreP1.textContent = scoreP1int.toString();
                 gameObjects.ball.position.x = 0;
                 gameObjects.ball.position.y = 0;
+                ({ vx: ballVX, vy: ballVY } = randomServeVelocity());
             }
 
             // Check winner
