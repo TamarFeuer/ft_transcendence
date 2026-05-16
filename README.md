@@ -507,14 +507,19 @@ The chat window is a fixed overlay rendered in `index.html`, outside the SPA's `
 
 - **Online users list** — rebuilt every time someone connects, disconnects, or changes game status. Users who blocked you are hidden; users you blocked are still shown so you can unblock them.
 - **Channel tabs** — the Global tab is always present. DM tabs are created on the fly when you open a conversation or receive a message from someone you don't have a tab open for yet. Tabs persist across navigation and show an unread badge when new messages arrive.
-- **Messages** — kept in memory per channel for the session. DM history (last 50 messages) is fetched from the database when a tab is opened. Global messages are not persisted.
+- **Messages** — kept in memory per channel for the session. DM history (last 50 messages) is fetched from the database when a tab is opened. Global messages are ephemeral — they are not persisted and are lost on refresh or reconnect.
 - **Channel title** — updates dynamically when switching between Global and DM tabs.
 - **Typing indicator** — appears when the other person is typing, cleared automatically when they stop.
 - **Read receipts** — a checkmark or indicator updates when your DM partner has read your messages.
 - **Block notice** — replaces the input area when either user has blocked the other, preventing new messages.
 - **Character counter** — shows the current character count against the 300 character limit as you type.
 - **Game invite UI** — inline invite cards appear in the DM with accept/decline actions. Expired or cancelled invites are cleaned up automatically.
-- **Context menu** — clicking an online user opens a menu with four actions: View Profile, Chat, Invite to Game, and Block. Invite to Game opens a game picker submenu to choose between Pong and Chess.
+- **Context menu** — clicking an online user opens a menu with four actions:
+  - **View Profile** — navigates to that user's profile page.
+  - **Chat** — opens a DM tab with that user.
+  - **Invite to Game** — opens a game picker submenu (Pong or Chess). Sends a game invite to the user's DM; the invite appears as a card with Accept/Decline. If accepted, both users are navigated to the game. Invites expire if the sender cancels or either user goes offline.
+  - **Block** — blocks the user (see [Block](#block)).
+- **Game results** — when a Pong or Chess game ends, the result is broadcast to all connected users as a message in Global chat (e.g. _"tamar beat rik in Chess"_).
 
 ##### WebSocket Message Protocol
 
