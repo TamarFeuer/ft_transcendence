@@ -441,6 +441,20 @@ Response: {
 
 #### Block
 
+Blocking is available from the chat context menu (right-click an online user). Blocks are stored as a `Block` row in the database.
+
+**Business rules:**
+
+- Blocking a user removes any existing friendship between the two users.
+- Once blocked, neither the blocker nor the blocked user can send messages to each other. The chat input is replaced with a notice: _"You have blocked this user."_ for the blocker and _"You have been blocked."_ for the blocked user.
+- If either user closes the DM tab after a block, they cannot reopen it until the block is lifted.
+- Blocking does not interrupt an ongoing game — if a game is already in progress, it continues to completion. This prevents blocking from being used as a way to abandon a losing game.
+- Users you have blocked are still visible in the online users list so you can unblock them. Users who blocked you are hidden from your list.
+
+**Real-time updates:** After a block is saved via the REST API, the frontend calls `reportBlockedUser()` over the chat WebSocket. This notifies the consumer to cancel any pending game invites between the two users, broadcast an updated online users list, and send `friendListChanged` to both users.
+
+---
+
 ##### Block REST API
 
 All endpoints are under `/api/block/`. Authentication via JWT cookie (`access_token`).
