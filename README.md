@@ -636,13 +636,13 @@ Sent on connect to confirm the user's identity.
 **Frontend:** `case "selfId"` in `chatSocket.onmessage` in `chat.js`
 
 ###### `openDms`
-All open DM tabs. Key is the other user's user_id. `unread` is the unread message count. `seen` indicates whether the other user has read your last message.
+All open DM tabs. Key is the other user's user_id. `unread_count` is the unread message count. `seen` indicates whether the other user has read your last message.
 ```json
 {
   "type": "openDms",
   "dms": {
-    "42": { "user_name": "tamar", "unread": 3, "seen": false },
-    "7":  { "user_name": "rik",   "unread": 0, "seen": true  }
+    "42": { "user_name": "tamar", "unread_count": 3, "seen": false },
+    "7":  { "user_name": "rik",   "unread_count": 0, "seen": true  }
   }
 }
 ```

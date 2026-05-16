@@ -193,31 +193,33 @@ def get_open_dms(user_id):
 
 	my_participations = ConversationParticipant.objects.filter(
 		user_id=user_id
-	).select_related('conversation')
+	)
 
 	result = {}
-	for my_part in my_participations:
+	for my_participation in my_participations:
 		# Skip conversations the user explicitly closed, unless there are unread messages —
 		# a new message should reopen the tab even if the user closed it.
-		if my_part.is_closed and my_part.unread_count == 0:
+		if my_participation.is_closed and my_participation.unread_count == 0:
 			continue
 
-		# Find the other participant to get their username and user_id.
-		other_part = ConversationParticipant.objects.filter(
-			conversation=my_part.conversation
+		# Find the other participant to get their participation and their username and user_id.
+		# Django will JOIN the UserProfile table upfront
+		other_participation = ConversationParticipant.objects.filter(
+			conversation_id=my_participation.conversation_id
 		).exclude(user_id=user_id).select_related('user').first()
 
-		if other_part:
-			last_sent = Message.objects.filter(
-				conversation=my_part.conversation,
+		if other_participation:
+			# most recent timestamp of my message
+			last_sent_by_me = Message.objects.filter(
+				conversation_id=my_participation.conversation_id,
 				sender_id=user_id
 			).order_by('-created_at').values_list('created_at', flat=True).first()
 			seen = False
-			if last_sent and other_part.last_read_at and other_part.last_read_at >= last_sent:
+			if last_sent_by_me and other_participation.last_read_at and other_participation.last_read_at >= last_sent_by_me:
 				seen = True
-			result[str(other_part.user_id)] = {
-				"user_name": other_part.user.username,
-				"unread": my_part.unread_count,
+			result[str(other_participation.user_id)] = {
+				"user_name": other_participation.user.username,
+				"unread_count": my_participation.unread_count,
 				"seen": seen,
 			}
 

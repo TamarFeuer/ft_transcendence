@@ -421,14 +421,14 @@ export function initChatUI() {
 		const { dms } = e.detail;
 		Object.entries(dms).forEach(([userId, data]) => {
 			getOrCreateDMTab(userId, data.user_name, false, false);
-			if (data.unread > 0) {
+			if (data.unread_count > 0) {
 				const tab = document.querySelector(`[data-id="${userId}"]`);
 				if (tab) {
 					// On WS reconnect the tab already exists — remove stale badge before adding the fresh one.
 					tab.querySelector(".unread-badge")?.remove();
 					const badge = document.createElement("span");
 					badge.className = "unread-badge";
-					badge.textContent = data.unread;
+					badge.textContent = data.unread_count;
 					tab.appendChild(badge);
 				}
 			}

@@ -72,7 +72,7 @@ export function initChat() {
 			// Server confirms our identity after connect
 			case "selfId":
 					verifiedUserId = data.user_id;
-					verifiedUserName = data.user_name || "Guest";
+					verifiedUserName = data.user_name;
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
 					// Fetch previous DM conversations to restore tabs
 					fetchOpenDms();
