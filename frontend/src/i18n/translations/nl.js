@@ -103,7 +103,10 @@ export const nl = {
   [TranslationKey.BTN_PONG]: 'Pong',
   
   [TranslationKey.BTN_START_GAME]: 'START SPEL',
-  
+
+  [TranslationKey.RED_PADDLE_LOCAL_PLAYER]: 'Rood batje',
+  [TranslationKey.BLUE_PADDLE_LOCAL_PLAYER]: 'Blauw batje',
+
   [TranslationKey.PLAYER_1]: 'Speler 1',
   [TranslationKey.PLAYER_2]: 'Speler 2',
   [TranslationKey.LABEL_LANGUAGE]: 'Taal:',

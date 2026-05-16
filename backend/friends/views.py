@@ -3,7 +3,7 @@ from json.encoder import JSONEncoder
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q
 import json
@@ -13,6 +13,9 @@ from .models import FriendRequest
 from .services import remove_friend_from_db
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
+
 
 def get_recipient(request):
 	data = json.loads(request.body.decode())

@@ -82,7 +82,8 @@ def update_game_completed(game_id, winner_id, winner_name):
     """Update tournament game with winner and completion status"""
     from tournament.models import TournamentGame
     from tournament.models import TournamentParticipant
-    from django.contrib.auth.models import User
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
 
     try:
         # Look up by game_id (GameSession UUID), not id (TournamentGame integer id)
@@ -142,7 +143,8 @@ def update_game_completed_tie(game_id):
     """Update tournament game as a tie with no winner"""
     from tournament.models import TournamentGame
     from tournament.models import TournamentParticipant
-    from django.contrib.auth.models import User
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
 
     try:
                 # Look up by game_id (GameSession UUID), not id (TournamentGame integer id)
