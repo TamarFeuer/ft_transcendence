@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q
 import json
@@ -11,6 +11,9 @@ from .models import Block
 from friends.models import FriendRequest
 
 logger = logging.getLogger(__name__)
+
+
+User = get_user_model()
 
 
 def get_authenticated_user(request):
