@@ -60,6 +60,9 @@ run the project>
 <classic references related to the topic (documentation, articles, tutorials, etc.), as well as a description of how AI was used —
 specifying for which tasks and which parts of the project>
 
+- [MDN — WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) — browser-side WebSocket interface (`readyState`, `send`, `onmessage`, etc.)
+- [Django Channels](https://channels.readthedocs.io/en/latest/) — async WebSocket support for Django (`AsyncWebsocketConsumer`, channel layers, `database_sync_to_async`)
+
 
 ### Team Information
 <For each team member mentioned at the top of the README.md, you must provide:
@@ -796,12 +799,56 @@ Frontend bottom-left corner has a language selector dropdown.
 
 
 ### Modules
-<◦ List of all chosen modules (Major and Minor).
-◦ Point calculation (Major = 2pts, Minor = 1pt).
-◦ Justification for each module choice, especially for custom "Modules of
-choice".
-◦ How each module was implemented.
-◦ Which team member(s) worked on each module>
+
+#### Major: User Interaction (2 pts)
+**Team members:** Tamar (chat), Stan (profile), Niko (friends)
+
+Covers the social layer of the application: a chat system, user profiles, and a friends system. See [Chat System](#chat-system), [Friends](#friends), and the profile page (`/profile`) for full details.
+
+---
+
+#### Minor: Advanced Chat Features (1 pt)
+**Team member:** Tamar
+
+Enhances the base chat module with the following:
+
+- **Block** — users can block each other from the chat context menu. Blocked users cannot send or receive messages; the input is replaced with a notice. See [Block](#block).
+- **Game invites from chat** — the context menu lets you invite any online user to Pong or Chess directly from chat. Invites appear as cards in the DM with Accept/Decline; accepting navigates both users to the game.
+- **Game/tournament notifications** — when a Pong or Chess game ends the result is broadcast to all connected users as a message in Global chat (e.g. _"tamar beat rik in a game of chess"_).
+- **Profile access from chat** — the context menu on any online user includes a View Profile action that navigates to their profile page.
+- **Chat history persistence** — the last 50 messages of each DM conversation are stored in the database and restored when the tab is reopened.
+- **Typing indicators and read receipts** — a typing indicator appears while the other user is composing a message; a read receipt updates when your DM partner has read your messages.
+
+---
+
+#### Minor: ORM for Database Access (1 pt)
+**Team members:** all (Tamar — chat, Niko — friends/block, Rik — game stats, and others)
+
+The project uses Django's ORM throughout instead of writing raw SQL. The ORM sits as an abstraction layer above the database driver (`psycopg2`) — it generates and executes SQL for you and maps rows back to Python objects, which eliminates manual query construction and protects against SQL injection by default.
+
+Without the ORM, talking to PostgreSQL from Python requires a driver like `psycopg2` directly:
+```python
+cursor.execute("SELECT * FROM auth_user WHERE id = %s", [user_id])
+```
+With the ORM, the same query is:
+```python
+User.objects.get(id=user_id)
+```
+
+ORM operations used across the project:
+
+| Operation | Used in |
+|-----------|---------|
+| `.objects.get()` / `.objects.filter()` | all apps |
+| `.objects.create()` / `.objects.get_or_create()` | chat, friends, block, game, chess, tournament |
+| `.objects.delete()` | chat, friends, block |
+| `.objects.exists()` / `.objects.count()` | friends, block, tournament |
+| `.objects.values()` / `.objects.values_list()` | chat, friends, game |
+| `.select_related()` | chat, game, chess (JOIN in a single query instead of N+1) |
+| `.order_by()` / `.exclude()` | game, chess, tournament |
+| `Q()` — complex OR/AND conditions | friends, block, chat |
+| `F()` — atomic in-DB increments | chat (unread counts, avoiding race conditions) |
+| `.union()` — combining querysets | game (match history from both player perspectives) |
 
 
 ### Individual Contributions

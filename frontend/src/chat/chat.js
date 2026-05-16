@@ -19,12 +19,6 @@ function formatGameResultMessage(data) {
 	return t(TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN, { game });
 }
 
-//chatSocket.readyState is a number. The WebSocket API defines four possible values:
-// javascriptWebSocket.CONNECTING  // 0 - still connecting
-// WebSocket.OPEN        // 1 - ready to use
-// WebSocket.CLOSING     // 2 - closing
-// WebSocket.CLOSED      // 3 - closed
-
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let chatSocket = null; // Single shared WebSocket connection for all chat
