@@ -34,6 +34,7 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Block](#block)
     - [Block REST API](#block-rest-api)
   - [Chat System](#chat-system)
+    - [UI](#ui)
     - [WebSocket Message Protocol](#websocket-message-protocol)
   - [Additional Games](#additional-games)
   - [Graphics & UI](#graphics--ui)
@@ -448,7 +449,7 @@ Blocking is available from the chat context menu (right-click an online user). B
 - Blocking a user removes any existing friendship between the two users.
 - Once blocked, neither the blocker nor the blocked user can send messages to each other. The chat input is replaced with a notice: _"You have blocked this user."_ for the blocker and _"You have been blocked."_ for the blocked user.
 - If either user closes the DM tab after a block, they cannot reopen it until the block is lifted.
-- Blocking does not interrupt an ongoing game — if a game is already in progress, it continues to completion. This prevents blocking from being used as a way to abandon a losing game.
+- Blocking does not interrupt an ongoing game. If a game is already in progress, it continues to completion. This prevents blocking from being used as a way to abandon a losing game.
 - Users you have blocked are still visible in the online users list so you can unblock them. Users who blocked you are hidden from your list.
 
 **Real-time updates:** After a block is saved via the REST API, the frontend calls `reportBlockedUser()` over the chat WebSocket. This notifies the consumer to cancel any pending game invites between the two users, broadcast an updated online users list, and send `friendListChanged` to both users.
@@ -505,21 +506,21 @@ chatContainer
 
 The chat window is a fixed overlay rendered in `index.html`, outside the SPA's `#app-root`. It stays mounted and connected across all page navigations. Everything inside it is dynamically rendered by JavaScript:
 
-- **Online users list** — rebuilt every time someone connects, disconnects, or changes game status. Users who blocked you are hidden; users you blocked are still shown so you can unblock them.
-- **Channel tabs** — the Global tab is always present. DM tabs are created on the fly when you open a conversation or receive a message from someone you don't have a tab open for yet. Tabs persist across navigation and show an unread badge when new messages arrive.
-- **Messages** — kept in memory per channel for the session. DM history (last 50 messages) is fetched from the database when a tab is opened. Global messages are ephemeral — they are not persisted and are lost on refresh or reconnect.
-- **Channel title** — updates dynamically when switching between Global and DM tabs.
-- **Typing indicator** — appears when the other person is typing, cleared automatically when they stop.
-- **Read receipts** — a checkmark or indicator updates when your DM partner has read your messages.
-- **Block notice** — replaces the input area when either user has blocked the other, preventing new messages.
-- **Character counter** — shows the current character count against the 300 character limit as you type.
-- **Game invite UI** — inline invite cards appear in the DM with accept/decline actions. Expired or cancelled invites are cleaned up automatically.
-- **Context menu** — clicking an online user opens a menu with four actions:
-  - **View Profile** — navigates to that user's profile page.
-  - **Chat** — opens a DM tab with that user.
-  - **Invite to Game** — opens a game picker submenu (Pong or Chess). Sends a game invite to the user's DM; the invite appears as a card with Accept/Decline. If accepted, both users are navigated to the game. Invites expire if the sender cancels or either user goes offline.
-  - **Block** — blocks the user (see [Block](#block)).
-- **Game results** — when a Pong or Chess game ends, the result is broadcast to all connected users as a message in Global chat (e.g. _"tamar beat rik in Chess"_).
+- **Online users list**: rebuilt every time someone connects, disconnects, or changes game status. Users who blocked you are hidden; users you blocked are still shown so you can unblock them.
+- **Channel tabs**: the Global tab is always present. DM tabs are created on the fly when you open a conversation or receive a message from someone you don't have a tab open for yet. Tabs persist across navigation and show an unread badge when new messages arrive.
+- **Messages**: kept in memory per channel for the session. DM history (last 50 messages) is fetched from the database when a tab is opened. Global messages are ephemeral — they are not persisted and are lost on refresh or reconnect.
+- **Channel title**: updates dynamically when switching between Global and DM tabs.
+- **Typing indicator**: appears when the other person is typing, cleared automatically when they stop.
+- **Read receipts**: a checkmark or indicator updates when your DM partner has read your messages.
+- **Block notice**: replaces the input area when either user has blocked the other, preventing new messages.
+- **Character counter**: shows the current character count against the 300 character limit as you type.
+- **Game invite UI**: inline invite cards appear in the DM with accept/decline actions. Expired or cancelled invites are cleaned up automatically.
+- **Context menu**: clicking an online user opens a menu with four actions:
+  - **View Profile**: navigates to that user's profile page.
+  - **Chat**: opens a DM tab with that user.
+  - **Invite to Game**: opens a game picker submenu (Pong or Chess). Sends a game invite to the user's DM; the invite appears as a card with Accept/Decline. If accepted, both users are navigated to the game. Invites expire if the sender cancels or either user goes offline.
+  - **Block**: blocks the user (see [Block](#block)).
+- **Game results**: when a Pong or Chess game ends, the result is broadcast to all connected users as a message in Global chat (e.g. _"tamar beat rik in Chess"_).
 
 ##### WebSocket Message Protocol
 
@@ -563,7 +564,7 @@ Reset unread count for a DM conversation.
 ```
 
 ###### `hide_dm`
-Hide a DM tab — it won't reappear on refresh unless a new message arrives.
+Hide a DM tab, it won't reappear on refresh unless a new message arrives.
 ```json
 { "type": "hide_dm", "dm_partner_id": "42" }
 ```
