@@ -5,42 +5,94 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
 # Documentation
 
 ## Table of Contents
-- [Description](#description)
-- [Instructions](#instructions)
-- [Resources](#resources)
-- [Team Information](#team-information)
-- [Project Management](#project-management)
-  - [Tools](#tools)
-  - [Process](#process)
-  - [Onboarding](#onboarding)
-  - [Communication Channels](#communication-channels)
-- [Technical Stack](#technical-stack)
-- [Database Schema](#database-schema)
-  - [Chat, Friends & Block](#chat-friends--block)
-  - [Pong Stats & Chess](#pong-stats--chess)
-  - [Tournament](#tournament)
-- [Feature List](#feature-list)
-  - [Authentication & Security](#authentication--security)
-  - [User Management](#user-management)
-  - [Local Pong](#local-pong)
-  - [Online Pong](#online-pong)
-  - [AI Player](#ai-player)
-  - [Tournaments](#tournaments)
-  - [ ](#chess)
-    - [Chess REST API](#chess-rest-api)
-    - [Chess WebSocket Protocol](#chess-websocket-protocol)
-  - [Friends](#friends)
-    - [Friends REST API](#friends-rest-api)
-  - [Block](#block)
-    - [Block REST API](#block-rest-api)
-  - [Chat System](#chat-system)
-    - [UI](#ui)
-    - [WebSocket Message Protocol](#websocket-message-protocol)
-  - [Additional Games](#additional-games)
-  - [Graphics & UI](#graphics--ui)
-  - [Internationalization (i18n)](#internationalization-i18n)
-- [Modules](#modules)
-- [Individual Contributions](#individual-contributions)
+- [Documentation](#documentation)
+  - [Table of Contents](#table-of-contents)
+    - [Description](#description)
+    - [Instructions](#instructions)
+    - [Resources](#resources)
+    - [Team Information](#team-information)
+    - [Project Management](#project-management)
+      - [Tools](#tools)
+      - [Process](#process)
+      - [Onboarding](#onboarding)
+      - [Communication Channels](#communication-channels)
+    - [Technical Stack](#technical-stack)
+    - [Database Schema](#database-schema)
+    - [Feature List](#feature-list)
+      - [Authentication \& Security](#authentication--security)
+      - [User Management](#user-management)
+      - [Local Pong](#local-pong)
+      - [Online Pong](#online-pong)
+        - [Pong REST API](#pong-rest-api)
+          - [`POST /api/game/create`](#post-apigamecreate)
+          - [`POST /api/game/join`](#post-apigamejoin)
+          - [`GET /api/leaderboard`](#get-apileaderboard)
+          - [`GET /api/player/me/stats`](#get-apiplayermestats)
+          - [`GET /api/match-history`](#get-apimatch-history)
+          - [`GET /api/match-history/<username>`](#get-apimatch-historyusername)
+          - [`GET /api/player/<username>/profile`](#get-apiplayerusernameprofile)
+          - [`GET /api/player/<username>/achievements`](#get-apiplayerusernameachievements)
+      - [AI Player](#ai-player)
+      - [Tournaments](#tournaments)
+      - [Chess](#chess)
+        - [Chess REST API](#chess-rest-api)
+          - [`POST /api/chess/join/`](#post-apichessjoin)
+          - [`GET /api/chess/stats/`](#get-apichessstats)
+          - [`GET /api/chess/leaderboard/`](#get-apichessleaderboard)
+          - [`GET /api/chess/match-history/`](#get-apichessmatch-history)
+        - [Chess WebSocket Protocol](#chess-websocket-protocol)
+          - [`move`](#move)
+          - [`assign`](#assign)
+          - [`gameStart`](#gamestart)
+          - [`gameState`](#gamestate)
+          - [`gameOver`](#gameover)
+      - [Friends](#friends)
+        - [Friends REST API](#friends-rest-api)
+          - [`POST /api/friends/send`](#post-apifriendssend)
+          - [`GET /api/friends/pending`](#get-apifriendspending)
+          - [`POST /api/friends/accept`](#post-apifriendsaccept)
+          - [`POST /api/friends/delete`](#post-apifriendsdelete)
+          - [`GET /api/friends/list`](#get-apifriendslist)
+          - [`POST /api/friends/remove`](#post-apifriendsremove)
+      - [Block](#block)
+        - [Block REST API](#block-rest-api)
+          - [`POST /api/block/`](#post-apiblock)
+          - [`DELETE /api/block/unblock`](#delete-apiblockunblock)
+      - [Chat System](#chat-system)
+        - [WebSocket Message Protocol](#websocket-message-protocol)
+        - [Frontend → Backend](#frontend--backend)
+          - [`send_message`](#send_message)
+          - [`fetch_history`](#fetch_history)
+          - [`get_open_dms`](#get_open_dms)
+          - [`set_active_conversation`](#set_active_conversation)
+          - [`mark_read`](#mark_read)
+          - [`hide_dm`](#hide_dm)
+          - [`send_game_invite`](#send_game_invite)
+          - [`cancel_game_invite`](#cancel_game_invite)
+          - [`accept_game_invite`](#accept_game_invite)
+          - [`report_blocked_user`](#report_blocked_user)
+          - [`notify_typing` / `notify_stop_typing`](#notify_typing--notify_stop_typing)
+        - [Backend → Frontend](#backend--frontend)
+          - [`selfId`](#selfid)
+          - [`chatMessage`](#chatmessage)
+          - [`dmHistory`](#dmhistory)
+          - [`openDms`](#opendms)
+          - [`messagesSeenByDmPartner`](#messagesseenbydmpartner)
+          - [`onlineUsers`](#onlineusers)
+          - [`gameInvite`](#gameinvite)
+          - [`gameInviteExpired`](#gameinviteexpired)
+          - [`gameInviteAccepted`](#gameinviteaccepted)
+          - [`gameInviteBlocked`](#gameinviteblocked)
+          - [`gameInviteRejected`](#gameinviterejected)
+          - [`gameResult`](#gameresult)
+          - [`friendListChanged`](#friendlistchanged)
+          - [`otherTyping` / `otherStoppedTyping`](#othertyping--otherstoppedtyping)
+      - [Game Statistics and Match History](#game-statistics-and-match-history)
+      - [Additional Games](#additional-games)
+      - [Graphics \& UI](#graphics--ui)
+      - [Internationalization (i18n)](#internationalization-i18n)
+    - [Modules](#modules)
+    - [Individual Contributions](#individual-contributions)
 
 
 ### Description
@@ -149,7 +201,168 @@ The following features are implemented:
 
 #### Online Pong
 
+##### Pong REST API
+
+All endpoints are under `/api/`. Authentication via JWT cookie (`access_token`), same as other protected APIs.
+
+###### `POST /api/game/create`
+
+Create a new Pong game session. Optionally specify an invitee for private games.
+
+```json
+Request (matchmaking):  {}
+Request (invite):       { "invitee_id": 42 }
+Response:               { "gameId": "a1b2c3d4-...", "status": "waiting", "message": "Game created. Waiting for players to join." }
+```
+
+Creates a new game lobby. If `invitee_id` is specified, only that user can join (private/invite-only game). Otherwise, the game is open for matchmaking.
+
+###### `POST /api/game/join`
+
+Join an existing waiting game or matchmaking queue.
+
+```json
+Request:  {}
+Response: { "gameId": "a1b2c3d4-..." }
+```
+
+Joins the first available open game with an empty slot, or creates a new one if none exist. Matchmaking automatically skips invite-only games.
+
+###### `GET /api/leaderboard`
+
+Get the global leaderboard (public, no auth required).
+
+```json
+Response: {
+  "leaderboard": [
+    { "username": "tamar", "elo_rating": 1350, "total_wins": 20, "current_win_streak": 5 }
+  ]
+}
+```
+
+Returns top players ranked by ELO, showing username, rating, total wins, and current win streak.
+
+###### `GET /api/player/me/stats`
+
+Get authenticated user's personal Pong statistics.
+
+```json
+Response: {
+  "username": "tamar",
+  "total_wins": 12,
+  "total_losses": 8,
+  "total_games": 20,
+  "elo_rating": 1248,
+  "current_win_streak": 3
+}
+```
+
+###### `GET /api/match-history`
+
+Get authenticated user's match history (last 20 matches).
+
+```json
+Response: {
+  "matches": [
+    {
+      "timestamp": "2026-05-10T14:30:00.123456+00:00",
+      "player1": "tamar",
+      "player2": "rik",
+      "player1_score": 5,
+      "player2_score": 3,
+      "winner": "tamar"
+    }
+  ]
+}
+```
+
+###### `GET /api/match-history/<username>`
+
+Get match history for a specific player (public).
+
+```json
+Response: {
+  "matches": [
+    {
+      "timestamp": "2026-05-10T14:30:00.123456+00:00",
+      "player1": "tamar",
+      "player2": "rik",
+      "player1_score": 5,
+      "player2_score": 3,
+      "winner": "tamar"
+    }
+  ]
+}
+```
+
+###### `GET /api/player/<username>/profile`
+
+Get a player's public profile information (Pong and Chess stats combined).
+
+```json
+Response: {
+  "username": "tamar",
+  "pong": {
+    "wins": 20,
+    "losses": 10,
+    "elo": 1350,
+    "total_games": 30
+  },
+  "chess": {
+    "wins": 5,
+    "losses": 3,
+    "elo": 1220,
+    "total_games": 8
+  }
+}
+```
+
+###### `GET /api/player/<username>/achievements`
+
+Get all achievements earned by a specific player.
+
+```json
+Response: {
+  "player": "tamar",
+  "achievements": [
+    {
+      "name": "First Victory",
+      "description": "Win your first game",
+      "requirement_type": "total_wins",
+      "requirement_value": 1,
+      "timestamp": "2026-05-01T10:00:00.123456+00:00"
+    }
+  ]
+}
+```
+
+---
+
 #### AI Player
+
+The AI Player module provides a challenging computer opponent for Pong games with realistic, human-like behavior. The AI is fully configurable and respects custom game rules and settings.
+
+**Key Features:**
+
+- **Challenging Gameplay:** The AI is designed to be competitive and can win regularly, providing a real challenge to players while remaining beatable.
+- **Human-like Behavior:** The AI simulates realistic player behavior rather than employing perfect play, making games feel natural and engaging.
+  - Variable reaction time based on ball position
+  - Occasional deliberate mistakes to mimic human error
+- **Game Customization Support:** The AI respects all custom game settings:
+  - Board size variations
+  - Ball speed and size adjustments
+  - Paddle size modifications
+  - Custom physics parameters
+
+**Implementation Details:**
+
+The AI opponent is implemented with a decision-making system that evaluates:
+- Current ball position and trajectory
+- Ball velocity and acceleration
+- Paddle position and available movement
+- Game physics and collision detection
+
+The AI logic adjusts paddle position dynamically to intercept the ball while introducing realistic timing delays and occasional suboptimal choices to maintain human-like behavior. This ensures matches feel competitive but fair, rather than feeling like playing against an unbeatable algorithm.
 
 #### Tournaments
 
@@ -638,33 +851,11 @@ Sent on connect to confirm the user's identity.
 ```json
 { "type": "selfId", "user_id": "42", "user_name": "tamar" }
 ```
-**Backend:** `connect()` in `consumers.py`  
-**Frontend:** `case "selfId"` in `chatSocket.onmessage` in `chat.js`
 
-###### `openDmsMetadata`
-Metadata for all open DM tabs — user_name, unread count, and seen status per tab. Key is the other user's user_id. `unread_count` is the unread message count. `seen` indicates whether the other user has read your last message. Does not include the messages themselves.
+###### `chatMessage`
+Delivers a message. `private: true` for DMs. Sent to all tabs of both sender and recipient.
 ```json
-{
-  "type": "openDmsMetadata",
-  "dms_metadata": {
-    "42": { "user_name": "tamar", "unread_count": 3, "seen": false },
-    "7":  { "user_name": "rik",   "unread_count": 0, "seen": true  }
-  }
-}
-```
-**Backend:** `get_open_dms_metadata` branch → `get_open_dms_metadata()` in `db.py`  
-**Frontend:** `case "openDmsMetadata"` → dispatches `openDmsMetadataReceived` event → `ensureDMTab()` in `chat-ui.js`
-
-###### `onlineUsers`
-Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
-```json
-{
-  "type": "onlineUsers",
-  "users": { "42": "tamar", "7": "rik" },
-  "blocked_by_me_ids": ["7"],
-  "blocked_me_ids": [],
-  "in_game_ids": ["42"]
-}
+{ "type": "chatMessage", "message": "hello", "sender_id": "42", "sender_name": "tamar", "private": true, "recipient_id": "7" }
 ```
 **Backend:** `broadcast_online_users()` → `online_users()` in `consumers.py`  
 **Frontend:** `case "onlineUsers"` → dispatches `onlineUsersUpdated` event → `renderOnlineUsers()` in `chat-ui.js`
@@ -682,27 +873,27 @@ Last 50 messages of a DM conversation, oldest first. `seen` indicates whether th
   ]
 }
 ```
-**Backend:** `fetch_history` branch → `get_dm_history()` in `db.py`  
-**Frontend:** `case "dmHistory"` → dispatches `dmHistoryReceived` event in `chat.js`
 
-###### `messagesSeenByDmPartner`
-Your DM partner has read your messages.
+###### `openDms`
+All open DM tabs. Key is the other user's user_id. `unread` is the unread message count. `seen` indicates whether the other user has read your last message.
 ```json
-{ "type": "messagesSeenByDmPartner", "read_by": "42" }
+{
+  "type": "openDms",
+  "dms": {
+    "42": { "user_name": "tamar", "unread": 3, "seen": false },
+    "7":  { "user_name": "rik",   "unread": 0, "seen": true  }
+  }
+}
 ```
-**Backend:** `messages_read()` in `consumers.py`  
-**Frontend:** `case "messagesSeenByDmPartner"` in `chat.js`
 
 ###### `chatMessage`
 Delivers a message. `private: true` for DMs. Sent to all tabs of both sender and recipient.
 ```json
-{ "type": "chatMessage", "message": "hello", "sender_id": "42", "sender_name": "tamar", "private": true, "recipient_id": "7" }
+{ "type": "messagesSeenByDmPartner", "by": "42" }
 ```
-**Backend:** `chat_message()` in `consumers.py`  
-**Frontend:** `case "chatMessage"` → dispatches `chatMessageReceived` event → `addMessage()` in `chat-ui.js`
 
-###### `otherTyping` / `otherStoppedTyping`
-Someone started or stopped typing. `private: true` for DMs, `false` for global.
+###### `onlineUsers`
+Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
 ```json
 { "type": "otherTyping", "typer_id": "42", "typer_name": "tamar", "private": true }
 { "type": "otherStoppedTyping", "typer_id": "42", "typer_name": "tamar", "private": false }
@@ -763,8 +954,49 @@ Your friend list changed. Frontend should re-fetch.
 ```json
 { "type": "friendListChanged" }
 ```
-**Backend:** `friend_list_changed()` in `consumers.py`  
-**Frontend:** `case "friendListChanged"` → dispatches `friendListChanged` event in `chat.js`
+
+###### `otherTyping` / `otherStoppedTyping`
+Someone started or stopped typing. `private: true` for DMs, `false` for global.
+```json
+{ "type": "otherTyping", "typer_id": "42", "typer_name": "tamar", "private": true }
+{ "type": "otherStoppedTyping", "typer_id": "42", "typer_name": "tamar", "private": false }
+```
+
+#### Game Statistics and Match History
+
+The project includes a comprehensive statistics and match history system that tracks player performance, achievements, and progression across all games.
+
+**Player Statistics:**
+
+Each player's profile displays:
+- **Overall Stats:** Total games played, total wins, total losses, and current ELO rating
+- **Game-Specific Stats:** Separate win/loss/ELO records for Pong and Chess games
+- **Achievements:** Badges and milestones earned through gameplay
+
+**Match History:**
+
+Players can view their match history including:
+- Opponent name
+- Final score of the match
+- Match result (win, loss, or draw)
+- Date and time of the match
+
+**Leaderboard Integration:**
+
+A global leaderboard displays:
+- Player ranking position (#)
+- Player name
+- Current ELO rating
+- Total wins
+- Current win streak
+
+The leaderboard provides a competitive social element, accessible from the stats page to see rankings and top performers.
+
+**Achievements & Progression:**
+
+Players unlock achievements and badges for completing various gameplay milestones and accomplishments. Achievements are displayed in a dedicated achievements section on the statistics page.
+
+Achievements are displayed on player profiles and contribute to overall progression and bragging rights within the community.
 
 #### Additional Games
 
@@ -773,35 +1005,97 @@ See [Chess](#chess) for the second implemented game (local, online, ELO, and cha
 #### Graphics & UI
 
 #### Internationalization (i18n)
-The project has a custom i18n (internationalization) system.
 
-Supported Languages:
-- English (en)
-- Dutch (nl)
-- Turkish (tr)
+The project implements a comprehensive internationalization (i18n) system that enables full multi-language support across the entire platform.
 
-**TODO (remove before final submission)**  
+**Supported Languages:**
+- English (en) — Default language
+- Dutch (nl) — Complete translation
+- Turkish (tr) — Complete translation
+
+Each language is fully translated and localized, including all user-facing text, menus, buttons, notifications, error messages, and game-related content.
+
+**i18n System Features:**
+
+- **Custom i18n Framework:** A lightweight, custom internationalization system built specifically for this project
+- **Dynamic Language Switching:** Users can switch languages at any time without losing session or game state
+- **Persistent Language Preference:** User's selected language is saved and restored on subsequent visits
+- **Real-time UI Updates:** All text updates instantly when language is changed
+- **Complete Coverage:** All user-facing content is translatable; no hardcoded strings in production code
+
+**Language Selector:**
+
+A language switcher dropdown is prominently placed in the frontend bottom-left corner, allowing users to:
+- See currently selected language
+- Switch between available languages
+- See language options with native language names
+- Change language at any time during gameplay or navigation
+
+**Translation Architecture:**
+
+The i18n system is organized as follows:
+
+- **Translation Keys:** `frontend/src/i18n/keys.js` — All translatable strings are defined as unique keys
+- **Language Files:** `frontend/src/i18n/translations/`
+  - `en.js` — English translations (base language)
+  - `nl.js` — Dutch translations
+  - `tr.js` — Turkish translations
+
+**Implementation for Developers:**
+
 How to add new translatable text:
 
 1. Add your translation key to: `frontend/src/i18n/keys.js`
-   Example: `MY_NEW_TEXT = 'MY_NEW_TEXT',`
+   ```javascript
+   MY_NEW_TEXT = 'MY_NEW_TEXT',
+   ```
 
-2. Add the English text for this key to: `frontend/src/i18n/translations/en.js`
-   Example: `[TranslationKey.MY_NEW_TEXT]: 'My English text',`
+2. Add the English text to: `frontend/src/i18n/translations/en.js`
+   ```javascript
+   [TranslationKey.MY_NEW_TEXT]: 'My English text',
+   ```
 
-3. (if possible) add translations for all other languages (nl.js, tr.js)
+3. Add translations for all supported languages in `nl.js` and `tr.js`
+   ```javascript
+   [TranslationKey.MY_NEW_TEXT]: 'Mijn Engelse tekst',  // Dutch
+   [TranslationKey.MY_NEW_TEXT]: 'Benim İngilizce metnim',  // Turkish
+   ```
 
-How to use translations in Javascript:
+**Using Translations in JavaScript:**
+
 ```javascript
 import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
+
+// Get translated text
+const greeting = t(TranslationKey.GREETING);
+
+// Change language
+setLanguage(Language.DUTCH);
+
+// Get current language
+const current = getCurrentLanguage();
 ```
 
-How to use translations in HTML:
+**Using Translations in HTML:**
+
 ```html
+<!-- Automatically translates text and updates on language change -->
 <button data-i18n="BTN_START_GAME">START GAME</button>
+<h1 data-i18n="TITLE_HOME">Welcome</h1>
 ```
-The text will automatically update when language changes.
-Frontend bottom-left corner has a language selector dropdown.
+
+**Localization Coverage:**
+
+The i18n system covers all aspects of the application:
+- Navigation menus and buttons
+- Game instructions and rules
+- User profile pages and settings
+- Chat messages and notifications
+- Error messages and warnings
+- Game statistics and leaderboard labels
+- Achievement names and descriptions
+- Form labels and placeholders
+- All dynamic content and user-facing text
 
 
 ### Modules

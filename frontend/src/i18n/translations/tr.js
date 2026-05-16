@@ -166,6 +166,7 @@ export const tr = {
   // User Management
   [TranslationKey.UM_LOGIN_TITLE]: 'Giriş Yap',
   [TranslationKey.UM_REGISTER_TITLE]: 'Kayıt Ol',
+  [TranslationKey.UM_EMAIL_PLACEHOLDER]: 'e-posta',
   [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'kullanıcı adı',
   [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'şifre',
   [TranslationKey.UM_SIGN_IN]: 'Giriş Yap',

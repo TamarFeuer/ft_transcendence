@@ -166,6 +166,7 @@ export const nl = {
   // User Management
   [TranslationKey.UM_LOGIN_TITLE]: 'Inloggen',
   [TranslationKey.UM_REGISTER_TITLE]: 'Registreren',
+  [TranslationKey.UM_EMAIL_PLACEHOLDER]: 'e-mail',
   [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'gebruikersnaam',
   [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'wachtwoord',
   [TranslationKey.UM_SIGN_IN]: 'Inloggen',
