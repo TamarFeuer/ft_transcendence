@@ -90,8 +90,10 @@ window.addEventListener("load", async () => {
 
 	const langBtn = document.getElementById("langBtn");
 	const currentUser = await fetchCurrentUser(); // wait for token refresh, ignore the result
-	if (currentUser.authenticated) {
+	if (langBtn) {
 		langBtn.style.display = "block";
+	}
+	if (currentUser.authenticated) {
 		initChat();
 		initChatUI();
 	}
