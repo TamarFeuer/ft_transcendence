@@ -3,7 +3,6 @@
 from django.db import migrations, models
 import django.contrib.auth.models
 
-
 class Migration(migrations.Migration):
 
     initial = True
