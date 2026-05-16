@@ -109,7 +109,53 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		logger.debug(f"[receive] type={msg_type} user={self.username}({self.user_id})")
 
-		if msg_type == "send_message":
+		if msg_type == "get_open_dms":
+			dms = await get_open_dms(self.user_id)
+			logger.info(f"[get_open_dms] user={self.username}({self.user_id}) → {dms}")
+			await self.send(text_data=json.dumps({
+				"type": "openDms",
+				"dms": dms
+			}))
+
+		elif msg_type == "fetch_history":
+			dm_partner_id = data.get("dm_partner_id")
+			if not dm_partner_id:
+				return
+			logger.debug(f"[fetch_history] user={self.username}({self.user_id}) → dm_partner_id={dm_partner_id}")
+			messages, seen = await get_dm_history(self.user_id, dm_partner_id)
+			await self.send(text_data=json.dumps({
+				"type": "dmHistory",
+				"dm_partner_id": dm_partner_id,
+				"messages": messages,
+				"seen": seen,
+			}))
+
+		elif msg_type == "set_active_conversation":
+			partner_id = data.get("partner_id")
+			logger.debug(f"[set_active_conversation] user={self.username}({self.user_id}) → partner_id={partner_id}")
+			if partner_id:
+				# Track that this user is now actively viewing this DM tab.
+				# Used in save_dm to skip the unread increment for active viewers.
+				ACTIVE_CONVERSATION[self.user_id] = partner_id
+			else:
+				# null partner_id means the user switched away (e.g. to global) — clear so
+				# save_dm doesn't keep skipping the unread increment for their old DM.
+				ACTIVE_CONVERSATION.pop(self.user_id, None)
+
+		elif msg_type == "mark_read":
+			dm_partner_id = data.get("dm_partner_id")
+			if not dm_partner_id:
+				return
+			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {dm_partner_id}")
+			# Reset the unread counter for this conversation in the database.
+			await mark_read(self.user_id, dm_partner_id)
+			# Notify the other user that their messages were read.
+			await self.channel_layer.group_send(
+				f"user_{dm_partner_id}",
+				{"type": "messages.read", "by": self.user_id}
+			)
+
+		elif msg_type == "send_message":
 			message = data.get("message", "")
 			if len(message) > 300:
 				return
@@ -145,50 +191,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				event["private"] = False
 				await self.channel_layer.group_send(GLOBAL_CHAT_GROUP, event)
 
-		elif msg_type == "fetch_history":
-			dm_partner_id = data.get("dm_partner_id")
-			if not dm_partner_id:
-				return
-			logger.debug(f"[fetch_history] user={self.username}({self.user_id}) → dm_partner_id={dm_partner_id}")
-			messages, seen = await get_dm_history(self.user_id, dm_partner_id)
-			await self.send(text_data=json.dumps({
-				"type": "dmHistory",
-				"dm_partner_id": dm_partner_id,
-				"messages": messages,
-				"seen": seen,
-			}))
-
-		elif msg_type == "get_open_dms":
-			dms = await get_open_dms(self.user_id)
-			logger.info(f"[get_open_dms] user={self.username}({self.user_id}) → {dms}")
-			await self.send(text_data=json.dumps({
-				"type": "openDms",
-				"dms": dms
-			}))
-
-		elif msg_type == "set_active_conversation":
-			partner_id = data.get("partner_id")
-			logger.debug(f"[set_active_conversation] user={self.username}({self.user_id}) → partner_id={partner_id}")
-			if partner_id:
-				# Track that this user is now actively viewing this DM tab.
-				# Used in save_dm to skip the unread increment for active viewers.
-				ACTIVE_CONVERSATION[self.user_id] = partner_id
-			else:
-				# null partner_id means the user switched away (e.g. to global) — clear so
-				# save_dm doesn't keep skipping the unread increment for their old DM.
-				ACTIVE_CONVERSATION.pop(self.user_id, None)
-
-		elif msg_type == "mark_read":
-			dm_partner_id = data.get("dm_partner_id")
-			if not dm_partner_id:
-				return
-			logger.info(f"[mark_read] user={self.username}({self.user_id}) read conversation with {dm_partner_id}")
-			# Reset the unread counter for this conversation in the database.
-			await mark_read(self.user_id, dm_partner_id)
-			# Notify the other user that their messages were read.
+		elif msg_type in ["notify_typing", "notify_stop_typing"]:
+			typing_recipient_id = data.get("typing_recipient_id")
+			action = "stop_typing" if msg_type == "notify_stop_typing" else "typing"
+			logger.debug(f"[{msg_type}] user={self.username}({self.user_id}) → typing_recipient_id={typing_recipient_id}")
+			# DM: notify only the typing recipient; global: broadcast to the global chat group
+			group = f"user_{typing_recipient_id}" if typing_recipient_id else GLOBAL_CHAT_GROUP
 			await self.channel_layer.group_send(
-				f"user_{dm_partner_id}",
-				{"type": "messages.read", "by": self.user_id}
+				group,
+				{
+					"type": "typing.notification",
+					"action": action,
+					"typer_id": self.user_id,
+					"typer_name": self.username,
+					"private": bool(typing_recipient_id),
+				}
 			)
 
 		elif msg_type == "hide_dm":
@@ -277,27 +294,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 				)
 			await self.broadcast_online_users()
 
-		elif msg_type in ["notify_typing", "notify_stop_typing"]:
-			typing_recipient_id = data.get("typing_recipient_id")
-			action = "stop_typing" if msg_type == "notify_stop_typing" else "typing"
-			logger.debug(f"[{msg_type}] user={self.username}({self.user_id}) → typing_recipient_id={typing_recipient_id}")
-			# DM: notify only the typing recipient; global: broadcast to the global chat group
-			group = f"user_{typing_recipient_id}" if typing_recipient_id else GLOBAL_CHAT_GROUP
-			await self.channel_layer.group_send(
-				group,
-				{
-					"type": "typing.notification",
-					"action": action,
-					"typer_id": self.user_id,
-					"typer_name": self.username,
-					"private": bool(typing_recipient_id),
-				}
-			)
-
 	# ─── Event handlers ───────────────────────────────────────────────────────
 	# These are called by the channel layer when a message arrives for this consumer.
 	# The method name must match the "type" field in the payload, with dots
 	# replaced by underscores — e.g. "chat.message" -> chat_message()
+
+	async def online_users(self, event):
+		# Deliver the updated online users list to this consumer's client.
+		await self.send(text_data=json.dumps({
+			"type": "onlineUsers",
+			"users": event["users"],
+			"blocked_by_me_ids": event.get("blocked_by_me_ids", []),
+			"blocked_me_ids": event.get("blocked_me_ids", []),
+			"in_game_ids": event.get("in_game_ids", []),
+		}))
 
 	async def chat_message(self, event):
 		# Deliver a chat message (global or DM) to this consumer's client.
@@ -316,6 +326,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"by": event["by"],
 		}))
 
+	async def typing_notification(self, event):
+		# Deliver a typing indicator to this consumer's client.
+		action = "otherStoppedTyping" if event["action"] == "stop_typing" else "otherTyping"
+		await self.send(text_data=json.dumps({
+			"type": action,
+			"typer_id": event["typer_id"],
+			"typer_name": event.get("typer_name"),
+			"private": event.get("private"),
+		}))
+
 	async def game_invite(self, event):
 		await self.send(text_data=json.dumps({
 			"type": "gameInvite",
@@ -323,6 +343,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"sender_name": event["sender_name"],
 			"game_type": event["game_type"],
 			"game_id": event["game_id"],
+		}))
+
+	async def game_invite_expired(self, event):
+		game_id = event["game_id"]
+		await delete_invite(game_id)
+		await self.send(text_data=json.dumps({
+			"type": "gameInviteExpired",
+			"game_id": game_id,
+		}))
+
+	async def game_invite_accepted(self, event):
+		await self.send(text_data=json.dumps({
+			"type": "gameInviteAccepted",
+			"game_id": event["game_id"],
+		}))
+
+	async def game_invite_blocked(self, event):
+		game_id = event["game_id"]
+		await delete_invite(game_id)
+		await self.send(text_data=json.dumps({
+			"type": "gameInviteBlocked",
+			"game_id": game_id,
 		}))
 
 	def format_game_result_message(self, event):
@@ -348,54 +390,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 			"game_type": event.get("game_type", "game"),
 		}))
 
-	async def trigger_online_users_broadcast(self, event):
-		logger.debug(f"[broadcast] IN_GAME_USERS at broadcast time: {IN_GAME_USERS}")
-		await self.broadcast_online_users()
-
-	async def game_invite_accepted(self, event):
-		await self.send(text_data=json.dumps({
-			"type": "gameInviteAccepted",
-			"game_id": event["game_id"],
-		}))
-
-	async def game_invite_blocked(self, event):
-		game_id = event["game_id"]
-		await delete_invite(game_id)
-		await self.send(text_data=json.dumps({
-			"type": "gameInviteBlocked",
-			"game_id": game_id,
-		}))
-
-	async def game_invite_expired(self, event):
-		game_id = event["game_id"]
-		await delete_invite(game_id)
-		await self.send(text_data=json.dumps({
-			"type": "gameInviteExpired",
-			"game_id": game_id,
-		}))
-
 	async def friend_list_changed(self, _event):
 		await self.send(text_data=json.dumps({'type': 'friendListChanged'}))
 
-	async def typing_notification(self, event):
-		# Deliver a typing indicator to this consumer's client.
-		action = "otherStoppedTyping" if event["action"] == "stop_typing" else "otherTyping"
-		await self.send(text_data=json.dumps({
-			"type": action,
-			"typer_id": event["typer_id"],
-			"typer_name": event.get("typer_name"),
-			"private": event.get("private"),
-		}))
-
-	async def online_users(self, event):
-		# Deliver the updated online users list to this consumer's client.
-		await self.send(text_data=json.dumps({
-			"type": "onlineUsers",
-			"users": event["users"],
-			"blocked_by_me_ids": event.get("blocked_by_me_ids", []),
-			"blocked_me_ids": event.get("blocked_me_ids", []),
-			"in_game_ids": event.get("in_game_ids", []),
-		}))
+	async def trigger_online_users_broadcast(self, event):
+		logger.debug(f"[broadcast] IN_GAME_USERS at broadcast time: {IN_GAME_USERS}")
+		await self.broadcast_online_users()
 
 	# ─── Internal helpers ────────────────────────────────────────────────────
 

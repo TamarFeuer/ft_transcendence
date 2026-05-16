@@ -533,13 +533,13 @@ All messages are JSON. The `type` field determines the message kind.
 
 **Frontend → Backend**
 
-###### `send_message`
-Send a global or DM message. Omit `recipient_id` for global.
+###### `get_open_dms`
+Request all open DM tabs (sent on connect to restore tabs).
 ```json
-{ "type": "send_message", "message": "hello", "recipient_id": "42" }
+{ "type": "get_open_dms" }
 ```
-**Frontend:** `sendChatMessage()` in `chat.js`  
-**Backend:** `receive()` → `send_message` branch in `consumers.py`
+**Frontend:** `fetchOpenDms()` in `chat.js`, called automatically after `selfId` is received  
+**Backend:** `receive()` → `get_open_dms` branch → `get_open_dms()` in `db.py`
 
 ###### `fetch_history`
 Request the last 50 messages from a DM conversation.
@@ -548,14 +548,6 @@ Request the last 50 messages from a DM conversation.
 ```
 **Frontend:** `fetchDMHistory()` in `chat.js`  
 **Backend:** `receive()` → `fetch_history` branch → `get_dm_history()` in `db.py`
-
-###### `get_open_dms`
-Request all open DM tabs (sent on connect to restore tabs).
-```json
-{ "type": "get_open_dms" }
-```
-**Frontend:** `fetchOpenDms()` in `chat.js`, called automatically after `selfId` is received  
-**Backend:** `receive()` → `get_open_dms` branch → `get_open_dms()` in `db.py`
 
 ###### `set_active_conversation`
 Tell the backend which conversation is currently open. Send `null` partner_id when switching to global.
@@ -572,6 +564,23 @@ Reset unread count for a DM conversation.
 ```
 **Frontend:** `markRead()` in `chat.js`  
 **Backend:** `receive()` → `mark_read` branch → `mark_read()` in `db.py`
+
+###### `send_message`
+Send a global or DM message. Omit `recipient_id` for global.
+```json
+{ "type": "send_message", "message": "hello", "recipient_id": "42" }
+```
+**Frontend:** `sendChatMessage()` in `chat.js`  
+**Backend:** `receive()` → `send_message` branch in `consumers.py`
+
+###### `notify_typing` / `notify_stop_typing`
+Notify that the current user started or stopped typing. Omit `typing_recipient_id` for global.
+```json
+{ "type": "notify_typing", "typing_recipient_id": "42" }
+{ "type": "notify_stop_typing", "typing_recipient_id": "42" }
+```
+**Frontend:** `initTyping()` in `chat.js`  
+**Backend:** `receive()` → `notify_typing` / `notify_stop_typing` branch in `consumers.py`
 
 ###### `hide_dm`
 Hide a DM tab, it won't reappear on refresh unless a new message arrives.
@@ -613,15 +622,6 @@ Notify the backend a user was blocked. Triggers invite cleanup and online users 
 **Frontend:** `reportBlockedUser()` in `chat.js`  
 **Backend:** `receive()` → `report_blocked_user` branch in `consumers.py`
 
-###### `notify_typing` / `notify_stop_typing`
-Notify that the current user started or stopped typing. Omit `typing_recipient_id` for global.
-```json
-{ "type": "notify_typing", "typing_recipient_id": "42" }
-{ "type": "notify_stop_typing", "typing_recipient_id": "42" }
-```
-**Frontend:** `initTyping()` in `chat.js`  
-**Backend:** `receive()` → `notify_typing` / `notify_stop_typing` branch in `consumers.py`
-
 **Backend → Frontend**
 
 ###### `selfId`
@@ -632,13 +632,33 @@ Sent on connect to confirm the user's identity.
 **Backend:** `connect()` in `consumers.py`  
 **Frontend:** `case "selfId"` in `chatSocket.onmessage` in `chat.js`
 
-###### `chatMessage`
-Delivers a message. `private: true` for DMs. Sent to all tabs of both sender and recipient.
+###### `openDms`
+All open DM tabs. Key is the other user's user_id. `unread` is the unread message count. `seen` indicates whether the other user has read your last message.
 ```json
-{ "type": "chatMessage", "message": "hello", "sender_id": "42", "sender_name": "tamar", "private": true, "recipient_id": "7" }
+{
+  "type": "openDms",
+  "dms": {
+    "42": { "user_name": "tamar", "unread": 3, "seen": false },
+    "7":  { "user_name": "rik",   "unread": 0, "seen": true  }
+  }
+}
 ```
-**Backend:** `chat_message()` in `consumers.py`  
-**Frontend:** `case "chatMessage"` → dispatches `chatMessageReceived` event → `addMessage()` in `chat-ui.js`
+**Backend:** `get_open_dms` branch → `get_open_dms()` in `db.py`  
+**Frontend:** `case "openDms"` → dispatches `openDmsReceived` event → `getOrCreateDMTab()` in `chat-ui.js`
+
+###### `onlineUsers`
+Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
+```json
+{
+  "type": "onlineUsers",
+  "users": { "42": "tamar", "7": "rik" },
+  "blocked_by_me_ids": ["7"],
+  "blocked_me_ids": [],
+  "in_game_ids": ["42"]
+}
+```
+**Backend:** `broadcast_online_users()` → `online_users()` in `consumers.py`  
+**Frontend:** `case "onlineUsers"` → dispatches `onlineUsersUpdated` event → `renderOnlineUsers()` in `chat-ui.js`
 
 ###### `dmHistory`
 Last 50 messages of a DM conversation, oldest first. `seen` indicates whether the other user has read your last sent message. Invite messages have an empty `message` and an `invite` object instead.
@@ -656,20 +676,6 @@ Last 50 messages of a DM conversation, oldest first. `seen` indicates whether th
 **Backend:** `fetch_history` branch → `get_dm_history()` in `db.py`  
 **Frontend:** `case "dmHistory"` → dispatches `dmHistoryReceived` event in `chat.js`
 
-###### `openDms`
-All open DM tabs. Key is the other user's user_id. `unread` is the unread message count. `seen` indicates whether the other user has read your last message.
-```json
-{
-  "type": "openDms",
-  "dms": {
-    "42": { "user_name": "tamar", "unread": 3, "seen": false },
-    "7":  { "user_name": "rik",   "unread": 0, "seen": true  }
-  }
-}
-```
-**Backend:** `get_open_dms` branch → `get_open_dms()` in `db.py`  
-**Frontend:** `case "openDms"` → dispatches `openDmsReceived` event → `createDMTab()` in `chat-ui.js`
-
 ###### `messagesSeenByDmPartner`
 Your DM partner has read your messages.
 ```json
@@ -678,19 +684,22 @@ Your DM partner has read your messages.
 **Backend:** `messages_read()` in `consumers.py`  
 **Frontend:** `case "messagesSeenByDmPartner"` in `chat.js`
 
-###### `onlineUsers`
-Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
+###### `chatMessage`
+Delivers a message. `private: true` for DMs. Sent to all tabs of both sender and recipient.
 ```json
-{
-  "type": "onlineUsers",
-  "users": { "42": "tamar", "7": "rik" },
-  "blocked_by_me_ids": ["7"],
-  "blocked_me_ids": [],
-  "in_game_ids": ["42"]
-}
+{ "type": "chatMessage", "message": "hello", "sender_id": "42", "sender_name": "tamar", "private": true, "recipient_id": "7" }
 ```
-**Backend:** `broadcast_online_users()` → `online_users()` in `consumers.py`  
-**Frontend:** `case "onlineUsers"` → dispatches `onlineUsersUpdated` event → `renderOnlineUsers()` in `chat-ui.js`
+**Backend:** `chat_message()` in `consumers.py`  
+**Frontend:** `case "chatMessage"` → dispatches `chatMessageReceived` event → `addMessage()` in `chat-ui.js`
+
+###### `otherTyping` / `otherStoppedTyping`
+Someone started or stopped typing. `private: true` for DMs, `false` for global.
+```json
+{ "type": "otherTyping", "typer_id": "42", "typer_name": "tamar", "private": true }
+{ "type": "otherStoppedTyping", "typer_id": "42", "typer_name": "tamar", "private": false }
+```
+**Backend:** `typing_notification()` in `consumers.py`  
+**Frontend:** `case "otherTyping"` / `case "otherStoppedTyping"` → dispatches `typingStarted` / `typingStopped` event in `chat.js`
 
 ###### `gameInvite`
 You received a game invite.
@@ -747,15 +756,6 @@ Your friend list changed. Frontend should re-fetch.
 ```
 **Backend:** `friend_list_changed()` in `consumers.py`  
 **Frontend:** `case "friendListChanged"` → dispatches `friendListChanged` event in `chat.js`
-
-###### `otherTyping` / `otherStoppedTyping`
-Someone started or stopped typing. `private: true` for DMs, `false` for global.
-```json
-{ "type": "otherTyping", "typer_id": "42", "typer_name": "tamar", "private": true }
-{ "type": "otherStoppedTyping", "typer_id": "42", "typer_name": "tamar", "private": false }
-```
-**Backend:** `typing_notification()` in `consumers.py`  
-**Frontend:** `case "otherTyping"` / `case "otherStoppedTyping"` → dispatches `typingStarted` / `typingStopped` event in `chat.js`
 
 #### Additional Games
 

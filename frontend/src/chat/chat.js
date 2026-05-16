@@ -226,7 +226,48 @@ export function initChat() {
 	};
 }
 
+export function closeChat() {
+	if (chatSocket) {
+		chatSocket.close();
+		chatSocket = null;
+	}
+	// Hide chat UI on logout
+	const chatContainer = document.getElementById("chatContainer");
+	const openChatBtn = document.getElementById("openChatBtn");
+	if (chatContainer) chatContainer.style.display = "none";
+	if (openChatBtn) openChatBtn.style.display = "none";
+}
+
 // ── Messaging ─────────────────────────────────────────────────────────────────
+
+function fetchOpenDms() {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({ type: "get_open_dms" }));
+}
+
+export function fetchDMHistory(dmPartnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "fetch_history",
+		dm_partner_id: dmPartnerId
+	}));
+}
+
+export function setActiveConversation(partnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "set_active_conversation",
+		partner_id: partnerId
+	}));
+}
+
+export function markRead(dmPartnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "mark_read",
+		dm_partner_id: dmPartnerId
+	}));
+}
 
 /**
  * Send a chat message via the WebSocket, global or DM
@@ -252,6 +293,22 @@ export function sendChatMessage(message, recipientId = null) {
 	chatSocket.send(JSON.stringify(payload));
 }
 
+export function hideDm(dmPartnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "hide_dm",
+		dm_partner_id: dmPartnerId
+	}));
+}
+
+// The HTTP block API only writes to the database — it has no connection to the WebSocket consumer.
+// This notifies the consumer separately so it can clean up pending game invites,
+// broadcast an updated online users list, and send friendListChanged to both users.
+export function reportBlockedUser(blockedUserId = null) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({ type: "report_blocked_user", blocked_user_id: blockedUserId }));
+}
+
 // ── Typing ────────────────────────────────────────────────────────────────────
 
 /**
@@ -275,7 +332,7 @@ export function initTyping(chatInput, getActiveChannel = () => null) {
 	// if it were inside the listener, it would reset to undefined on every keystroke
 	// and clearTimeout() would never be able to cancel the previous timer.
 	let typingTimeout;
-	
+
 	// We wrap the listener setup in a function because we need to attach it
 	// in two different places below — either now if the socket is already open,
 	// or later when it opens.
@@ -302,7 +359,7 @@ export function initTyping(chatInput, getActiveChannel = () => null) {
 			}, 1000);
 		});
 	};
-	
+
 	if (chatSocket.readyState === WebSocket.OPEN) {
 		// Socket is already open, attach the listener now
 		attachTyping();
@@ -312,55 +369,6 @@ export function initTyping(chatInput, getActiveChannel = () => null) {
 		// and the browswer "fires" the open event.
 		chatSocket.addEventListener("open", attachTyping, { once: true });
 	}
-}
-
-export function closeChat() {
-	if (chatSocket) {
-		chatSocket.close();
-		chatSocket = null;
-	}
-	// Hide chat UI on logout
-	const chatContainer = document.getElementById("chatContainer");
-	const openChatBtn = document.getElementById("openChatBtn");
-	if (chatContainer) chatContainer.style.display = "none";
-	if (openChatBtn) openChatBtn.style.display = "none";
-}
-
-function fetchOpenDms() {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "get_open_dms" }));
-}
-
-export function fetchDMHistory(dmPartnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "fetch_history",
-		dm_partner_id: dmPartnerId
-	}));
-}
-
-export function markRead(dmPartnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "mark_read",
-		dm_partner_id: dmPartnerId
-	}));
-}
-
-export function hideDm(dmPartnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "hide_dm",
-		dm_partner_id: dmPartnerId
-	}));
-}
-
-// The HTTP block API only writes to the database — it has no connection to the WebSocket consumer.
-// This notifies the consumer separately so it can clean up pending game invites,
-// broadcast an updated online users list, and send friendListChanged to both users.
-export function reportBlockedUser(blockedUserId = null) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "report_blocked_user", blocked_user_id: blockedUserId }));
 }
 
 // ── Game invites ───────────────────────────────────────────────────────────────
@@ -393,13 +401,5 @@ export function acceptGameInvite(gameId) {
 	chatSocket.send(JSON.stringify({
 		type: "accept_game_invite",
 		game_id: gameId,
-	}));
-}
-
-export function setActiveConversation(partnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "set_active_conversation",
-		partner_id: partnerId
 	}));
 }
