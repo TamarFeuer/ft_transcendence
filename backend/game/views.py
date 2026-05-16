@@ -136,7 +136,7 @@ def record_local_match(request):
         w, l = opponent_player, game_player
         winner_score, loser_score = opponent_score, player_score
 
-    Match.objects.create(
+    match = Match.objects.create(
         player1=game_player,
         player2=opponent_player,
         player1_score=player_score,

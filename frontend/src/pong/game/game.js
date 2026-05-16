@@ -396,6 +396,8 @@ export function joinOnlineGame(gameId, IsTournament) {
 
   ws.onclose = () => {
     console.log("WS disconnected");
+    const shouldSuppressNavigation = suppressOnCloseNavigation;
+    suppressOnCloseNavigation = false;
     if (waitingModalTimer) {
       clearTimeout(waitingModalTimer);
       waitingModalTimer = null;
@@ -415,6 +417,9 @@ export function joinOnlineGame(gameId, IsTournament) {
 
     }
     canvas.remove();
+    if (shouldSuppressNavigation) {
+      return;
+    }
     if (IsTournament) {
       navigate(`/tournament/${window.currentTournamentId}`);
     } else {
