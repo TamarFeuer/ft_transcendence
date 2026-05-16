@@ -105,8 +105,8 @@ export const tr = {
   
   [TranslationKey.BTN_START_GAME]: 'OYUNU BAŞLAT',
   
-  [TranslationKey.RED_PADDLE_LOCAL_PLAYER]: 'Kırmızı pinpon sopası',
-  [TranslationKey.BLUE_PADDLE_LOCAL_PLAYER]: 'Mavi pinpon sopası',
+  [TranslationKey.RED_PADDLE_LOCAL_PLAYER]: 'Kırmızı oyuncu',
+  [TranslationKey.BLUE_PADDLE_LOCAL_PLAYER]: 'Mavi oyuncu',
 
   [TranslationKey.PLAYER_1]: 'Oyuncu 1',
   [TranslationKey.PLAYER_2]: 'Oyuncu 2',

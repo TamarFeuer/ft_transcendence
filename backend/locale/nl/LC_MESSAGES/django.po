@@ -73,3 +73,135 @@ msgstr "spel gestart"
 
 msgid "game result updated"
 msgstr "spelresultaat bijgewerkt"
+
+msgid "User is not found"
+msgstr "gebruiker is niet gevonden"
+
+msgid "token expired"
+msgstr "token verlopen"
+
+msgid "invalid token"
+msgstr "ongeldig token"
+
+msgid "user does not exist"
+msgstr "gebruiker bestaat niet"
+
+msgid "user_id is required"
+msgstr "user_id is vereist"
+
+msgid "Cannot block yourself"
+msgstr "je kunt jezelf niet blokkeren"
+
+msgid "You have blocked {username}"
+msgstr "je hebt {username} geblokkeerd"
+
+msgid "User does not exist"
+msgstr "gebruiker bestaat niet"
+
+msgid "internal error"
+msgstr "interne fout"
+
+msgid "Authentication required"
+msgstr "authenticatie vereist"
+
+msgid "friend_id is required"
+msgstr "friend_id is vereist"
+
+msgid "You have successfully removed {username} from your friends list"
+msgstr "je hebt {username} succesvol uit je vriendenlijst verwijderd"
+
+msgid "Cannot remove friend"
+msgstr "kan vriend niet verwijderen"
+
+msgid "Cannot make a friend request to yourself"
+msgstr "je kunt geen vriendschapsverzoek naar jezelf sturen"
+
+msgid "Cannot send friend request"
+msgstr "kan vriendschapsverzoek niet verzenden"
+
+msgid "You are already friends"
+msgstr "jullie zijn al vrienden"
+
+msgid "Friend request pending"
+msgstr "vriendschapsverzoek is in behandeling"
+
+msgid "You are now friends with {username}"
+msgstr "je bent nu bevriend met {username}"
+
+msgid "Friend request sent to {username}"
+msgstr "vriendschapsverzoek verzonden naar {username}"
+
+msgid "request_id is required"
+msgstr "request_id is vereist"
+
+msgid "Not your friend request"
+msgstr "niet jouw vriendschapsverzoek"
+
+msgid "Friend request is already processed"
+msgstr "vriendschapsverzoek is al verwerkt"
+
+msgid "Friend Request does not exist"
+msgstr "vriendschapsverzoek bestaat niet"
+
+msgid "Error accepting friend request"
+msgstr "fout bij accepteren van vriendschapsverzoek"
+
+msgid "request does not exist"
+msgstr "verzoek bestaat niet"
+
+msgid "Error declining friend request"
+msgstr "fout bij weigeren van vriendschapsverzoek"
+
+msgid "username and password and email required"
+msgstr "gebruikersnaam, wachtwoord en e-mail zijn vereist"
+
+msgid "email taken"
+msgstr "e-mail al in gebruik"
+
+msgid "identifier and password required"
+msgstr "identifier en wachtwoord zijn vereist"
+
+msgid "invalid credentials"
+msgstr "ongeldige inloggegevens"
+
+msgid "refresh_token required"
+msgstr "refresh_token is vereist"
+
+msgid "invalid token type"
+msgstr "ongeldig tokentype"
+
+msgid "refresh token expired"
+msgstr "refresh token verlopen"
+
+msgid "invalid refresh token"
+msgstr "ongeldig refresh token"
+
+msgid "user not found"
+msgstr "gebruiker niet gevonden"
+
+msgid "username=None"
+msgstr "gebruikersnaam=Geen"
+
+msgid "User.DoesNotExist"
+msgstr "Gebruiker.BestaatNiet"
+
+msgid "Game created. Waiting for players to join."
+msgstr "Spel aangemaakt. Wachten tot spelers deelnemen."
+
+msgid "Invalid token type"
+msgstr "Ongeldig tokentype"
+
+msgid "Invalid token payload"
+msgstr "Ongeldige token-inhoud"
+
+msgid "Invalid or expired token"
+msgstr "Ongeldig of verlopen token"
+
+msgid "Player profile not found"
+msgstr "Spelersprofiel niet gevonden"
+
+msgid "Player not found"
+msgstr "Speler niet gevonden"
+
+msgid "User not found"
+msgstr "Gebruiker niet gevonden"

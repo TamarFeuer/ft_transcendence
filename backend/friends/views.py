@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q
+from django.utils.translation import gettext as _
 import json
 import jwt
 import logging
@@ -29,16 +30,16 @@ def get_authenticated_user(request):
 	try:
 		access_token = request.COOKIES.get('access_token')
 		if not access_token:
-			return (None, JsonResponse({'error': 'User is not found'}, status = 401))
+			return (None, JsonResponse({'error': _('User is not found')}, status = 401))
 		payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
 		user_id = payload.get('user_id')
 		user = User.objects.get(id=user_id)
 	except jwt.ExpiredSignatureError:
-		return (None, JsonResponse({'error': 'token expired'}, status=401))
+		return (None, JsonResponse({'error': _('token expired')}, status=401))
 	except jwt.DecodeError:
-		return (None, JsonResponse({'error': 'invalid token'}, status=401))
+		return (None, JsonResponse({'error': _('invalid token')}, status=401))
 	except User.DoesNotExist:
-		return (None, JsonResponse({'error': 'user does not exist'}, status=404))
+		return (None, JsonResponse({'error': _('user does not exist')}, status=404))
 	return (user, None)
 
 
@@ -52,15 +53,15 @@ def  remove_friend(request):
 		data = json.loads(request.body.decode())
 		friend_id = data.get('friend_id')
 		if not friend_id:
-			return JsonResponse({'error': 'friend_id is required'}, status=400)
+			return JsonResponse({'error': _('friend_id is required')}, status=400)
 		to_user = User.objects.get(id=friend_id)
 		remove_friend_from_db(user, to_user)
 		return JsonResponse({
 			'success': True,
-			'message': f'You have successfully removed {to_user.username} from your friends list'
+			'message': _('You have successfully removed {username} from your friends list').format(username=to_user.username)
 		})
 	except Exception as e:
-		return (JsonResponse({'error': 'Cannot remove friend'}, status=500))
+		return (JsonResponse({'error': _('Cannot remove friend')}, status=500))
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -71,17 +72,17 @@ def send_friend_request(request):
 			return error
 		to_user = get_recipient(request)
 		if from_user == to_user:
-			return JsonResponse({'error': 'Cannot make a friend request to yourself'}, status=400)
+			return JsonResponse({'error': _('Cannot make a friend request to yourself')}, status=400)
 		from block.models import is_blocked
 		if is_blocked(from_user.id, to_user.id):
-			return JsonResponse({'error': 'Cannot send friend request'}, status=400)
+			return JsonResponse({'error': _('Cannot send friend request')}, status=400)
 		if FriendRequest.objects.filter(
 			Q(from_user=from_user, to_user=to_user) | Q(from_user=to_user, to_user = from_user),
 			status='accepted').exists():
-			return JsonResponse({'error': 'You are already friends'}, status=400);
+			return JsonResponse({'error': _('You are already friends')}, status=400);
 		existing = FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exclude(status='declined').exists()
 		if existing:
-			return JsonResponse({'error': 'Friend request pending'}, status=400)
+			return JsonResponse({'error': _('Friend request pending')}, status=400)
 		
 		#check if there is a friend request from the other user already pending
 		reverse_request = FriendRequest.objects.filter(from_user=to_user, to_user=from_user, status = 'pending').first()
@@ -91,22 +92,22 @@ def send_friend_request(request):
 			reverse_request.save()
 			return JsonResponse({
 				'success': True,
-				'message': f'You are now friends with {to_user.username}'
+				'message': _('You are now friends with {username}').format(username=to_user.username)
 			})
 		FriendRequest.objects.create(from_user=from_user, to_user=to_user)
 		return JsonResponse({
 			'success': True,
-			'message': f'Friend request sent to {to_user.username}'
+			'message': _('Friend request sent to {username}').format(username=to_user.username)
 		})
 	except jwt.ExpiredSignatureError:
-		return JsonResponse({'error': 'token expired'}, status=401)
+		return JsonResponse({'error': _('token expired')}, status=401)
 	except jwt.DecodeError:
-		return JsonResponse({'error': 'invalid token'}, status=401)
+		return JsonResponse({'error': _('invalid token')}, status=401)
 	except User.DoesNotExist:
-		return JsonResponse({'error': 'user does not exist'}, status=404)
+		return JsonResponse({'error': _('user does not exist')}, status=404)
 	except Exception as e:
 		logger.exception('Error sending a friend request')
-		return JsonResponse({'error': 'internal error'}, status=500)
+		return JsonResponse({'error': _('internal error')}, status=500)
 
 @csrf_exempt
 @require_http_methods(["GET"])
@@ -122,7 +123,7 @@ def get_pending_requests(request):
 
 	except Exception as e:
 			logger.exception('Error sending a friend request')
-			return JsonResponse({'error': 'internal error'}, status=500)
+			return JsonResponse({'error': _('internal error')}, status=500)
 
 
 @csrf_exempt
@@ -135,19 +136,19 @@ def accept_request(request):
 		data = json.loads(request.body.decode())
 		request_id = data.get('request_id')
 		if not request_id:
-			return JsonResponse({'error': 'request_id is required'}, status=400)
+			return JsonResponse({'error': _('request_id is required')}, status=400)
 		friend_request = FriendRequest.objects.get(id=request_id)
 		if friend_request.to_user != user:
-			return JsonResponse({'error': 'Not your friend request'}, status=403)
+			return JsonResponse({'error': _('Not your friend request')}, status=403)
 		if friend_request.status != 'pending':
-			return JsonResponse({'error': 'Friend request is already processed'}, status=400)
+			return JsonResponse({'error': _('Friend request is already processed')}, status=400)
 		friend_request.status = 'accepted'
 		friend_request.save()
 		return JsonResponse({'success': True}, status=200)
 	except FriendRequest.DoesNotExist:
-			return JsonResponse({'error': 'Friend Request does not exist'}, status=404)
+			return JsonResponse({'error': _('Friend Request does not exist')}, status=404)
 	except Exception as e:
-		return JsonResponse({'error': "Error accepting friend request"}, status=500)
+		return JsonResponse({'error': _("Error accepting friend request")}, status=500)
 
 
 	
@@ -162,19 +163,19 @@ def delete_request(request):
 		data = json.loads(request.body.decode())
 		request_id = data.get('request_id')
 		if not request_id:
-			return JsonResponse({'error': 'request does not exist'})
+			return JsonResponse({'error': _('request does not exist')})
 		friend_request = FriendRequest.objects.get(id=request_id)
 		if friend_request.to_user != user:
-				return JsonResponse({'error': 'Not your friend request'}, status=403)
+				return JsonResponse({'error': _('Not your friend request')}, status=403)
 		if friend_request.status != 'pending':
-			return JsonResponse({'error': 'Friend request is already processed'}, status=400)
+			return JsonResponse({'error': _('Friend request is already processed')}, status=400)
 		friend_request.status = 'declined'
 		friend_request.save()
 		return JsonResponse({'success': True}, status=200)
 	except FriendRequest.DoesNotExist:
-			return JsonResponse({'error': 'Friend Request does not exist'}, status=404)
+			return JsonResponse({'error': _('Friend Request does not exist')}, status=404)
 	except Exception as e:
-		return JsonResponse({'error': "Error declining friend request"}, status=500)
+		return JsonResponse({'error': _("Error declining friend request")}, status=500)
 
 @csrf_exempt
 @require_http_methods(["GET"])
@@ -198,4 +199,4 @@ def get_friends(request):
 		return JsonResponse({'friends': friends}, status = 200)
 	except Exception as e:
 		logger.exception('Error getting friends list')
-		return JsonResponse({'error': 'internal error'}, status=500)
+		return JsonResponse({'error': _('internal error')}, status=500)

@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext as _
 import jwt
 from django.conf import settings
 import logging
@@ -35,7 +36,7 @@ def get_user_from_access_cookie(request):
 def join_chess(request):
 	user = get_user_from_access_cookie(request)
 	if not user:
-		return JsonResponse({'error': 'Authentication required'}, status=401)
+		return JsonResponse({'error': _('Authentication required')}, status=401)
 
 	body = json.loads(request.body or '{}')
 	invitee_id = body.get('invitee_id')
@@ -77,7 +78,7 @@ def join_chess(request):
 def chess_stats(request):
 	user = get_user_from_access_cookie(request)
 	if not user:
-		return JsonResponse({'error': 'Authentication required'}, status=401)
+		return JsonResponse({'error': _('Authentication required')}, status=401)
 	try:
 		player = ChessPlayer.objects.get(user=user)
 	except ChessPlayer.DoesNotExist:
@@ -109,7 +110,7 @@ def chess_leaderboard(request):
 def chess_match_history(request):
 	user = get_user_from_access_cookie(request)
 	if not user:
-		return JsonResponse({'error': 'Authentication required'}, status=401)
+		return JsonResponse({'error': _('Authentication required')}, status=401)
 	try:
 		player = ChessPlayer.objects.get(user=user)
 	except ChessPlayer.DoesNotExist:
