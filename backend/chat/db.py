@@ -188,7 +188,7 @@ def cleanup_stale_invites(user_id):
 
 
 @database_sync_to_async
-def get_open_dms(user_id):
+def get_open_dms_metadata(user_id):
 	from chat.models import ConversationParticipant, Message
 
 	my_participations = ConversationParticipant.objects.filter(

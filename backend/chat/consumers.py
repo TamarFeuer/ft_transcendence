@@ -5,7 +5,7 @@ from users.token_auth import get_user_from_token
 from channels.db import database_sync_to_async
 from chat.db import (
     save_dm, get_dm_history, save_invite, get_invite_id_with,
-    delete_invite, cleanup_stale_invites, get_open_dms,
+    delete_invite, cleanup_stale_invites, get_open_dms_metadata,
     mark_read, hide_dm, get_block_info_for,
 )
 
@@ -109,12 +109,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 		logger.debug(f"[receive] type={msg_type} user={self.username}({self.user_id})")
 
-		if msg_type == "get_open_dms":
-			dms = await get_open_dms(self.user_id)
-			logger.info(f"[get_open_dms] user={self.username}({self.user_id}) → {dms}")
+		if msg_type == "get_open_dms_metadata":
+			dms_metadata = await get_open_dms_metadata(self.user_id)
+			logger.info(f"[get_open_dms_metadata] user={self.username}({self.user_id}) → {dms_metadata}")
 			await self.send(text_data=json.dumps({
-				"type": "openDms",
-				"dms": dms
+				"type": "openDmsMetadata",
+				"dms_metadata": dms_metadata
 			}))
 
 		elif msg_type == "fetch_history":

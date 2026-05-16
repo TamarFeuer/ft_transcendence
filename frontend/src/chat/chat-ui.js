@@ -417,9 +417,9 @@ export function initChatUI() {
 	});
 	
 	// Restore DM tabs from previous session on page load
-	window.addEventListener("openDmsReceived", (e) => {
-		const { dms } = e.detail;
-		Object.entries(dms).forEach(([userId, data]) => {
+	window.addEventListener("openDmsMetadataReceived", (e) => {
+		const { dms_metadata } = e.detail;
+		Object.entries(dms_metadata).forEach(([userId, data]) => {
 			getOrCreateDMTab(userId, data.user_name, false, false);
 			if (data.unread_count > 0) {
 				const tab = document.querySelector(`[data-id="${userId}"]`);

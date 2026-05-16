@@ -536,13 +536,13 @@ All messages are JSON. The `type` field determines the message kind.
 
 **Frontend → Backend**
 
-###### `get_open_dms`
-Request all open DM tabs (sent on connect to restore tabs).
+###### `get_open_dms_metadata`
+Request metadata for all open DM tabs — user_name, unread count, and seen status per tab (sent on connect to restore tabs). Does not include the messages themselves.
 ```json
-{ "type": "get_open_dms" }
+{ "type": "get_open_dms_metadata" }
 ```
-**Frontend:** `fetchOpenDms()` in `chat.js`, called automatically after `selfId` is received  
-**Backend:** `receive()` → `get_open_dms` branch → `get_open_dms()` in `db.py`
+**Frontend:** `fetchOpenDmsMetadata()` in `chat.js`, called automatically after `selfId` is received  
+**Backend:** `receive()` → `get_open_dms_metadata` branch → `get_open_dms_metadata()` in `db.py`
 
 ###### `fetch_history`
 Request the last 50 messages from a DM conversation.
@@ -635,19 +635,19 @@ Sent on connect to confirm the user's identity.
 **Backend:** `connect()` in `consumers.py`  
 **Frontend:** `case "selfId"` in `chatSocket.onmessage` in `chat.js`
 
-###### `openDms`
-All open DM tabs. Key is the other user's user_id. `unread_count` is the unread message count. `seen` indicates whether the other user has read your last message.
+###### `openDmsMetadata`
+Metadata for all open DM tabs — user_name, unread count, and seen status per tab. Key is the other user's user_id. `unread_count` is the unread message count. `seen` indicates whether the other user has read your last message. Does not include the messages themselves.
 ```json
 {
-  "type": "openDms",
-  "dms": {
+  "type": "openDmsMetadata",
+  "dms_metadata": {
     "42": { "user_name": "tamar", "unread_count": 3, "seen": false },
     "7":  { "user_name": "rik",   "unread_count": 0, "seen": true  }
   }
 }
 ```
-**Backend:** `get_open_dms` branch → `get_open_dms()` in `db.py`  
-**Frontend:** `case "openDms"` → dispatches `openDmsReceived` event → `getOrCreateDMTab()` in `chat-ui.js`
+**Backend:** `get_open_dms_metadata` branch → `get_open_dms_metadata()` in `db.py`  
+**Frontend:** `case "openDmsMetadata"` → dispatches `openDmsMetadataReceived` event → `getOrCreateDMTab()` in `chat-ui.js`
 
 ###### `onlineUsers`
 Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.

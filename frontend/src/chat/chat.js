@@ -75,7 +75,7 @@ export function initChat() {
 					verifiedUserName = data.user_name;
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
 					// Fetch previous DM conversations to restore tabs
-					fetchOpenDms();
+					fetchOpenDmsMetadata();
 					break;
 
 			// Incoming chat message — either global or private DM
@@ -133,10 +133,10 @@ export function initChat() {
 				}));
 				break;
 				
-			case "openDms":
-				console.log("openDms received:", data.dms);
-				window.dispatchEvent(new CustomEvent("openDmsReceived", {
-					detail: { dms: data.dms }
+			case "openDmsMetadata":
+				console.log("openDmsMetadata received:", data.dms_metadata);
+				window.dispatchEvent(new CustomEvent("openDmsMetadataReceived", {
+					detail: { dms_metadata: data.dms_metadata }
 				}));
 				break;
 
@@ -231,9 +231,9 @@ export function closeChat() {
 
 // ── Messaging ─────────────────────────────────────────────────────────────────
 
-function fetchOpenDms() {
+function fetchOpenDmsMetadata() {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "get_open_dms" }));
+	chatSocket.send(JSON.stringify({ type: "get_open_dms_metadata" }));
 }
 
 export function fetchDMHistory(dmPartnerId) {
