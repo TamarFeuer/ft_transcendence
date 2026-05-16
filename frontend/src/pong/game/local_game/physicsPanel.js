@@ -1,3 +1,5 @@
+import { t, TranslationKey } from "../../../i18n/index.js";
+
 export function createPhysicsPanel(physics, defaultPhysics, sliderConfigs, makeValueFormatter, highImpactKeys, highImpactHints, arenaMeshes) {
     const gameContainer = document.getElementById("gameContainer") || document.getElementById("app-root");
     if (!gameContainer) return null;
@@ -23,21 +25,21 @@ export function createPhysicsPanel(physics, defaultPhysics, sliderConfigs, makeV
     panel.style.userSelect = "none";
 
     const title = document.createElement("div");
-    title.textContent = "Local Physics";
+    title.textContent = t(TranslationKey.PONG_PHYSICS_LOCAL);
     title.style.fontWeight = "700";
     title.style.marginBottom = "8px";
     title.style.letterSpacing = "0.04em";
     panel.appendChild(title);
 
     const focusHint = document.createElement("div");
-    focusHint.textContent = "Highlighted rows strongly affect side-spin and high arcs";
+    focusHint.textContent = t(TranslationKey.PONG_PHYSICS_HINT);
     focusHint.style.fontSize = "11px";
     focusHint.style.color = "#fde68a";
     focusHint.style.marginBottom = "8px";
     panel.appendChild(focusHint);
 
     const dragBar = document.createElement("div");
-    dragBar.textContent = "Drag";
+    dragBar.textContent = t(TranslationKey.PONG_PHYSICS_DRAG);
     dragBar.style.cursor = "move";
     dragBar.style.marginBottom = "10px";
     dragBar.style.padding = "6px 8px";
@@ -101,7 +103,7 @@ export function createPhysicsPanel(physics, defaultPhysics, sliderConfigs, makeV
 
         if (isHighImpact) {
             const hint = document.createElement("div");
-            hint.textContent = highImpactHints[config.key] || "High-impact control";
+            hint.textContent = highImpactHints[config.key] || t(TranslationKey.PONG_PHYSICS_HIGH_IMPACT);
             hint.style.fontSize = "10px";
             hint.style.color = "#fde68a";
             hint.style.opacity = "0.85";
@@ -142,7 +144,7 @@ export function createPhysicsPanel(physics, defaultPhysics, sliderConfigs, makeV
 
     const resetBtn = document.createElement("button");
     resetBtn.type = "button";
-    resetBtn.textContent = "Reset Defaults";
+    resetBtn.textContent = t(TranslationKey.PONG_PHYSICS_RESET);
     resetBtn.style.padding = "6px 8px";
     resetBtn.style.borderRadius = "6px";
     resetBtn.style.border = "1px solid rgba(34, 197, 94, 0.5)";

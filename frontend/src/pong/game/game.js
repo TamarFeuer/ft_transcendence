@@ -16,14 +16,16 @@ import { updateTournamentGameResult } from "../tournament/tournament_api.js";
 import "../../styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { showMessage } from "../../utils/utils.js"
-import { t } from "../../i18n/index.js";
+import { t, TranslationKey } from "../../i18n/index.js";
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
 
 function showAchievements(achievements) {
     if (!achievements || achievements.length === 0) return;
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;color:#fff;padding:16px 20px;border-radius:10px;z-index:9999;max-width:320px;box-shadow:0 4px 16px rgba(0,0,0,0.5);';
-    const title = achievements.length === 1 ? '🏆 Achievement Unlocked!' : `🏆 ${achievements.length} Achievements Unlocked!`;
+  const title = achievements.length === 1
+    ? t(TranslationKey.ACHIEVEMENT_UNLOCKED_SINGLE)
+    : t(TranslationKey.ACHIEVEMENT_UNLOCKED_MULTI, { count: achievements.length });
     overlay.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;">${title}</div><ul style="margin:0;padding-left:20px;">` +
         achievements.map(a => `<li style="margin-bottom:4px;"><b>${a.name}</b>: ${a.description}</li>`).join('') +
         '</ul>';

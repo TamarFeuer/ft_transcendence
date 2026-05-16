@@ -223,9 +223,15 @@ export const tr = {
   [TranslationKey.TOURNAMENT_TH_SCORE]: 'Skor',
   [TranslationKey.TOURNAMENT_LOADING_MSG]: 'Yükleniyor...',
   [TranslationKey.TOURNAMENT_READY_GAMES]: 'Hazır Oyunlarınız',
+  [TranslationKey.TOURNAMENT_START_GAME]: 'Oyunu Başlat',
+  [TranslationKey.TOURNAMENT_STARTING_GAME]: 'Başlatılıyor...',
+  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'Sizin için hazır oyun yok.',
   [TranslationKey.TOURNAMENT_LOADING_GAMES]: 'Oyunlar yükleniyor...',
   [TranslationKey.TOURNAMENT_ONGOING_GAMES]: 'Devam Eden Oyunlar',
   [TranslationKey.TOURNAMENT_NO_ONGOING]: 'Devam eden oyun yok',
+  [TranslationKey.TOURNAMENT_NO_FUTURE_GAMES]: 'Gelecek turlarda oyun yok',
+  [TranslationKey.TOURNAMENT_SCHEDULED]: 'Planlandı',
+  [TranslationKey.TOURNAMENT_PENDING]: 'Beklemede',
   [TranslationKey.TOURNAMENT_COMPLETED_GAMES]: 'Tamamlanan Oyunlar',
   [TranslationKey.TOURNAMENT_NO_COMPLETED]: 'Tamamlanan oyun yok',
 
@@ -307,7 +313,13 @@ export const tr = {
   // Pong waiting modal
   [TranslationKey.PONG_WAITING]: 'Rakip bekleniyor...',
   [TranslationKey.PONG_GAME_STARTING]: 'Oyun yakında başlayacak',
+  [TranslationKey.PONG_AUTO_STARTS]: 'Sayaç dolduğunda oyun otomatik olarak devam edecek',
   [TranslationKey.PONG_LEAVE_GAME]: 'Oyundan Çık',
+  [TranslationKey.PONG_PHYSICS_LOCAL]: 'Yerel Fizik',
+  [TranslationKey.PONG_PHYSICS_HINT]: 'Vurgulanan satırlar yan falsoyu ve yüksek yayları güçlü biçimde etkiler',
+  [TranslationKey.PONG_PHYSICS_DRAG]: 'Sürükle',
+  [TranslationKey.PONG_PHYSICS_RESET]: 'Varsayılanları Sıfırla',
+  [TranslationKey.PONG_PHYSICS_HIGH_IMPACT]: 'Yüksek etkili kontrol',
 
   // Game names
   [TranslationKey.GAME_NAME_CHESS]: 'satranç',
@@ -333,6 +345,8 @@ export const tr = {
   [TranslationKey.ACHIEVEMENT_PONG_EXPERT]: 'Pong Uzmanı: Reytingin 1050\'ye ulaştı!',
   [TranslationKey.ACHIEVEMENT_PONG_MASTER]: 'Pong Ustası: Reytingin 1100\'e ulaştı!',
   [TranslationKey.ACHIEVEMENT_PONG_GURU]: 'Pong Gurusu: Reytingin 1150\'ye ulaştı!',
+  [TranslationKey.ACHIEVEMENT_UNLOCKED_SINGLE]: '🏆 Başarım Açıldı!',
+  [TranslationKey.ACHIEVEMENT_UNLOCKED_MULTI]: '🏆 {count} başarım açıldı!',
 };
 
 

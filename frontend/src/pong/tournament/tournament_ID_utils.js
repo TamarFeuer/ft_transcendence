@@ -3,7 +3,7 @@ import * as tournamentAPI from './tournament_api.js';
 import { showMessage } from "../../utils/utils.js"
 import { checkAuthRequired } from '../../users_friends/usermanagement.js';
 import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
-import { t } from '../../i18n/index.js';
+import { t, TranslationKey } from '../../i18n/index.js';
 import { joinOnlineGame } from '../game/game.js';
 
 const activeGameTimers = new Map();
