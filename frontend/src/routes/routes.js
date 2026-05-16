@@ -69,6 +69,15 @@ export async function redirectIfNotLoggedIn() {
   return false;
 }
 
+export async function redirectIfLoggedIn() {
+  const noAuth = await checkAuthRequired();
+  if (!noAuth) {
+    navigate('/');
+    return true;
+  }
+  return false;
+}
+
 
 async function loadTemplate(name) {
   disposeCurrentEngine();
@@ -100,11 +109,15 @@ export function setupRoutes() {
   };
   routes['/login'] = async () => {
     stopTournamentAutoRefresh();
+    if (await redirectIfLoggedIn())
+      return;
     await loadTemplate('login');
     initLoginPage();
   };
   routes['/register'] = async () =>{
     stopTournamentAutoRefresh();
+    if (await redirectIfLoggedIn())
+      return;
     await loadTemplate('register');
     registerPage();
   }
