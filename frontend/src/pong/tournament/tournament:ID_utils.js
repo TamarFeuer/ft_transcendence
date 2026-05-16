@@ -85,7 +85,7 @@ function renderTournamentTimers() {
     const entries = Array.from(activeGameTimers.entries())
         .sort((a, b) => a[1] - b[1])
         .map(([id, timerData]) => `
-            <div class="bg-blue-950/50 border border-blue-700 rounded px-3 py-2 text-blue-100 text-sm">
+            <div class="bg-zinc-700 rounded px-3 py-2 text-zinc-200 text-sm">
                 Game: ${timerData.left_player} vs ${timerData.right_player}: <span class="font-bold text-white">${timerData.remaining}s</span> left to join
             </div>
         `)
@@ -107,17 +107,18 @@ async function loadLeaderBoard() {
     console.log("Tournament leaderboard:", leaderboardResult);
     if (leaderboardResult.ok && leaderboardResult.data) {
         const tbody = document.getElementById('leaderboardBody');
-        tbody.innerHTML = '';
+        const fragment = document.createDocumentFragment();
         leaderboardResult.data.forEach((participant, index) => {
         const row = document.createElement('tr');
-        row.className = 'border-b border-gray-700 hover:bg-gray-800';
+        row.className = 'border-b border-zinc-700 hover:bg-zinc-700';
         row.innerHTML = `
             <td class="py-2">${participant.rank || index + 1}</td>
             <td class="py-2">${participant.username}</td>
             <td class="text-right py-2">${participant.score}</td>
         `;
-        tbody.appendChild(row);
+        fragment.appendChild(row);
         });
+        tbody.replaceChildren(fragment);
     }
 
 }
@@ -128,25 +129,46 @@ async function loadReadyGames() {
     const readyResult = await tournamentAPI.getTournamentUserReadyGames(tournamentId);
     if (readyResult.ok && readyResult.data && readyResult.data.length > 0) {
         const listEl = document.getElementById('readyGamesList');
-        listEl.innerHTML = '';
+        const fragment = document.createDocumentFragment();
         let cnt = 0;
         readyResult.data.forEach(game => {
         console.log("Ready game:", game);
         const gameDiv = document.createElement('div');
-        gameDiv.className = 'bg-gray-800 rounded-lg p-4 border border-blue-500';
+        gameDiv.className = 'bg-zinc-700 rounded-lg p-4';
         if (cnt == 0)
         {
             gameDiv.innerHTML = `
             <div class="flex justify-between items-center">
             <div class="text-white">
             <div class="font-bold text-lg">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-gray-400 text-sm">Round ${game.round}</div>
+                <div class="text-zinc-400 text-sm">Round ${game.round}</div>
                 </div>
-                <button class="start-game-btn px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold" data-game-id="${game.id}">
+                <button class="start-game-btn bg-violet-600 hover:bg-violet-500 rounded-xl px-6 h-10 lg:h-12 flex items-center justify-center font-semibold text-white text-sm lg:text-base transition-colors duration-200 shadow-lg shadow-violet-500/20" data-game-id="${game.id}">
                 Start Game
                 </button>
                 </div>
                 `;
+
+            const startBtn = gameDiv.querySelector('.start-game-btn');
+            startBtn.addEventListener('click', async () => {
+                if (await checkAuthRequired()) {
+                    showMessage(t('TOURN_LOGIN_REQUIRED'), 'error');
+                    return;
+                }
+                startBtn.disabled = true;
+                startBtn.textContent = 'Starting...';
+
+                const result = await tournamentAPI.startTournamentGame(game.id);
+                if (result.ok) {
+                    showMessage(t('TOURN_GAME_STARTED'), 'success');
+                    stopTournamentAutoRefresh();
+                    joinOnlineGame(result.data.game_id, true);
+                    return;
+                }
+                showMessage(result.data?.error || t('TOURN_GAME_START_FAILED'), 'error');
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Game';
+            });
         }
         else
         {
@@ -154,43 +176,18 @@ async function loadReadyGames() {
             <div class="flex justify-between items-center">
             <div class="text-white">
             <div class="font-bold text-lg">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-gray-400 text-sm">Round ${game.round}</div>
+                <div class="text-zinc-400 text-sm">Round ${game.round}</div>
                 </div>
 
                 </div>
                 `;
         }
-        listEl.appendChild(gameDiv);
+        fragment.appendChild(gameDiv);
         cnt += 1;
         });
-        
-        // Add event listeners for starting games
-        listEl.querySelectorAll('.start-game-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            if (await checkAuthRequired()) {
-            showMessage(t('TOURN_LOGIN_REQUIRED'), 'error');
-            return;
-            }
-
-            const gameId = e.target.dataset.gameId;
-            btn.disabled = true;
-            btn.textContent = 'Starting...';
-
-            const result = await tournamentAPI.startTournamentGame(gameId);
-            if (result.ok) {
-            showMessage(t('TOURN_GAME_STARTED'), 'success');
-            // Redirect to the game
-            stopTournamentAutoRefresh();
-            joinOnlineGame(result.data.game_id, true);
-            } else {
-            showMessage(result.data?.error || t('TOURN_GAME_START_FAILED'), 'error');
-            btn.disabled = false;
-            btn.textContent = 'Start Game';
-            }
-        });
-        });
+        listEl.replaceChildren(fragment);
     } else {
-        document.getElementById('readyGamesList').innerHTML = '<p class="text-gray-400">No ready games for you.</p>';
+        document.getElementById('readyGamesList').innerHTML = '<p class="text-zinc-400">No ready games for you.</p>';
     }
 }
 
@@ -205,63 +202,66 @@ async function loadAllGamesStatus() {
         const ongoingList = document.getElementById('ongoingGamesList');
         const futureList = document.getElementById('futureGamesList');
         const completedList = document.getElementById('completedGamesList');
-        ongoingList.innerHTML = '';
-        futureList.innerHTML = '';
-        completedList.innerHTML = '';
-        
+
         const ongoingGames = allGamesResult.data.filter(g => g.status === 'ongoing');
         const futureGames = allGamesResult.data.filter(g => g.status === 'ready' || g.status === 'pending');
         const completedGames = allGamesResult.data.filter(g => g.status === 'completed');
-        
+
         if (ongoingGames.length === 0) {
-                ongoingList.innerHTML = `<p class="text-gray-400" data-i18n="TOURNAMENT_NO_ONGOING_GAMES">${t('TOURNAMENT_NO_ONGOING_GAMES')}</p>`;
+            ongoingList.innerHTML = `<p class="text-zinc-400" data-i18n="TOURNAMENT_NO_ONGOING_GAMES">${t('TOURNAMENT_NO_ONGOING_GAMES')}</p>`;
         } else {
-        ongoingGames.forEach(game => {
-            const gameDiv = document.createElement('div');
-            gameDiv.className = 'bg-gray-800 rounded-lg p-4 border border-yellow-500';
-            gameDiv.innerHTML = `
-            <div class="text-white">
-                <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-gray-400 text-sm">${t('TOURNAMENT_ROUND')} ${game.round} - ${t('TOURNAMENT_ONGOING')}</div>
-            </div>
-            `;
-            ongoingList.appendChild(gameDiv);
-        });
+            const fragment = document.createDocumentFragment();
+            ongoingGames.forEach(game => {
+                const gameDiv = document.createElement('div');
+                gameDiv.className = 'bg-zinc-700 rounded-lg p-4';
+                gameDiv.innerHTML = `
+                <div class="text-white">
+                    <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
+                    <div class="text-yellow-400 text-sm">${t('TOURNAMENT_ROUND')} ${game.round} - ${t('TOURNAMENT_ONGOING')}</div>
+                </div>
+                `;
+                fragment.appendChild(gameDiv);
+            });
+            ongoingList.replaceChildren(fragment);
         }
 
         if (futureGames.length === 0) {
-        futureList.innerHTML = '<p class="text-gray-400">No future round games</p>';
+            futureList.innerHTML = '<p class="text-zinc-400">No future round games</p>';
         } else {
-        futureGames
-            .sort((a, b) => Number(a.round || 0) - Number(b.round || 0))
-            .forEach(game => {
-            const gameDiv = document.createElement('div');
-            gameDiv.className = 'bg-gray-800 rounded-lg p-4 border border-indigo-500';
-            gameDiv.innerHTML = `
-            <div class="text-white">
-                <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-indigo-300 text-sm">Round ${game.round} - ${game.status === 'ready' ? 'Scheduled' : 'Pending'}</div>
-            </div>
-            `;
-            futureList.appendChild(gameDiv);
-        });
+            const fragment = document.createDocumentFragment();
+            futureGames
+                .sort((a, b) => Number(a.round || 0) - Number(b.round || 0))
+                .forEach(game => {
+                const gameDiv = document.createElement('div');
+                gameDiv.className = 'bg-zinc-700 rounded-lg p-4';
+                gameDiv.innerHTML = `
+                <div class="text-white">
+                    <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
+                    <div class="text-zinc-400 text-sm">Round ${game.round} - ${game.status === 'ready' ? 'Scheduled' : 'Pending'}</div>
+                </div>
+                `;
+                fragment.appendChild(gameDiv);
+            });
+            futureList.replaceChildren(fragment);
         }
-        
+
         if (completedGames.length === 0) {
-                completedList.innerHTML = `<p class="text-gray-400" data-i18n="TOURNAMENT_NO_COMPLETED_GAMES">${t('TOURNAMENT_NO_COMPLETED_GAMES')}</p>`;
+            completedList.innerHTML = `<p class="text-zinc-400" data-i18n="TOURNAMENT_NO_COMPLETED_GAMES">${t('TOURNAMENT_NO_COMPLETED_GAMES')}</p>`;
         } else {
-        completedGames.forEach(game => {
-            const gameDiv = document.createElement('div');
-            gameDiv.className = 'bg-gray-800 rounded-lg p-4 border border-green-500';
-            gameDiv.innerHTML = `
-            <div class="text-white">
-                <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
-                        <div class="text-green-400 text-sm">🏆 ${t('TOURNAMENT_WINNER')}: ${game.winner_username ? game.winner_username : t('TOURNAMENT_NO_WINNER')}</div>
-                        <div class="text-gray-400 text-sm">${t('TOURNAMENT_ROUND')} ${game.round}</div>
-            </div>
-            `;
-            completedList.appendChild(gameDiv);
-        });
+            const fragment = document.createDocumentFragment();
+            completedGames.forEach(game => {
+                const gameDiv = document.createElement('div');
+                gameDiv.className = 'bg-zinc-700 rounded-lg p-4';
+                gameDiv.innerHTML = `
+                <div class="text-white">
+                    <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
+                    <div class="text-green-400 text-sm">${t('TOURNAMENT_WINNER')}: ${game.winner_username ? game.winner_username : t('TOURNAMENT_NO_WINNER')}</div>
+                    <div class="text-zinc-400 text-sm">${t('TOURNAMENT_ROUND')} ${game.round}</div>
+                </div>
+                `;
+                fragment.appendChild(gameDiv);
+            });
+            completedList.replaceChildren(fragment);
         }
     }
 }

@@ -23,7 +23,7 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Online Pong](#online-pong)
   - [AI Player](#ai-player)
   - [Tournaments](#tournaments)
-  - [Chess](#chess)
+  - [ ](#chess)
     - [Chess REST API](#chess-rest-api)
     - [Chess WebSocket Protocol](#chess-websocket-protocol)
   - [Friends](#friends)
