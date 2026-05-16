@@ -274,6 +274,7 @@ export const tr = {
 
   [TranslationKey.LOGIN_INVALID]: 'Geçersiz kullanıcı adı veya şifre, lütfen tekrar deneyin.',
   [TranslationKey.LOGIN_TOO_MANY]: 'Çok fazla başarısız deneme. 3 dakika sonra tekrar deneyin.',
+  [TranslationKey.REG_INVALID_EMAIL]: 'E-posta adresi doğru formatta olmalıdır, örn: abc@abc.nl',
   [TranslationKey.REG_INVALID_CHARS]: 'Kullanıcı adı yalnızca harf, rakam ve alt çizgi içerebilir.',
   [TranslationKey.REG_USERNAME_LENGTH]: 'Kullanıcı adı 3 ile 20 karakter arasında olmalıdır.',
   [TranslationKey.REG_PASSWORD_LENGTH]: 'Şifre 3 ile 72 karakter arasında olmalıdır.',
