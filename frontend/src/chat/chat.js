@@ -25,6 +25,8 @@ function formatGameResultMessage(data) {
 // WebSocket.CLOSING     // 2 - closing
 // WebSocket.CLOSED      // 3 - closed
 
+// ── State ─────────────────────────────────────────────────────────────────────
+
 let chatSocket = null; // Single shared WebSocket connection for all chat
 export let verifiedUserId = null; // Set after server sends "self_id" confirmation
 let verifiedUserName = null;
@@ -42,6 +44,8 @@ export let inGameIds = new Set();
 
 let reconnectDelay = 1000;
 let reconnectTimer = null;
+
+// ── Connection lifecycle ───────────────────────────────────────────────────────
 
 export function initChat() {
 	const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -222,6 +226,8 @@ export function initChat() {
 	};
 }
 
+// ── Messaging ─────────────────────────────────────────────────────────────────
+
 /**
  * Send a chat message via the WebSocket, global or DM
  * @param {string} message - The text content to send
@@ -245,6 +251,8 @@ export function sendChatMessage(message, recipientId = null) {
 
 	chatSocket.send(JSON.stringify(payload));
 }
+
+// ── Typing ────────────────────────────────────────────────────────────────────
 
 /**
  * Attach typing indicator events to the chat textarea.
@@ -349,6 +357,8 @@ export function reportBlockedUser(blockedUserId = null) {
 	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({ type: "report_blocked_user", blocked_user_id: blockedUserId }));
 }
+
+// ── Game invites ───────────────────────────────────────────────────────────────
 
 export function sendGameInvite(inviteeId, gameType, gameId) {
 	console.log('[invite] sendGameInvite — WS state:', chatSocket?.readyState, '(1=OPEN), gameId:', gameId, 'invitee:', inviteeId);

@@ -547,7 +547,7 @@ Request the last 50 messages from a DM conversation.
 { "type": "fetch_history", "dm_partner_id": "42" }
 ```
 **Frontend:** `fetchDMHistory()` in `chat.js`  
-**Backend:** `receive()` → `fetch_history` branch → `get_dm_history()` in `consumers.py`
+**Backend:** `receive()` → `fetch_history` branch → `get_dm_history()` in `db.py`
 
 ###### `get_open_dms`
 Request all open DM tabs (sent on connect to restore tabs).
@@ -555,7 +555,7 @@ Request all open DM tabs (sent on connect to restore tabs).
 { "type": "get_open_dms" }
 ```
 **Frontend:** sent automatically after `selfId` is received in `chat.js`  
-**Backend:** `receive()` → `get_open_dms` branch → `get_open_dms()` in `consumers.py`
+**Backend:** `receive()` → `get_open_dms` branch → `get_open_dms()` in `db.py`
 
 ###### `set_active_conversation`
 Tell the backend which conversation is currently open. Send `null` partner_id when switching to global.
@@ -571,7 +571,7 @@ Reset unread count for a DM conversation.
 { "type": "mark_read", "dm_partner_id": "42" }
 ```
 **Frontend:** `markRead()` in `chat.js`  
-**Backend:** `receive()` → `mark_read` branch → `mark_read()` in `consumers.py`
+**Backend:** `receive()` → `mark_read` branch → `mark_read()` in `db.py`
 
 ###### `hide_dm`
 Hide a DM tab, it won't reappear on refresh unless a new message arrives.
@@ -579,7 +579,7 @@ Hide a DM tab, it won't reappear on refresh unless a new message arrives.
 { "type": "hide_dm", "dm_partner_id": "42" }
 ```
 **Frontend:** `hideDm()` in `chat.js`  
-**Backend:** `receive()` → `hide_dm` branch → `hide_dm()` in `consumers.py`
+**Backend:** `receive()` → `hide_dm` branch → `hide_dm()` in `db.py`
 
 ###### `send_game_invite`
 Send a game invite. `game_type` is `"pong"` or `"chess"`.
@@ -587,7 +587,7 @@ Send a game invite. `game_type` is `"pong"` or `"chess"`.
 { "type": "send_game_invite", "invitee_id": "42", "game_type": "pong", "game_id": "abc-123" }
 ```
 **Frontend:** `sendGameInvite()` in `chat.js`  
-**Backend:** `receive()` → `send_game_invite` branch → `save_invite()` in `consumers.py`
+**Backend:** `receive()` → `send_game_invite` branch → `save_invite()` in `db.py`
 
 ###### `cancel_game_invite`
 Cancel a sent invite.
@@ -595,7 +595,7 @@ Cancel a sent invite.
 { "type": "cancel_game_invite", "invitee_id": "42", "game_id": "abc-123" }
 ```
 **Frontend:** `cancelGameInvite()` in `chat.js`  
-**Backend:** `receive()` → `cancel_game_invite` branch → `delete_invite()` in `consumers.py`
+**Backend:** `receive()` → `cancel_game_invite` branch → `delete_invite()` in `db.py`
 
 ###### `accept_game_invite`
 Accept a received invite — deletes it from DB and notifies the sender.
@@ -603,7 +603,7 @@ Accept a received invite — deletes it from DB and notifies the sender.
 { "type": "accept_game_invite", "game_id": "abc-123" }
 ```
 **Frontend:** `acceptGameInvite()` in `chat.js`  
-**Backend:** `receive()` → `accept_game_invite` branch → `delete_invite()` in `consumers.py`
+**Backend:** `receive()` → `accept_game_invite` branch → `delete_invite()` in `db.py`
 
 ###### `report_blocked_user`
 Notify the backend a user was blocked. Triggers invite cleanup and online users broadcast.
@@ -653,7 +653,7 @@ Last 50 messages of a DM conversation, oldest first. `seen` indicates whether th
   ]
 }
 ```
-**Backend:** `fetch_history` branch → `get_dm_history()` in `consumers.py`  
+**Backend:** `fetch_history` branch → `get_dm_history()` in `db.py`  
 **Frontend:** `case "dmHistory"` → dispatches `dmHistoryReceived` event in `chat.js`
 
 ###### `openDms`
@@ -667,7 +667,7 @@ All open DM tabs. Key is the other user's user_id. `unread` is the unread messag
   }
 }
 ```
-**Backend:** `get_open_dms` branch → `get_open_dms()` in `consumers.py`  
+**Backend:** `get_open_dms` branch → `get_open_dms()` in `db.py`  
 **Frontend:** `case "openDms"` → dispatches `openDmsReceived` event → `createDMTab()` in `chat-ui.js`
 
 ###### `messagesSeenByDmPartner`
