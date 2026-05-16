@@ -278,6 +278,8 @@ export const tr = {
   [TranslationKey.CHAT_INVITE_RECEIVED]: '{name} sizi {game} oyununa davet etti',
   [TranslationKey.CHAT_CREATE_GAME_ERROR]: 'Oyun oluşturulamadı. Lütfen tekrar deneyin.',
   [TranslationKey.CHAT_USER_IN_GAME]: 'O kullanıcı şu an bir oyunda.',
+  [TranslationKey.CHAT_TYPING_SINGLE]: '{name} yazıyor...',
+  [TranslationKey.CHAT_TYPING_PLURAL]: '{count} kişi yazıyor...',
 
   // Chat system/broadcast/global messages
   [TranslationKey.CHAT_SYSTEM_MESSAGE]: '[Sistem] {text}',

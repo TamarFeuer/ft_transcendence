@@ -278,6 +278,8 @@ export const nl = {
   [TranslationKey.CHAT_INVITE_RECEIVED]: '{name} heeft je uitgenodigd voor {game}',
   [TranslationKey.CHAT_CREATE_GAME_ERROR]: 'Kon het spel niet aanmaken. Probeer opnieuw.',
   [TranslationKey.CHAT_USER_IN_GAME]: 'Die gebruiker speelt momenteel een spel.',
+  [TranslationKey.CHAT_TYPING_SINGLE]: '{name} is aan het typen...',
+  [TranslationKey.CHAT_TYPING_PLURAL]: '{count} personen zijn aan het typen...',
 
   // Chat system/broadcast/global messages
   [TranslationKey.CHAT_SYSTEM_MESSAGE]: '[Systeem] {text}',

@@ -340,7 +340,7 @@ Response: {
 
 #### AI Player
 
-The AI Player module provides a challenging computer opponent for Pong games with realistic, human-like behavior. The AI is fully configurable and respects custom game rules and settings.
+The AI Player module provides a challenging computer opponent for Pong games with realistic, human-like behavior. The AI respects custom game rules and settings.
 
 **Key Features:**
 
@@ -998,6 +998,23 @@ Players unlock achievements and badges for completing various gameplay milestone
 
 Achievements are displayed on player profiles and contribute to overall progression and bragging rights within the community.
 
+**Available Achievements:**
+
+| Achievement | Description | Type | Requirement |
+|-------------|-------------|------|-------------|
+| First Game | You played your first game! | Total Games | 1 |
+| Third Game | You played your third game! | Total Games | 3 |
+| Tenth Game | You played your tenth game! | Total Games | 10 |
+| Twentieth Game | You played your twentieth game! | Total Games | 20 |
+| First Win | You won for the first time! Congratulations! | Total Wins | 1 |
+| Winning Streak 1 | You won 3 games in a row! | Best Win Streak | 3 |
+| Winning Streak 2 | You won 5 games in a row! | Best Win Streak | 5 |
+| Winning Streak 3 | You won 10 games in a row! | Best Win Streak | 10 |
+| Winning Streak 4 | You won 20 games in a row! | Best Win Streak | 20 |
+| Pong Expert | Your rating reached 1050! | ELO Rating | 1050 |
+| Pong Master | Your rating reached 1100! | ELO Rating | 1100 |
+| Pong Guru | Your rating reached 1150! | ELO Rating | 1150 |
+
 #### Additional Games
 
 See [Chess](#chess) for the second implemented game (local, online, ELO, and chat invites).
@@ -1040,49 +1057,6 @@ The i18n system is organized as follows:
   - `en.js` — English translations (base language)
   - `nl.js` — Dutch translations
   - `tr.js` — Turkish translations
-
-**Implementation for Developers:**
-
-How to add new translatable text:
-
-1. Add your translation key to: `frontend/src/i18n/keys.js`
-   ```javascript
-   MY_NEW_TEXT = 'MY_NEW_TEXT',
-   ```
-
-2. Add the English text to: `frontend/src/i18n/translations/en.js`
-   ```javascript
-   [TranslationKey.MY_NEW_TEXT]: 'My English text',
-   ```
-
-3. Add translations for all supported languages in `nl.js` and `tr.js`
-   ```javascript
-   [TranslationKey.MY_NEW_TEXT]: 'Mijn Engelse tekst',  // Dutch
-   [TranslationKey.MY_NEW_TEXT]: 'Benim İngilizce metnim',  // Turkish
-   ```
-
-**Using Translations in JavaScript:**
-
-```javascript
-import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
-
-// Get translated text
-const greeting = t(TranslationKey.GREETING);
-
-// Change language
-setLanguage(Language.DUTCH);
-
-// Get current language
-const current = getCurrentLanguage();
-```
-
-**Using Translations in HTML:**
-
-```html
-<!-- Automatically translates text and updates on language change -->
-<button data-i18n="BTN_START_GAME">START GAME</button>
-<h1 data-i18n="TITLE_HOME">Welcome</h1>
-```
 
 **Localization Coverage:**
 

@@ -279,6 +279,8 @@ export const en = {
   [TranslationKey.CHAT_INVITE_RECEIVED]: '{name} invited you to a game of {game}',
   [TranslationKey.CHAT_CREATE_GAME_ERROR]: 'Could not create game. Please try again.',
   [TranslationKey.CHAT_USER_IN_GAME]: 'That user is currently in a game.',
+  [TranslationKey.CHAT_TYPING_SINGLE]: '{name} is typing...',
+  [TranslationKey.CHAT_TYPING_PLURAL]: '{count} people are typing...',
 
   // Chat system/broadcast/global messages
   [TranslationKey.CHAT_SYSTEM_MESSAGE]: '[System] {text}',
