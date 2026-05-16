@@ -23,7 +23,11 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Online Pong](#online-pong)
   - [AI Player](#ai-player)
   - [Tournaments](#tournaments)
+  - [Chess](#chess)
+    - [Chess REST API](#chess-rest-api)
+    - [Chess WebSocket Protocol](#chess-websocket-protocol)
   - [Friends](#friends)
+    - [Friends REST API](#friends-rest-api)
   - [Block](#block)
     - [Block REST API](#block-rest-api)
   - [Chat System](#chat-system)
@@ -119,7 +123,295 @@ The following features are implemented:
 
 #### Tournaments
 
+#### Chess
+
+Chess is implemented as a second game mode alongside Pong. Players switch between Pong and Chess from the home hub (`/`). The frontend uses [chess.js](https://github.com/jhlywa/chess.js) for rules and move validation in the browser; the backend uses [python-chess](https://python-chess.readthedocs.io/) as the source of truth for online games. Piece graphics are Cburnett-style SVGs in `frontend/public/chess-pieces/`.
+
+**Modes:**
+
+| Mode | Route | Auth | Description |
+|------|-------|------|-------------|
+| Local (hot-seat) | `/chess` | Required | Two players on one device; rules enforced client-side only. |
+| Online matchmaking | `/chess-online` | Required | Join or create a lobby via REST, then play over WebSocket. |
+| Friend invite | `/chess-online?gameId=…` | Required | Invitor creates a private session via chat; invitee accepts and connects to the same `gameId`. |
+
+Online play is only entered intentionally: the home **Online Game** button sets a flag before navigation, or the user follows an invite link with `gameId` in the query string. A bare refresh or direct visit to `/chess-online` without either is redirected away.
+
+Active chess sessions mark both players in `IN_GAME_USERS` (shared with Pong and chat), which blocks duplicate games and updates the chat online list. Game results are broadcast on the global chat WebSocket as `gameResult` with `game_type: "chess"`.
+
+##### Chess REST API
+
+All endpoints are under `/api/chess/`. Authentication via JWT cookie (`access_token`), same as other protected APIs.
+
+###### `POST /api/chess/join/`
+
+Create a new game or join an open waiting lobby (matchmaking). For friend invites, pass the invitee’s user ID; the session is invite-only until that user joins.
+
+```json
+Request (matchmaking):  {}
+Request (invite):       { "invitee_id": 42 }
+Response:               { "gameId": "a1b2c3d4-..." }
+```
+
+Matchmaking skips sessions that already have an `invitee_id` (invite-only tables). Colors are assigned when the session is created (random for the creator) or when the second player joins; the WebSocket connect order does not decide colors.
+
+###### `GET /api/chess/stats/`
+
+Current user’s chess record. Returns defaults if the user has never played.
+
+```json
+Response: {
+  "total_games": 12,
+  "total_wins": 7,
+  "total_losses": 5,
+  "elo_rating": 1248
+}
+```
+
+###### `GET /api/chess/leaderboard/`
+
+Top 10 players by ELO (public).
+
+```json
+Response: {
+  "leaderboard": [
+    { "username": "tamar", "elo_rating": 1350, "total_wins": 20, "total_games": 30 }
+  ]
+}
+```
+
+###### `GET /api/chess/match-history/`
+
+Last 20 matches for the authenticated user.
+
+```json
+Response: {
+  "matches": [
+    {
+      "white": "tamar",
+      "black": "rik",
+      "opponent": "rik",
+      "result": "1-0",
+      "winner": "tamar",
+      "timestamp": "2026-05-10T14:30:00.123456+00:00"
+    }
+  ]
+}
+```
+
+`result` uses standard chess notation: `1-0`, `0-1`, `1/2-1/2`, or `abandonment` when a player disconnects mid-game.
+
+The stats page is at `/chess-stats` (linked from the profile). Profile also shows chess wins, losses, and ELO when available.
+
+---
+
+##### Chess WebSocket Protocol
+
+**Endpoint:** `ws(s)://<host>/ws/chess/<game_id>/`
+
+Authenticated via `TokenAuthMiddleware` (JWT from cookies on the WebSocket handshake). After connect, the server assigns `white` or `black` and broadcasts game state to the `chess_<game_id>` channel group.
+
+**Close codes:**
+
+| Code | Meaning |
+|------|---------|
+| `4004` | Unknown or expired `game_id` |
+| `4003` | Not a participant, table full, or user already in another active game |
+
+---
+
+**Frontend → Backend**
+
+###### `move`
+
+Send a move in UCI form (`from` + `to` squares, optional promotion). Only accepted when it is your turn and the game is `active`.
+
+```json
+{ "type": "move", "from": "e2", "to": "e4" }
+{ "type": "move", "from": "e7", "to": "e8", "promotion": "q" }
+```
+
+Illegal moves receive a direct `illegal_move` message to the sender only (not broadcast).
+
+---
+
+**Backend → Frontend**
+
+###### `assign`
+
+Sent immediately after a successful connect.
+
+```json
+{ "type": "assign", "color": "white" }
+```
+
+###### `gameStart`
+
+Both players connected; game is active. Board orientation: black’s client flips the view.
+
+```json
+{
+  "type": "gameStart",
+  "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "white": "tamar",
+  "black": "rik",
+  "white_elo": 1200,
+  "black_elo": 1185
+}
+```
+
+###### `gameState`
+
+Broadcast after every legal move.
+
+```json
+{
+  "type": "gameState",
+  "fen": "...",
+  "turn": "black"
+}
+```
+
+###### `gameOver`
+
+Game ended (checkmate, draw, stalemate, or abandonment).
+
+```json
+{ "type": "gameOver", "winner": "white", "result": "1-0" }
+{ "type": "gameOver", "winner": null, "result": "1/2-1/2" }
+{ "type": "gameOver", "winner": "black", "result": "abandonment" }
+```
+
+On game over, ELO is updated (K-factor 40), a `ChessMatch` row is persisted, the in-memory `ChessSession` is removed, and a `gameResult` event is sent on global chat.
+
+---
+
+**Implementation notes**
+
+- **In-memory games:** Active boards live in `ChessSession._games` (not the database). Only finished games are stored in `ChessMatch` / `ChessPlayer`.
+- **ELO:** Default rating 1200; draws update both players with result `0.5` but are not counted separately in win/loss totals on `ChessPlayer`.
+- **Chat invites:** Invitor calls `POST /api/chess/join/` with `invitee_id`, sends a chat `send_game_invite` with `game_type: "chess"`, and opens `/chess-online?gameId=…`. Acceptor uses the invite link in the DM; accepting clears competing invites when the game starts.
+- **Frontend modules:** `frontend/src/chess/chess.js` (local + shared board UI), `chess-online.js` (WebSocket client), `chess-modal.js` (result overlay). Leaving `/chess-online` closes the socket via `closeChessConnection()` in the router.
+
 #### Friends
+
+Friends are managed from your own profile (`/profile`). Other users’ profiles (`/profile/:username`) show stats and match history only — friend actions are not available there.
+
+Friendships are stored as a single `FriendRequest` row between two users with `status: "accepted"`. Pending and declined requests use the same model. There is no separate friends join table.
+
+**UI flow (own profile):**
+
+| Section | Action |
+|---------|--------|
+| Add Friend | Enter a username and send a request (`POST /api/friends/send`). |
+| Pending Requests | Incoming requests with Accept / Decline. |
+| Friends | List of accepted friends, sorted online first (using the chat `onlineUsers` map), with Remove per friend. |
+
+**Business rules:**
+
+- Cannot send a request to yourself.
+- Cannot send if either user has blocked the other (`is_blocked` from the block app).
+- Cannot send if already friends (an accepted request exists in either direction).
+- Cannot send a duplicate outgoing request while one is still `pending` (declined requests can be sent again).
+- **Mutual pending auto-accept:** If user B already sent a pending request to user A, and A sends a request to B, the existing request is accepted immediately (both become friends without B pressing Accept).
+- **Blocking removes friendship:** `POST /api/block/` deletes any accepted `FriendRequest` between the two users (see [Block](#block)).
+
+**Real-time updates:** The profile page listens for the browser event `friendListChanged`. Chat WebSocket delivers `{ "type": "friendListChanged" }` after a block is reported (`report_blocked_user`), which triggers a friends list refresh. Accept/decline/remove also re-render the list directly after the REST call succeeds.
+
+**Frontend modules:** `frontend/src/users_friends/friends.js` (API helpers), `profilePage.js` (UI). All requests use `fetchWithRefreshAuth` (JWT cookies + token refresh).
+
+---
+
+##### Friends REST API
+
+All endpoints are under `/api/friends/`. Authentication via JWT cookie (`access_token`).
+
+###### `POST /api/friends/send`
+
+Send a friend request by target username.
+
+```json
+Request:  { "to_username": "rik" }
+Response: { "success": true, "message": "Friend request sent to rik" }
+```
+
+Possible errors: `400` (self-request, already friends, pending duplicate, blocked), `404` (user not found), `401` (not authenticated).
+
+Auto-accept response when the other user already has a pending request to you:
+
+```json
+Response: { "success": true, "message": "You are now friends with rik" }
+```
+
+###### `GET /api/friends/pending`
+
+List incoming pending requests for the authenticated user.
+
+```json
+Response: {
+  "requests": [
+    { "id": 3, "from_user__username": "tamar", "status": "pending" }
+  ]
+}
+```
+
+###### `POST /api/friends/accept`
+
+Accept a pending request. Only the recipient (`to_user`) may accept.
+
+```json
+Request:  { "request_id": 3 }
+Response: { "success": true }
+```
+
+Errors: `403` (not your request), `400` (already processed), `404` (request not found).
+
+###### `POST /api/friends/delete`
+
+Decline a pending request (sets status to `declined`). Only the recipient may decline.
+
+```json
+Request:  { "request_id": 3 }
+Response: { "success": true }
+```
+
+###### `GET /api/friends/list`
+
+Return all accepted friends of the authenticated user.
+
+```json
+Response: {
+  "friends": [
+    { "id": 7, "username": "rik" },
+    { "id": 42, "username": "tamar" }
+  ]
+}
+```
+
+The frontend splits this list into online vs offline using chat presence (`onlineUsers`).
+
+###### `POST /api/friends/remove`
+
+Remove an accepted friendship by the other user’s ID. Deletes the `FriendRequest` row (either direction).
+
+```json
+Request:  { "friend_id": 7 }
+Response: {
+  "success": true,
+  "message": "You have successfully removed rik from your friends list"
+}
+```
+
+---
+
+**Data model (`friends.FriendRequest`):**
+
+| Field | Description |
+|-------|-------------|
+| `from_user` | User who sent the request |
+| `to_user` | User who receives the request |
+| `status` | `pending`, `accepted`, or `declined` |
+| `created_at` / `updated_at` | Timestamps |
 
 #### Block
 
@@ -337,6 +629,8 @@ Someone started or stopped typing. `private: true` for DMs, `false` for global.
 ```
 
 #### Additional Games
+
+See [Chess](#chess) for the second implemented game (local, online, ELO, and chat invites).
 
 #### Graphics & UI
 
