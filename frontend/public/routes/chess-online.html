@@ -48,9 +48,11 @@
   </div>
 
   <!-- blocks the board until the other player arrives -->
-  <div id="waiting-overlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-950/90">
-    <div class="mb-3 text-xl font-semibold text-white" data-i18n="CHESS_WAITING">Waiting for opponent...</div>
-    <div class="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+  <div id="waiting-overlay" class="absolute inset-0 z-20 flex items-center justify-center bg-zinc-900/90">
+    <div class="bg-zinc-800 rounded-lg p-8 flex flex-col items-center gap-4 text-center">
+      <p class="text-white text-xl font-semibold" data-i18n="CHESS_WAITING">Waiting for opponent...</p>
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-violet-400 border-t-transparent"></div>
+    </div>
   </div>
 
 </div>
