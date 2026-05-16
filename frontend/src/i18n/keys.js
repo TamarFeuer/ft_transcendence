@@ -103,7 +103,11 @@ export const TranslationKey = {
   
   // Player setup
   BTN_START_GAME: 'BTN_START_GAME',
-  
+
+  // Local Game UI
+  RED_PADDLE_LOCAL_PLAYER: 'RED_PADDLE_LOCAL_PLAYER',
+  BLUE_PADDLE_LOCAL_PLAYER: 'BLUE_PADDLE_LOCAL_PLAYER',
+
   // Game UI
   PLAYER_1: 'PLAYER_1',
   PLAYER_2: 'PLAYER_2',
