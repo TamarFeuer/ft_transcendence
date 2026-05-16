@@ -35,8 +35,6 @@ export function initAIGame(scene, gameObjects, tournament) {
         window.addEventListener("keydown", keyDownHandler);
         window.addEventListener("keyup", keyUpHandler);
 
-        // AI controls (W/S)
-
         // Simulated Annealing
         const keyboardIntervalP1 = setInterval(() => {
             const paddleY = gameObjects.paddleLeft.position.y;
