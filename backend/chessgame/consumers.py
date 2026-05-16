@@ -188,6 +188,9 @@ class ChessConsumer(AsyncWebsocketConsumer):
 					getattr(self.game.players.get('black'), 'username', None),
 				]
 
+			# Mark game as finished to prevent duplicate saves on disconnect
+			self.game.status = 'finished'
+			
 			#save result in db
 			await self.save_chess_result(self.game, over['winner'], over['result'])
 			for player in self.game.players.values():
