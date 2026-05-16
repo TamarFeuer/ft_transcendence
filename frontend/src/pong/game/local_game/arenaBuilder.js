@@ -10,6 +10,11 @@ export function createTableArena(scene, physics) {
     const netMat = new StandardMaterial("localNetMat", scene);
     netMat.diffuseColor = new Color3(0.92, 0.92, 0.95);
 
+    const wallIndicatorMat = new StandardMaterial("localWallIndicatorMat", scene);
+    wallIndicatorMat.diffuseColor = new Color3(0.95, 0.75, 0.2);
+    wallIndicatorMat.emissiveColor = new Color3(0.95, 0.75, 0.2);
+    wallIndicatorMat.alpha = 0.85;
+
     const floorMat = new StandardMaterial("localFloorMat", scene);
     floorMat.diffuseColor = new Color3(0.08, 0.1, 0.14);
 
@@ -81,9 +86,27 @@ export function createTableArena(scene, physics) {
         depth: physics.tableHalfWidth * 2,
     }, scene);
     endWallRight.position = new Vector3(physics.goalX, physics.endWallStartY + endWallHeight / 2, 0);
-    endWallRight.isVisible = false;
+    endWallRight.isVisible = true;
 
-    return { table, centerLine, sideLineLeft, sideLineRight, net, floor, roof, endWallLeft, endWallRight };
+    const wallIndicatorHeight = 0.42;
+    const wallIndicatorInset = physics.tableHalfWidth - 0.18;
+    const wallIndicatorLeft = MeshBuilder.CreateBox("localPongWallIndicatorLeft", {
+        width: 0.02,
+        height: 0.04,
+        depth: physics.tableHalfWidth * 2,
+    }, scene);
+    wallIndicatorLeft.position = new Vector3(-physics.goalX, physics.endWallStartY, 0);
+    wallIndicatorLeft.material = wallIndicatorMat;
+
+    const wallIndicatorRight = MeshBuilder.CreateBox("localPongWallIndicatorRight", {
+        width: 0.04,
+        height: 0.04,
+        depth: physics.tableHalfWidth * 2,
+    }, scene);
+    wallIndicatorRight.position = new Vector3(physics.goalX, physics.endWallStartY, 0);
+    wallIndicatorRight.material = wallIndicatorMat;
+
+    return { table, centerLine, sideLineLeft, sideLineRight, net, floor, roof, endWallLeft, endWallRight, wallIndicatorLeft, wallIndicatorRight };
 }
 
 export function positionPaddles(gameObjects, physics, paddleLeftBaseX, paddleRightBaseX) {
