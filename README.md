@@ -538,60 +538,80 @@ Send a global or DM message. Omit `recipient_id` for global.
 ```json
 { "type": "send_message", "message": "hello", "recipient_id": "42" }
 ```
+**Frontend:** `sendChatMessage()` in `chat.js`  
+**Backend:** `receive()` → `send_message` branch in `consumers.py`
 
 ###### `fetch_history`
 Request the last 50 messages from a DM conversation.
 ```json
 { "type": "fetch_history", "dm_partner_id": "42" }
 ```
+**Frontend:** `fetchDMHistory()` in `chat.js`  
+**Backend:** `receive()` → `fetch_history` branch → `get_dm_history()` in `consumers.py`
 
 ###### `get_open_dms`
 Request all open DM tabs (sent on connect to restore tabs).
 ```json
 { "type": "get_open_dms" }
 ```
+**Frontend:** sent automatically after `selfId` is received in `chat.js`  
+**Backend:** `receive()` → `get_open_dms` branch → `get_open_dms()` in `consumers.py`
 
 ###### `set_active_conversation`
 Tell the backend which conversation is currently open. Send `null` partner_id when switching to global.
 ```json
 { "type": "set_active_conversation", "partner_id": "42" }
 ```
+**Frontend:** `setActiveConversation()` in `chat.js`  
+**Backend:** `receive()` → `set_active_conversation` branch in `consumers.py`
 
 ###### `mark_read`
 Reset unread count for a DM conversation.
 ```json
 { "type": "mark_read", "dm_partner_id": "42" }
 ```
+**Frontend:** `markRead()` in `chat.js`  
+**Backend:** `receive()` → `mark_read` branch → `mark_read()` in `consumers.py`
 
 ###### `hide_dm`
 Hide a DM tab, it won't reappear on refresh unless a new message arrives.
 ```json
 { "type": "hide_dm", "dm_partner_id": "42" }
 ```
+**Frontend:** `hideDm()` in `chat.js`  
+**Backend:** `receive()` → `hide_dm` branch → `hide_dm()` in `consumers.py`
 
 ###### `send_game_invite`
 Send a game invite. `game_type` is `"pong"` or `"chess"`.
 ```json
 { "type": "send_game_invite", "invitee_id": "42", "game_type": "pong", "game_id": "abc-123" }
 ```
+**Frontend:** `sendGameInvite()` in `chat.js`  
+**Backend:** `receive()` → `send_game_invite` branch → `save_invite()` in `consumers.py`
 
 ###### `cancel_game_invite`
 Cancel a sent invite.
 ```json
 { "type": "cancel_game_invite", "invitee_id": "42", "game_id": "abc-123" }
 ```
+**Frontend:** `cancelGameInvite()` in `chat.js`  
+**Backend:** `receive()` → `cancel_game_invite` branch → `delete_invite()` in `consumers.py`
 
 ###### `accept_game_invite`
 Accept a received invite — deletes it from DB and notifies the sender.
 ```json
 { "type": "accept_game_invite", "game_id": "abc-123" }
 ```
+**Frontend:** `acceptGameInvite()` in `chat.js`  
+**Backend:** `receive()` → `accept_game_invite` branch → `delete_invite()` in `consumers.py`
 
 ###### `report_blocked_user`
 Notify the backend a user was blocked. Triggers invite cleanup and online users broadcast.
 ```json
 { "type": "report_blocked_user", "recipient_id": "42" }
 ```
+**Frontend:** `reportBlockedUser()` in `chat.js`  
+**Backend:** `receive()` → `report_blocked_user` branch in `consumers.py`
 
 ###### `notify_typing` / `notify_stop_typing`
 Notify that the current user started or stopped typing. Omit `typing_recipient_id` for global.
@@ -599,6 +619,8 @@ Notify that the current user started or stopped typing. Omit `typing_recipient_i
 { "type": "notify_typing", "typing_recipient_id": "42" }
 { "type": "notify_stop_typing", "typing_recipient_id": "42" }
 ```
+**Frontend:** `initTyping()` in `chat.js`  
+**Backend:** `receive()` → `notify_typing` / `notify_stop_typing` branch in `consumers.py`
 
 **Backend → Frontend**
 
@@ -607,12 +629,16 @@ Sent on connect to confirm the user's identity.
 ```json
 { "type": "selfId", "user_id": "42", "user_name": "tamar" }
 ```
+**Backend:** `connect()` in `consumers.py`  
+**Frontend:** `case "selfId"` in `chatSocket.onmessage` in `chat.js`
 
 ###### `chatMessage`
 Delivers a message. `private: true` for DMs. Sent to all tabs of both sender and recipient.
 ```json
 { "type": "chatMessage", "message": "hello", "sender_id": "42", "sender_name": "tamar", "private": true, "recipient_id": "7" }
 ```
+**Backend:** `chat_message()` in `consumers.py`  
+**Frontend:** `case "chatMessage"` → dispatches `chatMessageReceived` event → `addMessage()` in `chat-ui.js`
 
 ###### `dmHistory`
 Last 50 messages of a DM conversation, oldest first. `seen` indicates whether the other user has read your last sent message. Invite messages have an empty `message` and an `invite` object instead.
@@ -627,6 +653,8 @@ Last 50 messages of a DM conversation, oldest first. `seen` indicates whether th
   ]
 }
 ```
+**Backend:** `fetch_history` branch → `get_dm_history()` in `consumers.py`  
+**Frontend:** `case "dmHistory"` → dispatches `dmHistoryReceived` event in `chat.js`
 
 ###### `openDms`
 All open DM tabs. Key is the other user's user_id. `unread` is the unread message count. `seen` indicates whether the other user has read your last message.
@@ -639,12 +667,16 @@ All open DM tabs. Key is the other user's user_id. `unread` is the unread messag
   }
 }
 ```
+**Backend:** `get_open_dms` branch → `get_open_dms()` in `consumers.py`  
+**Frontend:** `case "openDms"` → dispatches `openDmsReceived` event → `createDMTab()` in `chat-ui.js`
 
 ###### `messagesSeenByDmPartner`
 Your DM partner has read your messages.
 ```json
 { "type": "messagesSeenByDmPartner", "by": "42" }
 ```
+**Backend:** `messages_read()` in `consumers.py`  
+**Frontend:** `case "messagesSeenByDmPartner"` in `chat.js`
 
 ###### `onlineUsers`
 Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
@@ -657,48 +689,64 @@ Personalized online users list sent to every user on connect/disconnect/game sta
   "in_game_ids": ["42"]
 }
 ```
+**Backend:** `broadcast_online_users()` → `online_users()` in `consumers.py`  
+**Frontend:** `case "onlineUsers"` → dispatches `onlineUsersUpdated` event → `renderOnlineUsers()` in `chat-ui.js`
 
 ###### `gameInvite`
 You received a game invite.
 ```json
 { "type": "gameInvite", "sender_id": "42", "sender_name": "tamar", "game_type": "pong", "game_id": "abc-123" }
 ```
+**Backend:** `game_invite()` in `consumers.py`  
+**Frontend:** `case "gameInvite"` → dispatches `gameInviteReceived` event in `chat.js`
 
 ###### `gameInviteExpired`
 An invite you received was cancelled by the sender.
 ```json
 { "type": "gameInviteExpired", "game_id": "abc-123" }
 ```
+**Backend:** `game_invite_expired()` in `consumers.py`  
+**Frontend:** `case "gameInviteExpired"` → dispatches `gameInviteExpired` event in `chat.js`
 
 ###### `gameInviteAccepted`
 An invite you sent was accepted.
 ```json
 { "type": "gameInviteAccepted", "game_id": "abc-123" }
 ```
+**Backend:** `game_invite_accepted()` in `consumers.py`  
+**Frontend:** `case "gameInviteAccepted"` → dispatches `gameInviteAccepted` event in `chat.js`
 
 ###### `gameInviteBlocked`
 An invite was cancelled because you blocked the other user.
 ```json
 { "type": "gameInviteBlocked", "game_id": "abc-123" }
 ```
+**Backend:** `game_invite_blocked()` in `consumers.py`  
+**Frontend:** `case "gameInviteBlocked"` → dispatches `gameInviteBlocked` event in `chat.js`
 
 ###### `gameInviteRejected`
 Your invite was rejected because one of the users is already in a game.
 ```json
 { "type": "gameInviteRejected", "reason": "in_game" }
 ```
+**Backend:** `receive()` → `send_game_invite` branch in `consumers.py`  
+**Frontend:** `case "gameInviteRejected"` → dispatches `gameInviteRejected` event in `chat.js`
 
 ###### `gameResult`
 A game ended. Broadcast to all connected users. For draws, `winner` and `loser` are `null` and `draw_players` contains both usernames.
 ```json
 { "type": "gameResult", "winner": "tamar", "loser": "rik", "draw_players": null, "game_type": "pong" }
 ```
+**Backend:** `game_result()` in `consumers.py`  
+**Frontend:** `case "gameResult"` → dispatches `chatMessageReceived` event → renders in Global chat in `chat.js`
 
 ###### `friendListChanged`
 Your friend list changed. Frontend should re-fetch.
 ```json
 { "type": "friendListChanged" }
 ```
+**Backend:** `friend_list_changed()` in `consumers.py`  
+**Frontend:** `case "friendListChanged"` → dispatches `friendListChanged` event in `chat.js`
 
 ###### `otherTyping` / `otherStoppedTyping`
 Someone started or stopped typing. `private: true` for DMs, `false` for global.
@@ -706,6 +754,8 @@ Someone started or stopped typing. `private: true` for DMs, `false` for global.
 { "type": "otherTyping", "typer_id": "42", "typer_name": "tamar", "private": true }
 { "type": "otherStoppedTyping", "typer_id": "42", "typer_name": "tamar", "private": false }
 ```
+**Backend:** `typing_notification()` in `consumers.py`  
+**Frontend:** `case "otherTyping"` / `case "otherStoppedTyping"` → dispatches `typingStarted` / `typingStopped` event in `chat.js`
 
 #### Additional Games
 
