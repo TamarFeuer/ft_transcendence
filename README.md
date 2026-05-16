@@ -110,7 +110,7 @@ The database is PostgreSQL. The schema is split into three diagrams by domain.
 
 Centres on `auth_user`. Friend requests and blocks are direct user-to-user relationships. Chat is built around a `Conversation` container — messages, participants, and game invites all hang off it. `ConversationParticipant` tracks per-user state (unread count, read timestamp, tab visibility).
 
-![Chat, Friends & Block](docs/images/chat_social.png)
+![Chat, Friends & Block](docs/images/chat_diagram.png)
 
 ##### Example Data
 
@@ -122,13 +122,13 @@ Sample data from a test session (users: tamar=1, Alascode331=2, The_cat=3, PongL
 
 Each user gets a `stats_players` profile (auto-created on registration) that accumulates pong stats and ELO. Matches reference players, not users directly. Achievements are defined once in `stats_achievements` and linked to players via `stats_player_achievements`. Chess has its own parallel player and match tables with separate ELO tracking.
 
-![Pong Stats & Chess](docs/images/stats_chess.png)
+![Pong Stats & Chess](docs/images/stats-chess_diagram.png)
 
 #### Tournament
 
 A `Tournament` is created by a user and has many `TournamentParticipant` rows (one per registered player) and many `TournamentGame` rows (one per match in the bracket). Games reference users directly and track round, status, and the external `game_id` used to link to the live pong session.
 
-![Tournament](docs/images/tournament.png)
+![Tournament](docs/images/tournament_diagram.png)
 
 
 ### Feature List
@@ -468,6 +468,26 @@ The chat system is a persistent WebSocket overlay that stays alive across SPA na
 ##### UI
 
 ![Chat UI](docs/images/chat-ui.png)
+
+**DOM structure of `chatContainer`:**
+```
+chatContainer
+├── chatHeader
+│   ├── channelTabs        (Global tab + DM tabs)
+│   └── closeChatBtn
+└── chatContent
+    ├── usersSidebar
+    │   └── onlineUsersList
+    └── chatPanel
+        ├── channelTitle
+        ├── chatMessages
+        ├── typingIndicator
+        └── chatInputWrapper
+            ├── chatInput
+            ├── blockNotice
+            ├── charCounter
+            └── sendChatBtn
+```
 
 The chat window is a fixed overlay rendered in `index.html`, outside the SPA's `#app-root`. It stays mounted and connected across all page navigations. Everything inside it is dynamically rendered by JavaScript:
 
