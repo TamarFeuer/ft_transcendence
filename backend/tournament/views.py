@@ -4,6 +4,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext as _
 import jwt
 from django.conf import settings
 from .models import Tournament, TournamentParticipant, TournamentGame
@@ -37,7 +38,7 @@ class TournamentCreateView(APIView):
     def post(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         serializer = TournamentSerializer(data=request.data)
         if serializer.is_valid():
@@ -54,28 +55,28 @@ class TournamentJoinView(APIView):
     def post(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         tournament_id = request.data.get('tournament_id')
         if not tournament_id:
-            return Response({'error': 'tournament_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('tournament_id required')}, status=status.HTTP_400_BAD_REQUEST)
         
         tournament = get_object_or_404(Tournament, id=tournament_id)
         
         if tournament.status != 'registration':
-            return Response({'error': 'tournament registration closed'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('tournament registration closed')}, status=status.HTTP_400_BAD_REQUEST)
         
         if tournament.participants.count() >= tournament.max_players:
-            return Response({'error': 'tournament is full'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('tournament is full')}, status=status.HTTP_400_BAD_REQUEST)
         
         participant, created = TournamentParticipant.objects.get_or_create(
             tournament=tournament, user=user
         )
         
         if not created:
-            return Response({'error': 'already joined'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('already joined')}, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response({'message': 'joined successfully'}, status=status.HTTP_201_CREATED)
+        return Response({'message': _('joined successfully')}, status=status.HTTP_201_CREATED)
 
 class TournamentStartView(APIView):
     """Start a tournament (creator only)."""
@@ -83,20 +84,20 @@ class TournamentStartView(APIView):
     def post(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         tournament_id = request.data.get('tournament_id')
         tournament = get_object_or_404(Tournament, id=tournament_id)
         
         if tournament.creator != user:
-            return Response({'error': 'only creator can start tournament'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': _('only creator can start tournament')}, status=status.HTTP_403_FORBIDDEN)
         
         if tournament.status != 'registration':
-            return Response({'error': 'tournament already started or completed'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('tournament already started or completed')}, status=status.HTTP_400_BAD_REQUEST)
         
         participant_count = tournament.participants.count()
         if participant_count < 2:
-            return Response({'error': 'need at least 2 participants'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('need at least 2 participants')}, status=status.HTTP_400_BAD_REQUEST)
         
         tournament.status = 'ongoing'
         tournament.start_time = timezone.now()
@@ -136,7 +137,7 @@ class TournamentStartView(APIView):
             round_num += 1
 
         logger.debug(f"Created {len(all_pairings)} games across {round_num - 1} rounds")
-        return Response({'message': 'tournament started'}, status=status.HTTP_200_OK)
+        return Response({'message': _('tournament started')}, status=status.HTTP_200_OK)
 
 
 class TournamentCancelView(APIView):
@@ -145,21 +146,21 @@ class TournamentCancelView(APIView):
     def post(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         tournament_id = request.data.get('tournament_id')
         tournament = get_object_or_404(Tournament, id=tournament_id)
         
         if tournament.creator != user:
-            return Response({'error': 'only creator can cancel tournament'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': _('only creator can cancel tournament')}, status=status.HTTP_403_FORBIDDEN)
         
         if tournament.status == 'completed':
-            return Response({'error': 'cannot cancel completed tournament'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('cannot cancel completed tournament')}, status=status.HTTP_400_BAD_REQUEST)
         
         tournament.status = 'cancelled'
         tournament.save()
         
-        return Response({'message': 'tournament cancelled'}, status=status.HTTP_200_OK)
+        return Response({'message': _('tournament cancelled')}, status=status.HTTP_200_OK)
 
 
 class RegistrationTournamentListView(APIView):
@@ -177,7 +178,7 @@ class UpcomingTournamentListView(APIView):
     def get(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         tournaments = Tournament.objects.filter(
             participants__user=user,
@@ -193,7 +194,7 @@ class OngoingTournamentListView(APIView):
     def get(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         tournaments = Tournament.objects.filter(
             participants__user=user,
@@ -209,7 +210,7 @@ class CompletedTournamentListView(APIView):
     def get(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         tournaments = Tournament.objects.filter(
             participants__user=user,
@@ -225,7 +226,7 @@ class TournamentGamesListView(APIView):
     def get(self, request):
         tournament_id = request.GET.get('tournament_id')
         if not tournament_id:
-            return Response({'error': 'tournament_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('tournament_id required')}, status=status.HTTP_400_BAD_REQUEST)
         
         games = TournamentGame.objects.filter(tournament_id=tournament_id)
         serializer = TournamentGameSerializer(games, many=True)
@@ -238,11 +239,11 @@ class TournamentUserReadyGamesListView(APIView):
     def get(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         tournament_id = request.GET.get('tournament_id')
         if not tournament_id:
-            return Response({'error': 'tournament_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('tournament_id required')}, status=status.HTTP_400_BAD_REQUEST)
         
         from django.db.models import Q
         games = TournamentGame.objects.filter(
@@ -260,7 +261,7 @@ class TournamentLeaderboardView(APIView):
     def get(self, request):
         tournament_id = request.GET.get('tournament_id')
         if not tournament_id:
-            return Response({'error': 'tournament_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('tournament_id required')}, status=status.HTTP_400_BAD_REQUEST)
         
         logger.debug(f"Fetching leaderboard for tournament_id={tournament_id}")
         logger.debug(f"Tournament exists: {Tournament.objects.filter(id=tournament_id)}")
@@ -279,26 +280,26 @@ class StartTournamentGameView(APIView):
     def post(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         game_id = request.data.get('game_id')
         if not game_id:
-            return Response({'error': 'game_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('game_id required')}, status=status.HTTP_400_BAD_REQUEST)
         
         game = get_object_or_404(TournamentGame, id=game_id)
         
         # Verify user is one of the players
         if user not in [game.player1, game.player2]:
-            return Response({'error': 'you are not in this game'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': _('you are not in this game')}, status=status.HTTP_403_FORBIDDEN)
         
         # If game is already ongoing, return the existing game_id so second player can join
         if game.status == '1/2 players ready':
             if not game.game_id:
-                return Response({'error': 'game session not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'error': _('game session not found')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             game.status = 'ongoing'
             game.save()
             return Response({
-                'message': 'game already started',
+                'message': _('game already started'),
                 'game_id': game.game_id,
                 'tournament_game_id': game.id,
                 'player1': game.player1.username,
@@ -306,7 +307,7 @@ class StartTournamentGameView(APIView):
             }, status=status.HTTP_200_OK)
         
         if game.status != 'waiting_active_round' and game.status != '1/2 players ready':
-            return Response({'error': 'game is not ready'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('game is not ready')}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create GameSession from game app
         from game.models import GameSession
@@ -333,7 +334,7 @@ class StartTournamentGameView(APIView):
         game.save()
         
         return Response({
-            'message': 'game started',
+            'message': _('game started'),
             'game_id': game_session.id,
             'tournament_game_id': game.id,
             'player1': game.player1.username,
@@ -347,13 +348,13 @@ class UpdateTournamentGameResultView(APIView):
     def post(self, request):
         user = get_user_from_cookie(request)
         if not user:
-            return Response({'error': 'authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': _('authentication required')}, status=status.HTTP_401_UNAUTHORIZED)
         
         game_id = request.data.get('game_id')
         winner_id = request.data.get('winner_id')
         logger.debug(f"UpdateTournamentGameResultView called with game_id={game_id}, winner_id={winner_id}")
         if not game_id or not winner_id:
-            return Response({'error': 'game_id and winner_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('game_id and winner_id required')}, status=status.HTTP_400_BAD_REQUEST)
         
         # Look up by game_id (GameSession UUID), not id (TournamentGame integer id)
         game = get_object_or_404(TournamentGame, game_id=game_id)
@@ -361,7 +362,7 @@ class UpdateTournamentGameResultView(APIView):
         
         # Verify winner is one of the players
         if winner_id not in [game.player1.id, game.player2.id]:
-            return Response({'error': 'invalid winner'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': _('invalid winner')}, status=status.HTTP_400_BAD_REQUEST)
         
         winner = User.objects.get(id=winner_id)
         
@@ -402,6 +403,6 @@ class UpdateTournamentGameResultView(APIView):
             logger.debug(f"Tournament {tournament.id} completed; all scheduled games finished.")
 
         return Response({
-            'message': 'game result updated',
+            'message': _('game result updated'),
             'next_round': next_round_response
         }, status=status.HTTP_200_OK)

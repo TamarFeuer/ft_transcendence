@@ -246,6 +246,8 @@ export const en = {
   [TranslationKey.GAME_WINS_SUFFIX]: 'wins',
   [TranslationKey.GAME_RESULT]: 'Result',
   [TranslationKey.GAME_CONTINUE]: 'Continue',
+  [TranslationKey.LOCAL_GAME_RED_WINS]: 'Red wins!',
+  [TranslationKey.LOCAL_GAME_BLUE_WINS]: 'Blue wins!',
 
   [TranslationKey.CHAT_OPEN_BTN]: 'Chat',
   [TranslationKey.CHAT_GLOBAL]: 'Global',

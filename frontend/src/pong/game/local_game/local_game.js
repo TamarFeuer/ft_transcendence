@@ -3,6 +3,7 @@ import { showMessage } from "../../../utils/utils.js";
 import { handleRoute, navigate } from "../../../routes/route_helpers.js";
 import { currentEngine, disposeCurrentEngine, resizeListener } from "../../../routes/routes.js";
 import { Color3, Vector3 } from "@babylonjs/core";
+import { t, TranslationKey } from "../../../i18n/index.js";
 
 // Game modules
 import defaultPhysics from "./physicsConfig.js";
@@ -95,7 +96,11 @@ export function initOfflineGame(scene, gameObjects, tournament) {
 
             if (showWinnerMessage && !tournament) {
                 const winner = scoreManager.getWinner(gameState);
-                showMessage(winner === "p1" ? "Red wins!" : "Blue wins!");
+                showMessage(
+                    winner === "p1"
+                        ? t(TranslationKey.LOCAL_GAME_RED_WINS)
+                        : t(TranslationKey.LOCAL_GAME_BLUE_WINS)
+                );
                 navigate("/pong");
             }
 

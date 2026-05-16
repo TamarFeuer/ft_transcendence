@@ -3,6 +3,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext as _
 import json
 import jwt
 from .models import GameSession, Player, Match, PlayerAchievement
@@ -37,7 +38,7 @@ def create_game(request):
     return JsonResponse({
         'gameId': game.id,
         'status': 'waiting',
-        'message': 'Game created. Waiting for players to join.'
+        'message': _('Game created. Waiting for players to join.')
     })
 
 # a plain HTTP GET endpoint to return the current leaderboard
@@ -59,19 +60,19 @@ def get_leaderboard(request):
 def get_authenticated_user(request):
     access_token = request.COOKIES.get('access_token')
     if not access_token:
-        return None, JsonResponse({'error': 'Authentication required'}, status=401)
+        return None, JsonResponse({'error': _('Authentication required')}, status=401)
     try:
         payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
         if payload.get('type') != 'access':
-            return None, JsonResponse({'error': 'Invalid token type'}, status=401)
+            return None, JsonResponse({'error': _('Invalid token type')}, status=401)
         user_id = payload.get('user_id')
         if not user_id:
-            return None, JsonResponse({'error': 'Invalid token payload'}, status=401)
+            return None, JsonResponse({'error': _('Invalid token payload')}, status=401)
         User = get_user_model()
         user = User.objects.get(pk=user_id)
         return user, None
     except (jwt.ExpiredSignatureError, jwt.DecodeError, User.DoesNotExist):
-        return None, JsonResponse({'error': 'Invalid or expired token'}, status=401)
+        return None, JsonResponse({'error': _('Invalid or expired token')}, status=401)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -165,7 +166,7 @@ def match_history(request):
     try:
         player = Player.objects.get(user=user)
     except Player.DoesNotExist:
-        return JsonResponse({'error': 'Player profile not found'}, status=404)
+        return JsonResponse({'error': _('Player profile not found')}, status=404)
 
     matches = get_match_history(player)
     return JsonResponse({
@@ -187,7 +188,7 @@ def player_match_history(request, username):
     try:
         player = Player.objects.get(user__username=username)
     except Player.DoesNotExist:
-        return JsonResponse({'error': 'Player not found'}, status=404)
+        return JsonResponse({'error': _('Player not found')}, status=404)
     matches = get_match_history(player)
     return JsonResponse({
         'matches': [
@@ -208,7 +209,7 @@ def player_achievements(request, username):
     try:
         player = Player.objects.get(user__username=username)
     except Player.DoesNotExist:
-        return JsonResponse({'error': 'Player not found'}, status=404)
+        return JsonResponse({'error': _('Player not found')}, status=404)
 
     achievements = PlayerAchievement.objects.filter(player=player).select_related('achievement').order_by('-timestamp')
     return JsonResponse({
@@ -233,7 +234,7 @@ def my_stats(request):
     try:
         player = Player.objects.get(user=user)
     except Player.DoesNotExist:
-        return JsonResponse({'error': 'Player profile not found'}, status=404)
+        return JsonResponse({'error': _('Player profile not found')}, status=404)
     return JsonResponse({
         'username': user.username,
         'total_wins': player.total_wins,
@@ -249,7 +250,7 @@ def player_profile(request, username):
     try:
         user = User.objects.get(username=username)
     except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
+        return JsonResponse({'error': _('User not found')}, status=404)
 
     try:
         pong = Player.objects.get(user=user)

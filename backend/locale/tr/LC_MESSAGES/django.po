@@ -1,0 +1,207 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tamar_transcendence\n"
+"POT-Creation-Date: 2026-05-16 00:00+0000\n"
+"PO-Revision-Date: 2026-05-16 00:00+0000\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "authentication required"
+msgstr "kimlik dogrulama gerekli"
+
+msgid "tournament_id required"
+msgstr "tournament_id gerekli"
+
+msgid "tournament registration closed"
+msgstr "turnuva kaydi kapandi"
+
+msgid "tournament is full"
+msgstr "turnuva dolu"
+
+msgid "already joined"
+msgstr "zaten katildiniz"
+
+msgid "only creator can start tournament"
+msgstr "turnuvayi sadece olusturan kisi baslatabilir"
+
+msgid "tournament already started or completed"
+msgstr "turnuva zaten baslamis veya tamamlanmis"
+
+msgid "need at least 2 participants"
+msgstr "en az 2 katilimci gerekli"
+
+msgid "only creator can cancel tournament"
+msgstr "turnuvayi sadece olusturan kisi iptal edebilir"
+
+msgid "cannot cancel completed tournament"
+msgstr "tamamlanmis turnuva iptal edilemez"
+
+msgid "game_id required"
+msgstr "game_id gerekli"
+
+msgid "you are not in this game"
+msgstr "bu oyunda degilsiniz"
+
+msgid "game session not found"
+msgstr "oyun oturumu bulunamadi"
+
+msgid "game is not ready"
+msgstr "oyun hazir degil"
+
+msgid "game_id and winner_id required"
+msgstr "game_id ve winner_id gerekli"
+
+msgid "invalid winner"
+msgstr "gecersiz kazanan"
+
+msgid "joined successfully"
+msgstr "basariyla katildiniz"
+
+msgid "tournament started"
+msgstr "turnuva basladi"
+
+msgid "tournament cancelled"
+msgstr "turnuva iptal edildi"
+
+msgid "game already started"
+msgstr "oyun zaten basladi"
+
+msgid "game started"
+msgstr "oyun basladi"
+
+msgid "game result updated"
+msgstr "oyun sonucu guncellendi"
+
+msgid "User is not found"
+msgstr "kullanici bulunamadi"
+
+msgid "token expired"
+msgstr "token suresi doldu"
+
+msgid "invalid token"
+msgstr "gecersiz token"
+
+msgid "user does not exist"
+msgstr "kullanici mevcut degil"
+
+msgid "user_id is required"
+msgstr "user_id gerekli"
+
+msgid "Cannot block yourself"
+msgstr "kendinizi engelleyemezsiniz"
+
+msgid "You have blocked {username}"
+msgstr "{username} kullanicisini engellediniz"
+
+msgid "User does not exist"
+msgstr "kullanici mevcut degil"
+
+msgid "internal error"
+msgstr "dahili hata"
+
+msgid "Authentication required"
+msgstr "kimlik dogrulama gerekli"
+
+msgid "friend_id is required"
+msgstr "friend_id gerekli"
+
+msgid "You have successfully removed {username} from your friends list"
+msgstr "{username} arkadas listenizden basariyla kaldirildi"
+
+msgid "Cannot remove friend"
+msgstr "arkadas kaldirilamadi"
+
+msgid "Cannot make a friend request to yourself"
+msgstr "kendinize arkadaslik istegi gonderemezsiniz"
+
+msgid "Cannot send friend request"
+msgstr "arkadaslik istegi gonderilemedi"
+
+msgid "You are already friends"
+msgstr "zaten arkadassiniz"
+
+msgid "Friend request pending"
+msgstr "arkadaslik istegi beklemede"
+
+msgid "You are now friends with {username}"
+msgstr "artik {username} ile arkadassiniz"
+
+msgid "Friend request sent to {username}"
+msgstr "{username} kullanicisina arkadaslik istegi gonderildi"
+
+msgid "request_id is required"
+msgstr "request_id gerekli"
+
+msgid "Not your friend request"
+msgstr "bu sizin arkadaslik isteginiz degil"
+
+msgid "Friend request is already processed"
+msgstr "arkadaslik istegi zaten islenmis"
+
+msgid "Friend Request does not exist"
+msgstr "arkadaslik istegi mevcut degil"
+
+msgid "Error accepting friend request"
+msgstr "arkadaslik istegi kabul edilirken hata"
+
+msgid "request does not exist"
+msgstr "istek mevcut degil"
+
+msgid "Error declining friend request"
+msgstr "arkadaslik istegi reddedilirken hata"
+
+msgid "username and password and email required"
+msgstr "username, password ve email gerekli"
+
+msgid "email taken"
+msgstr "email zaten kullaniliyor"
+
+msgid "identifier and password required"
+msgstr "identifier ve password gerekli"
+
+msgid "invalid credentials"
+msgstr "gecersiz giris bilgileri"
+
+msgid "refresh_token required"
+msgstr "refresh_token gerekli"
+
+msgid "invalid token type"
+msgstr "gecersiz token tipi"
+
+msgid "refresh token expired"
+msgstr "refresh token suresi doldu"
+
+msgid "invalid refresh token"
+msgstr "gecersiz refresh token"
+
+msgid "user not found"
+msgstr "kullanici bulunamadi"
+
+msgid "username=None"
+msgstr "username=None"
+
+msgid "User.DoesNotExist"
+msgstr "User.DoesNotExist"
+
+msgid "Game created. Waiting for players to join."
+msgstr "Oyun olusturuldu. Oyuncularin katilmasi bekleniyor."
+
+msgid "Invalid token type"
+msgstr "Gecersiz token tipi"
+
+msgid "Invalid token payload"
+msgstr "Gecersiz token icerigi"
+
+msgid "Invalid or expired token"
+msgstr "Gecersiz veya suresi dolmus token"
+
+msgid "Player profile not found"
+msgstr "Oyuncu profili bulunamadi"
+
+msgid "Player not found"
+msgstr "Oyuncu bulunamadi"
+
+msgid "User not found"
+msgstr "Kullanici bulunamadi"
