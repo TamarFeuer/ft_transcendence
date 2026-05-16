@@ -104,7 +104,10 @@ export const en = {
   [TranslationKey.BTN_PONG]: 'Pong',
   
   [TranslationKey.BTN_START_GAME]: 'START GAME',
-  
+
+  [TranslationKey.RED_PADDLE_LOCAL_PLAYER]: 'Red paddle',
+  [TranslationKey.BLUE_PADDLE_LOCAL_PLAYER]: 'Blue paddle',
+
   [TranslationKey.PLAYER_1]: 'Player 1',
   [TranslationKey.PLAYER_2]: 'Player 2',
   [TranslationKey.LABEL_LANGUAGE]: 'Language:',
