@@ -92,6 +92,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 		# Broadcast — tell everyone else this user went offline.
 		await self.broadcast_online_users()
 
+	# Called whenever the frontend sends a message over the WebSocket.
 	async def receive(self, text_data):
 		try:
 			data = json.loads(text_data)
@@ -412,7 +413,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 	# ─── Database helpers ─────────────────────────────────────────────────────
 	# All database access must be wrapped in database_sync_to_async because
 	# Django's ORM is synchronous but the consumer runs in an async context.
-	# database_sync_to_async runs the wrapped function in a thread pool executor.
+	# database_sync_to_async runs the wrapped function in a thread pool executor
+	# so that the synchronous ORM call doesn't block the async event loop —
+	# otherwise it would freeze the consumer while waiting for the database,
+	# preventing it from handling any other messages during that time.
 
 	# The sender's consumer saves the message — it's the one that received the send_message event from the browser.
 	@database_sync_to_async

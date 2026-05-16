@@ -108,6 +108,12 @@ Centres on `auth_user`. Friend requests and blocks are direct user-to-user relat
 
 ![Chat, Friends & Block](docs/images/chat_social.png)
 
+##### Example Data
+
+Sample data from a test session (users: tamar=1, Alascode331=2, The_cat=3, PongLover59=4):
+
+![Chat Tables](docs/images/chat_tables.png)
+
 #### Pong Stats & Chess
 
 Each user gets a `stats_players` profile (auto-created on registration) that accumulates pong stats and ELO. Matches reference players, not users directly. Achievements are defined once in `stats_achievements` and linked to players via `stats_player_achievements`. Chess has its own parallel player and match tables with separate ELO tracking.
