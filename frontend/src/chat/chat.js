@@ -2,6 +2,7 @@
 // The chat panel is a persistent overlay in index.html — it is NOT a route.
 // It stays alive across SPA navigation because it lives outside #app-root.
 import { t, TranslationKey } from '../i18n/index.js';
+import { navigate } from '../routes/route_helpers.js';
 
 function formatGameResultMessage(data) {
 	const { winner, loser, draw_players, game_type = 'game' } = data;
@@ -19,11 +20,7 @@ function formatGameResultMessage(data) {
 	return t(TranslationKey.CHAT_GAME_RESULT_DRAW_UNKNOWN, { game });
 }
 
-//chatSocket.readyState is a number. The WebSocket API defines four possible values:
-// javascriptWebSocket.CONNECTING  // 0 - still connecting
-// WebSocket.OPEN        // 1 - ready to use
-// WebSocket.CLOSING     // 2 - closing
-// WebSocket.CLOSED      // 3 - closed
+// ── State ─────────────────────────────────────────────────────────────────────
 
 let chatSocket = null; // Single shared WebSocket connection for all chat
 export let verifiedUserId = null; // Set after server sends "self_id" confirmation
@@ -43,7 +40,26 @@ export let inGameIds = new Set();
 let reconnectDelay = 1000;
 let reconnectTimer = null;
 
-export function initChat() {
+// ── Connection lifecycle ───────────────────────────────────────────────────────
+
+export async function initChat() {
+	// The WS handshake authenticates via the access_token cookie. That token expires
+	// every 2 min and WebSockets have no equivalent of fetchWithRefreshAuth, so we
+	// refresh it ourselves before each connect (including every reconnect attempt).
+	try {
+		const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+		// 401 = refresh token expired; 400 = refresh cookie missing (e.g. user wiped by `down -v`).
+		// Either way the session is dead: clear cookies on the server and send the user to /login.
+		if (res.status === 401 || res.status === 400) {
+			await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+			closeChat();
+			navigate('/login');
+			return;
+		}
+	} catch (err) {
+		// Server unreachable — fall through and let the WS attempt + reconnect loop handle it.
+	}
+
 	const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
 	chatSocket = new WebSocket(`${wsProtocol}//${location.host}/ws/chat/`);
 
@@ -54,16 +70,21 @@ export function initChat() {
 
 	chatSocket.onclose = () => {
 		console.log(`Chat WebSocket disconnected — reconnecting in ${reconnectDelay / 1000}s`);
+		// Clear cached state so the UI doesn't show stale online users while disconnected.
+		onlineUsers = {};
+		blockedByMeIds = new Set();
+		blockedMeIds = new Set();
+		inGameIds = new Set();
+		window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
+		// Tell chat-ui to wipe DM tabs / message history — we'll repopulate from the server on reconnect.
+		window.dispatchEvent(new CustomEvent("wsDisconnected"));
 		reconnectTimer = setTimeout(() => {
 			reconnectDelay = Math.min(reconnectDelay * 2, 30000);
 			initChat();
 		}, reconnectDelay);
 	};
 
-	chatSocket.onerror = (err) => {
-		console.error("Chat WebSocket error:", err);
-	};
-
+	// Fires whenever the backend sends a message over the WebSocket.
 	chatSocket.onmessage = (ev) => {
 		// All messages from the server are JSON
 		const data = JSON.parse(ev.data);
@@ -73,14 +94,18 @@ export function initChat() {
 			// Server confirms our identity after connect
 			case "selfId":
 					verifiedUserId = data.user_id;
-					verifiedUserName = data.user_name || "Guest";
+					verifiedUserName = data.user_name;
 					console.log(`Chat identified as: ${verifiedUserName} (id: ${verifiedUserId})`);
-					window.dispatchEvent(new CustomEvent("userIdentified", {
-						detail: { userId: verifiedUserId }
-					}));
 					// Fetch previous DM conversations to restore tabs
-					chatSocket.send(JSON.stringify({ type: "get_open_dms" }));
+					fetchOpenDmsMetadata();
 					break;
+			
+			case "openDmsMetadata":
+				console.log("openDmsMetadata received:", data.dms_metadata);
+				window.dispatchEvent(new CustomEvent("openDmsMetadataReceived", {
+					detail: { dms_metadata: data.dms_metadata }
+				}));
+				break;
 
 			// Incoming chat message — either global or private DM
 			case "chatMessage": {
@@ -119,7 +144,6 @@ export function initChat() {
 
 			// Server sends the full list of online users whenever someone joins/leaves
 			case "onlineUsers":
-				console.log("Received onlineUsers message:", data.users);
 				onlineUsers = data.users;
 				blockedByMeIds = new Set(data.blocked_by_me_ids || []);
 				blockedMeIds = new Set(data.blocked_me_ids || []);
@@ -136,17 +160,10 @@ export function initChat() {
 					}
 				}));
 				break;
-				
-			case "openDms":
-				console.log("openDms received:", data.dms);
-				window.dispatchEvent(new CustomEvent("openDmsReceived", {
-					detail: { dms: data.dms }
-				}));
-				break;
 
 			case "messagesSeenByDmPartner":
 				window.dispatchEvent(new CustomEvent("messagesSeenByDmPartner", {
-					detail: { by: data.by }
+					detail: { read_by: data.read_by }
 				}));
 				break;
 
@@ -215,10 +232,51 @@ export function initChat() {
 				break;
 			}
 
-			default:
-				console.warn("Unknown chat message type:", data.type);
 		}
 	};
+}
+
+export function closeChat() {
+	if (chatSocket) {
+		chatSocket.close();
+		chatSocket = null;
+	}
+	// Hide chat UI on logout
+	const chatContainer = document.getElementById("chatContainer");
+	const openChatBtn = document.getElementById("openChatBtn");
+	if (chatContainer) chatContainer.style.display = "none";
+	if (openChatBtn) openChatBtn.style.display = "none";
+}
+
+// ── Messaging ─────────────────────────────────────────────────────────────────
+
+function fetchOpenDmsMetadata() {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({ type: "get_open_dms_metadata" }));
+}
+
+export function fetchDMHistory(dmPartnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "fetch_history",
+		dm_partner_id: dmPartnerId
+	}));
+}
+
+export function setActiveConversation(partnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "set_active_conversation",
+		partner_id: partnerId
+	}));
+}
+
+export function markRead(dmPartnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "mark_read",
+		dm_partner_id: dmPartnerId
+	}));
 }
 
 /**
@@ -227,10 +285,7 @@ export function initChat() {
  * @param {string|null} recipientId - User ID to send a private DM, or null for global chat
  */
 export function sendChatMessage(message, recipientId = null) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-		console.warn("sendChatMessage: WebSocket not ready (state:", chatSocket?.readyState, ")");
-		return;
-	}
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 
 	const payload = {
 		type: "send_message",
@@ -245,37 +300,49 @@ export function sendChatMessage(message, recipientId = null) {
 	chatSocket.send(JSON.stringify(payload));
 }
 
+export function hideDm(dmPartnerId) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({
+		type: "hide_dm",
+		dm_partner_id: dmPartnerId
+	}));
+}
+
+// The HTTP block API only writes to the database — it has no connection to the WebSocket consumer.
+// This notifies the consumer separately so it can clean up pending game invites,
+// broadcast an updated online users list, and send friendListChanged to both users.
+export function reportBlockedUser(blockedUserId = null) {
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+	chatSocket.send(JSON.stringify({ type: "report_blocked_user", blocked_user_id: blockedUserId }));
+}
+
+// ── Typing ────────────────────────────────────────────────────────────────────
+
 /**
  * Attach typing indicator events to the chat textarea.
  * Sends "typing" on input, then "stop_typing" after 1s of inactivity.
  * @param {HTMLTextAreaElement} chatInput - The textarea element.
- * @param {Function} getDmPartnerId - Returns the current DM partner user ID, or null for global.
+ * @param {Function} getActiveChannel - Returns the current DM partner user ID, or null for global.
  */
-export function initTyping(chatInput, getDmPartnerId = () => null) {
-	if (!chatInput) {
-		console.warn("initTyping: no chatInput element provided");
-		return;
-	}
-	if (!chatSocket) {
-		console.warn("Typing init: chatSocket not ready yet");
-		return;
-	}
+export function initTyping(chatInput, getActiveChannel = () => null) {
+	if (!chatInput || !chatSocket) return;
 
 	// Stores the ID of the current countdown timer.
 	// Declared outside the event listener so it persists between keystrokes —
 	// if it were inside the listener, it would reset to undefined on every keystroke
 	// and clearTimeout() would never be able to cancel the previous timer.
 	let typingTimeout;
-	
+
 	// We wrap the listener setup in a function because we need to attach it
 	// in two different places below — either now if the socket is already open,
 	// or later when it opens.
-	 const attachTyping = () => {
+	const attachTyping = () => {
+		// The browser fires the input event once per keystroke (also on delete/paste).
 		chatInput.addEventListener("input", () => {
 			if (chatSocket.readyState !== WebSocket.OPEN) return;
 
 			// Tell the server this user is typing
-			const typingRecipientId = getDmPartnerId();
+			const typingRecipientId = getActiveChannel();
 			const typingPayload = { type: "notify_typing" };
 			if (typingRecipientId) typingPayload.typing_recipient_id = typingRecipientId;
 			chatSocket.send(JSON.stringify(typingPayload));
@@ -292,8 +359,8 @@ export function initTyping(chatInput, getDmPartnerId = () => null) {
 			}, 1000);
 		});
 	};
-	
-	   if (chatSocket.readyState === WebSocket.OPEN) {
+
+	if (chatSocket.readyState === WebSocket.OPEN) {
 		// Socket is already open, attach the listener now
 		attachTyping();
 	} else {
@@ -304,53 +371,10 @@ export function initTyping(chatInput, getDmPartnerId = () => null) {
 	}
 }
 
-export function closeChat() {
-	if (chatSocket) {
-		chatSocket.close();
-		chatSocket = null;
-	}
-	// Hide chat UI on logout
-	const chatContainer = document.getElementById("chatContainer");
-	const openChatBtn = document.getElementById("openChatBtn");
-	if (chatContainer) chatContainer.style.display = "none";
-	if (openChatBtn) openChatBtn.style.display = "none";
-}
-
-export function fetchDMHistory(dmPartnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "fetch_history",
-		dm_partner_id: dmPartnerId
-	}));
-}
-
-export function markRead(dmPartnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "mark_read",
-		dm_partner_id: dmPartnerId
-	}));
-}
-
-export function hideDm(dmPartnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "hide_dm",
-		dm_partner_id: dmPartnerId
-	}));
-}
-
-export function reportBlockedUser(recipientId = null) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({ type: "report_blocked_user", recipient_id: recipientId }));
-}
+// ── Game invites ───────────────────────────────────────────────────────────────
 
 export function sendGameInvite(inviteeId, gameType, gameId) {
-	console.log('[invite] sendGameInvite — WS state:', chatSocket?.readyState, '(1=OPEN), gameId:', gameId, 'invitee:', inviteeId);
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-		console.warn('[invite] DROPPED — WS not open');
-		return;
-	}
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
 		type: "send_game_invite",
 		invitee_id: inviteeId,
@@ -373,13 +397,5 @@ export function acceptGameInvite(gameId) {
 	chatSocket.send(JSON.stringify({
 		type: "accept_game_invite",
 		game_id: gameId,
-	}));
-}
-
-export function setActiveConversation(partnerId) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-	chatSocket.send(JSON.stringify({
-		type: "set_active_conversation",
-		partner_id: partnerId
 	}));
 }

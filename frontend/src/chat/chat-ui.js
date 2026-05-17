@@ -26,7 +26,7 @@ export function initChatUI() {
 	// ── State ─────────────────────────────────────────────────────────────────
 	// activeChannel is either "global" or a user ID for DMs
 	let activeChannel = "global";
-	// messageHistory stores messages per channel — keyed by "global" or user ID
+	// messageHistory stores messages per channel, keyed by "global" or user ID
 	const messageHistory = { global: [] };
 	// tracks which DM channels have been read by the other person
 	const seenBy = {}; // tabName -> true/false
@@ -58,7 +58,8 @@ export function initChatUI() {
 			blockNotice.textContent = "";
 		}
 	}
-
+	
+	// tabName is either "global" (for the Global tab), or a user ID like "42"
 	function switchChannel(tabName) {
 		activeChannel = tabName;
 
@@ -66,7 +67,7 @@ export function initChatUI() {
 		document.querySelectorAll(".channel-tab").forEach(tab => {
 			tab.classList.remove("active");
 		});
-		const activeTab = document.querySelector(`[data-channel="${tabName}"]`);
+		const activeTab = document.querySelector(`[data-id="${tabName}"]`);
 		if (activeTab) activeTab.classList.add("active");
 
 		// Update channel title
@@ -75,6 +76,9 @@ export function initChatUI() {
 			channelTitle.textContent = t('CHAT_GLOBAL_TITLE');
 		} else {
 			const name = onlineUsers[tabName]
+				// activeTab? — optional chaining. If activeTab is null (no tab found), skip everything after and return undefined instead of crashing.
+				// tab.append(atSpan, nameSpan, closeSpan);
+				//            1st     2nd       3rd
 				|| activeTab?.querySelector("span:nth-child(2)")?.textContent;
 			channelTitle.textContent = name ? `@ ${name}` : `@ ${t('CHAT_DIRECT_MSG')}`;
 			markRead(tabName);
@@ -105,22 +109,10 @@ export function initChatUI() {
 		renderMessages(activeChannel);
 	});
 
-	function createDMTab(userId, userName, switchToChannel = true, fetchHistory = true) {
-		// Don't open DM with yourself
-		if (userId === verifiedUserId) return;
-
-		// If tab already exists just switch to it
-		const existingTab = document.querySelector(`[data-channel="${userId}"]`);
-		if (existingTab) {
-			if (switchToChannel) switchChannel(userId);
-			return;
-		}
-
-		if (!messageHistory[userId]) messageHistory[userId] = [];
-
+	function createDMTabElement(userId, userName) {
 		const tab = document.createElement("button");
 		tab.className = "channel-tab";
-		tab.dataset.channel = userId;
+		tab.dataset.id = userId;
 
 		const atSpan = document.createElement("span");
 		atSpan.className = "font-bold opacity-80";
@@ -131,14 +123,29 @@ export function initChatUI() {
 
 		const closeSpan = document.createElement("span");
 		closeSpan.className = "close-tab";
-		closeSpan.dataset.close = userId;
 		closeSpan.textContent = "  X";
 
 		tab.append(atSpan, nameSpan, closeSpan);
+		return tab;
+	}
 
-		const globalTab = channelTabs.querySelector('[data-channel="global"]');
+	function ensureDMTab(userId, userName, switchToChannel = true, fetchHistory = true) {
+		// Don't open DM with yourself
+		if (userId === verifiedUserId) return;
+
+		// If tab already exists just switch to it
+		const existingTab = document.querySelector(`[data-id="${userId}"]`);
+		if (existingTab) {
+			if (switchToChannel) switchChannel(userId);
+			return;
+		}
+
+		// Otherwise, create it and wire it in
+		if (!messageHistory[userId]) messageHistory[userId] = [];
+
+		const tab = createDMTabElement(userId, userName);
+		const globalTab = channelTabs.querySelector('[data-id="global"]');
 		channelTabs.insertBefore(tab, globalTab.nextSibling);
-		if(fetchHistory) fetchDMHistory(userId);
 
 		tab.addEventListener("click", (e) => {
 			if (e.target.classList.contains("close-tab")) {
@@ -149,11 +156,12 @@ export function initChatUI() {
 			}
 		});
 
+		if (fetchHistory) fetchDMHistory(userId);
 		if (switchToChannel) switchChannel(userId);
 	}
 
 	function closeDMChannel(userId) {
-		const tab = document.querySelector(`[data-channel="${userId}"]`);
+		const tab = document.querySelector(`[data-id="${userId}"]`);
 		if (tab) tab.remove();
 
 		// If we were viewing this channel, fall back to global
@@ -165,6 +173,29 @@ export function initChatUI() {
 
 	// ── Message management ────────────────────────────────────────────────────
 
+	function incrementUnreadBadge(tabName) {
+		const tab = document.querySelector(`[data-id="${tabName}"]`);
+		if (!tab) return;
+		const badge = tab.querySelector(".unread-badge");
+		if (badge) {
+			badge.textContent = parseInt(badge.textContent) + 1;
+		} else {
+			const newBadge = document.createElement("span");
+			newBadge.className = "unread-badge";
+			newBadge.textContent = "1";
+			tab.appendChild(newBadge);
+		}
+	}
+
+	// Only mark as read if this is a DM from someone else AND the chat window is actually visible.
+	function markReadIfChatVisible(tabName, message) {
+		if (tabName === "global") return;
+		if (message.senderId === verifiedUserId) return;
+		if (chatContainer?.style.display === "none") return;
+		if (document.visibilityState !== "visible") return;
+		markRead(tabName);
+	}
+
 	function addMessage(tabName, message) {
 		if (!messageHistory[tabName]) messageHistory[tabName] = [];
 		messageHistory[tabName].push(message);
@@ -172,96 +203,84 @@ export function initChatUI() {
 		if (tabName === activeChannel) {
 			// User is already viewing this channel, render immediately
 			renderMessages(tabName);
-			// If it's a DM from someone else, mark it read — but only if the chat window is actually visible
-			if (tabName !== "global" && message.senderId !== verifiedUserId
-					&& chatContainer?.style.display !== "none"
-					&& document.visibilityState === "visible") {
-				markRead(tabName);
-			}
+			markReadIfChatVisible(tabName, message);
 		} else if (message.senderId !== verifiedUserId) {
 			// Only badge for messages from others — own messages echoed to other tabs shouldn't count as unread
-			const tab = document.querySelector(`[data-channel="${tabName}"]`);
-			if (tab && !tab.querySelector(".unread-badge")) {
-				const badge = document.createElement("span");
-				badge.className = "unread-badge";
-				badge.textContent = "1";
-				tab.appendChild(badge);
-			} else if (tab) {
-				const badge = tab.querySelector(".unread-badge");
-				badge.textContent = parseInt(badge.textContent) + 1;
-			}
+			incrementUnreadBadge(tabName);
 		}
 	}
+	
+	// ── Invite card actions ─────────────────────────────────────────────────
+	// Used by the Accept/Reject buttons on invite cards inside renderMessages.
 
-	function renderMessages(tabName) {
-		chatMessages.innerHTML = "";
+	function discardInviteCard(msgDiv, tabName, msg) {
+		msgDiv.remove();
+		const idx = messageHistory[tabName].indexOf(msg);
+		if (idx !== -1) messageHistory[tabName].splice(idx, 1);
+	}
 
-		const messages = messageHistory[tabName] || [];
-		messages.forEach(msg => {
-			const msgDiv = document.createElement("div");
-			msgDiv.className = "chat-message text-base leading-relaxed text-gray-200";
+	function acceptInvite(msgDiv, tabName, msg) {
+		discardInviteCard(msgDiv, tabName, msg);
+		acceptGameInvite(msg.invite.gameId);
+		const route = msg.invite.gameType === "chess" ? "/chess-online" : "/online";
+		window.history.pushState({}, '', `${route}?gameId=${msg.invite.gameId}`);
+		handleRoute(route);
+	}
 
-			const isOwnMessage = msg.senderId === verifiedUserId;
+	function rejectInvite(msgDiv, tabName, msg) {
+		discardInviteCard(msgDiv, tabName, msg);
+		cancelGameInvite(msg.senderId, msg.invite.gameId);
+	}
 
-			// Game invite — render as a card with an Accept button
-			if (msg.invite) {
-				msgDiv.classList.add(isOwnMessage ? "self" : "dm-received", "game-invite");
-				if (isOwnMessage) {
-					const recipientName = msg.recipientName || "them";
-					msgDiv.appendChild(document.createTextNode(t('CHAT_INVITE_SENT', { name: recipientName, game: msg.invite.gameType })));
-				} else {
-					msgDiv.appendChild(document.createTextNode(t('CHAT_INVITE_RECEIVED', { name: msg.senderName, game: msg.invite.gameType })));
-					const acceptBtn = document.createElement("button");
-					acceptBtn.textContent = t('CHAT_ACCEPT');
-					acceptBtn.className = "ml-2 px-2 py-0.5 text-xs bg-pink-500 hover:bg-pink-400 rounded font-semibold";
-					acceptBtn.addEventListener("click", () => {
-						msgDiv.remove();
-						const idx = messageHistory[tabName].indexOf(msg);
-						if (idx !== -1) messageHistory[tabName].splice(idx, 1);
-						acceptGameInvite(msg.invite.gameId);
-						if (msg.invite.gameType === "chess") {
-							window.history.pushState({}, '', `/chess-online?gameId=${msg.invite.gameId}`);
-							handleRoute('/chess-online');
-						} else {
-							window.history.pushState({}, '', `/online?gameId=${msg.invite.gameId}`);
-							handleRoute('/online');
-						}
-					});
-					msgDiv.appendChild(acceptBtn);
-					const rejectBtn = document.createElement("button");
-					rejectBtn.textContent = t('CHAT_REJECT');
-					rejectBtn.className = "ml-2 px-2 py-0.5 text-xs bg-gray-500 hover:bg-gray-400 rounded font-semibold";
-					rejectBtn.addEventListener("click", () => {
-						msgDiv.remove();
-						const idx = messageHistory[tabName].indexOf(msg);
-						if (idx !== -1) messageHistory[tabName].splice(idx, 1);
-						cancelGameInvite(msg.senderId, msg.invite.gameId);
-					});
-					msgDiv.appendChild(rejectBtn);
-				}
-				chatMessages.appendChild(msgDiv);
-				return;
-			}
+	function renderInviteCard(msg, tabName, isOwnMessage) {
+		const msgDiv = document.createElement("div");
+		msgDiv.className = "chat-message text-base leading-relaxed text-gray-200";
+		// class="chat-message ... self game-invite" or "... dm-received game-invite"
+		msgDiv.classList.add(isOwnMessage ? "self" : "dm-received", "game-invite");
 
-			if (isOwnMessage) {
-				msgDiv.classList.add("self");
-			} else if (tabName !== "global") {
-				msgDiv.classList.add("dm-received");
-			}
+		if (isOwnMessage) {
+			const recipientName = msg.recipientName;
+			msgDiv.appendChild(document.createTextNode(t('CHAT_INVITE_SENT', { name: recipientName, game: msg.invite.gameType })));
+		} else {
+			msgDiv.appendChild(document.createTextNode(t('CHAT_INVITE_RECEIVED', { name: msg.senderName, game: msg.invite.gameType })));
+			const acceptBtn = document.createElement("button");
+			acceptBtn.textContent = t('CHAT_ACCEPT');
+			acceptBtn.className = "ml-2 px-2 py-0.5 text-xs bg-pink-500 hover:bg-pink-400 rounded font-semibold";
+			acceptBtn.addEventListener("click", () => acceptInvite(msgDiv, tabName, msg));
+			msgDiv.appendChild(acceptBtn);
+			const rejectBtn = document.createElement("button");
+			rejectBtn.textContent = t('CHAT_REJECT');
+			rejectBtn.className = "ml-2 px-2 py-0.5 text-xs bg-gray-500 hover:bg-gray-400 rounded font-semibold";
+			rejectBtn.addEventListener("click", () => rejectInvite(msgDiv, tabName, msg));
+			msgDiv.appendChild(rejectBtn);
+		}
+		chatMessages.appendChild(msgDiv);
+	}
 
-			const senderSpan = document.createElement("span");
-			senderSpan.className = "sender";
-			senderSpan.textContent = isOwnMessage ? t('CHAT_ME') : msg.senderName;
+	function renderTextMessage(msg, tabName, isOwnMessage) {
+		const msgDiv = document.createElement("div");
+		msgDiv.className = "chat-message text-base leading-relaxed text-gray-200";
 
-			const messageSpan = document.createElement("span");
-			messageSpan.textContent = msg.message;
+		if (isOwnMessage) {
+			msgDiv.classList.add("self");
+		} else if (tabName !== "global") {
+			msgDiv.classList.add("dm-received");
+		}
 
-			msgDiv.appendChild(senderSpan);
-			msgDiv.appendChild(document.createTextNode(": "));
-			msgDiv.appendChild(messageSpan);
-			chatMessages.appendChild(msgDiv);
-		});
+		const senderSpan = document.createElement("span");
+		senderSpan.className = "sender";
+		senderSpan.textContent = isOwnMessage ? t('CHAT_ME') : msg.senderName;
 
+		const messageSpan = document.createElement("span");
+		messageSpan.textContent = msg.message;
+
+		msgDiv.appendChild(senderSpan);
+		msgDiv.appendChild(document.createTextNode(": "));
+		msgDiv.appendChild(messageSpan);
+		chatMessages.appendChild(msgDiv);
+	}
+
+	function renderSeenIndicator(messages, tabName) {
 		// Show "Seen" only if the other person read AND the last message is ours
 		const lastMsg = messages[messages.length - 1];
 		if (tabName !== "global" && seenBy[tabName] && lastMsg?.senderId === verifiedUserId) {
@@ -270,18 +289,34 @@ export function initChatUI() {
 			seenDiv.textContent = "✓ Seen";
 			chatMessages.appendChild(seenDiv);
 		}
+	}
 
+	function clearUnreadBadgeIfActive(tabName) {
+		if (tabName !== activeChannel) return;
+		const tab = document.querySelector(`[data-id="${tabName}"]`);
+		if (tab) {
+			const badge = tab.querySelector(".unread-badge");
+			if (badge) badge.remove();
+		}
+	}
+
+	function renderMessages(tabName) {
+		chatMessages.innerHTML = "";
+
+		const messages = messageHistory[tabName] || [];
+		messages.forEach(msg => {
+			const isOwnMessage = msg.senderId === verifiedUserId;
+			if (msg.invite) {
+				renderInviteCard(msg, tabName, isOwnMessage);
+			} else {
+				renderTextMessage(msg, tabName, isOwnMessage);
+			}
+		});
+
+		renderSeenIndicator(messages, tabName);
 		// Scroll to bottom so latest message is always visible
 		chatMessages.scrollTop = chatMessages.scrollHeight;
-
-		// Clear unread badge only when the user is actively viewing this channel
-		if (tabName === activeChannel) {
-			const tab = document.querySelector(`[data-channel="${tabName}"]`);
-			if (tab) {
-				const badge = tab.querySelector(".unread-badge");
-				if (badge) badge.remove();
-			}
-		}
+		clearUnreadBadgeIfActive(tabName);
 	}
 
 	// ── Typing indicator ─────────────────────────────────────────────────────
@@ -363,7 +398,7 @@ export function initChatUI() {
 				div.addEventListener("dblclick", (e) => {
 					e.stopPropagation();
 					hideChatUserMenu();
-					createDMTab(id, name || id);
+					ensureDMTab(id, name || id);
 				});
 			}
 
@@ -379,17 +414,33 @@ export function initChatUI() {
 		updateDMInputState(activeChannel);
 	});
 
+	// chat.js dispatches this when the WS drops — wipe in-memory state so the next
+	// reconnect rebuilds tabs/history fresh from the server (handles DB wipes correctly).
+	window.addEventListener("wsDisconnected", () => {
+		document.querySelectorAll(".channel-tab").forEach(tab => {
+			if (tab.dataset.id !== "global") tab.remove();
+		});
+		for (const key in messageHistory) {
+			if (key !== "global") delete messageHistory[key];
+		}
+		messageHistory.global = [];
+		for (const key in seenBy) delete seenBy[key];
+		for (const key in typingUsers) delete typingUsers[key];
+		if (activeChannel !== "global") switchChannel("global");
+		else renderMessages("global");
+	});
+
 	// chat.js dispatches this whenever a message arrives
 	window.addEventListener("chatMessageReceived", (e) => {
 		const { tabName, senderId, senderName, message } = e.detail;
 
 		// If a DM arrives and the tab doesn't exist yet, create it silently
 		if (tabName !== "global") {
-			const existingTab = document.querySelector(`[data-channel="${tabName}"]`);
+			const existingTab = document.querySelector(`[data-id="${tabName}"]`);
 			if (!existingTab) {
 				// first false means don't switch to it 
 				// second false means don't fetch history
-				createDMTab(tabName, senderName, false, false);
+				ensureDMTab(tabName, senderName, false, false);
 			}
 		}
 
@@ -417,16 +468,23 @@ export function initChatUI() {
 	});
 	
 	// Restore DM tabs from previous session on page load
-	window.addEventListener("openDmsReceived", (e) => {
-		const { dms } = e.detail;
-		Object.entries(dms).forEach(([userId, data]) => {
-			createDMTab(userId, data.user_name, false, false);
-			if (data.unread > 0) {
-				const tab = document.querySelector(`[data-channel="${userId}"]`);
+	window.addEventListener("openDmsMetadataReceived", (e) => {
+		const dms_metadata = e.detail.dms_metadata;
+		// entries turn the object into an array of [key, value] pairs
+		Object.entries(dms_metadata).forEach(([userId, data]) => {
+			// Fetch history when there are unread messages so the cache holds them before
+			// any live messages arrive — otherwise switchChannel sees a non-empty cache
+			// (just the live ones) and skips the DB fetch, hiding the earlier messages.
+			const needsHistory = data.unread_count > 0;
+			ensureDMTab(userId, data.user_name, false, needsHistory);
+			if (data.unread_count > 0) {
+				const tab = document.querySelector(`[data-id="${userId}"]`);
 				if (tab) {
+					// On WS reconnect the tab already exists — remove stale badge before adding the fresh one.
+					tab.querySelector(".unread-badge")?.remove();
 					const badge = document.createElement("span");
 					badge.className = "unread-badge";
-					badge.textContent = data.unread;
+					badge.textContent = data.unread_count;
 					tab.appendChild(badge);
 				}
 			}
@@ -441,6 +499,7 @@ export function initChatUI() {
 		openChatBtn.addEventListener("click", () => {
 			chatContainer.style.display = "flex";
 			openChatBtn.style.display = "none";
+			// Move cursor into the textarea so the user can start typing immediately.
 			chatInput.focus();
 			renderOnlineUsers();
 			if (activeChannel !== "global") markRead(activeChannel);
@@ -489,7 +548,7 @@ export function initChatUI() {
 	}
 
 	// Handle menu option clicks
-	chatUserMenu.addEventListener("click", (e) => {
+	chatUserMenu.addEventListener("click", async (e) => {
 		const action = e.target.dataset.action;
 		if (!action || !chatMenuUser) return;
 
@@ -498,26 +557,26 @@ export function initChatUI() {
 		} else if (action === "invite") {
 			// Show game picker below the context menu — keep chatMenuUser alive for when picker is clicked
 			e.stopPropagation();
-			const rect = chatUserMenu.getBoundingClientRect();
+			const rect = chatUserMenu.getBoundingClientRect(); // returns the element's position/size on screen
 			gamePickerMenu.style.left = chatUserMenu.style.left;
 			gamePickerMenu.style.top = `${rect.bottom + 4}px`;
 			gamePickerMenu.style.display = "block";
 			return; // skip hideChatUserMenu() at the bottom
 		} else if (action === "chat") {
-			createDMTab(chatMenuUser.id, chatMenuUser.name || chatMenuUser.id);
+			ensureDMTab(chatMenuUser.id, chatMenuUser.name);
 		} else if (action === "block") {
 			const blockedUserId = chatMenuUser.id;
-			fetchWithRefreshAuth('/api/block/', {
+			const r = await fetchWithRefreshAuth('/api/block/', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ user_id: blockedUserId })
-			}).then(r => r.json()).then(data => {
-				if (data.success) {
-					reportBlockedUser(blockedUserId);
-				} else {
-					console.warn("Block failed:", data.error);
-				}
 			});
+			const data = await r.json();
+			if (data.success) {
+				reportBlockedUser(blockedUserId);
+			} else {
+				console.warn("Block failed:", data.error);
+			}
 		}
 
 		hideChatUserMenu();
@@ -570,7 +629,7 @@ export function initChatUI() {
 			const gameId = data.gameId;
 			console.log('[invite] gameId from response:', gameId);
 			sendGameInvite(inviteeId, "chess", gameId);
-			createDMTab(inviteeId, inviteeName, true, false);
+			ensureDMTab(inviteeId, inviteeName, true, false);
 			addMessage(inviteeId, {
 				senderId: verifiedUserId,
 				senderName: null,
@@ -594,7 +653,7 @@ export function initChatUI() {
 			const data = await res.json();
 			const gameId = data.gameId;
 			sendGameInvite(inviteeId, "pong", gameId);
-			createDMTab(inviteeId, inviteeName, true, false);
+			ensureDMTab(inviteeId, inviteeName, true, false);
 			addMessage(inviteeId, {
 				senderId: verifiedUserId,
 				senderName: null,
@@ -613,9 +672,9 @@ export function initChatUI() {
 		const { senderId, senderName, gameType, gameId } = e.detail;
 		const tabName = senderId;
 
-		const existingTab = document.querySelector(`[data-channel="${tabName}"]`);
+		const existingTab = document.querySelector(`[data-id="${tabName}"]`);
 		if (!existingTab) {
-			createDMTab(tabName, senderName, false, false);
+			ensureDMTab(tabName, senderName, false, false);
 		}
 
 		addMessage(tabName, {
@@ -653,7 +712,7 @@ export function initChatUI() {
 			if (messageHistory[tabName].length < before) {
 				renderMessages(tabName);
 				if (tabName !== activeChannel && removedFromOther > 0) {
-					const tab = document.querySelector(`[data-channel="${tabName}"]`);
+					const tab = document.querySelector(`[data-id="${tabName}"]`);
 					if (tab) {
 						const badge = tab.querySelector(".unread-badge");
 						if (badge) {
@@ -668,7 +727,7 @@ export function initChatUI() {
 	}
 
 	window.addEventListener("messagesSeenByDmPartner", (e) => {
-		const tabName = e.detail.by;
+		const tabName = e.detail.read_by;
 		seenBy[tabName] = true;
 		if (activeChannel === tabName) renderMessages(tabName);
 	});
@@ -720,8 +779,9 @@ export function initChatUI() {
 		}
 	});
 
-	// initTyping attaches the typing indicator to the textarea (chat.js)
-	// Pass a getTarget callback so typing events include the active DM channel
+	// Called once at startup. Sets up the typing indicator by passing the textarea and a function that
+	// returns the current DM partner ID (or null for global). initTyping attaches a listener to the
+	// textarea so that on every keystroke it knows where to send the typing notification.
 	initTyping(chatInput, () => activeChannel === "global" ? null : activeChannel);
 
 	if (sendChatBtn && chatInput) {
@@ -730,11 +790,11 @@ export function initChatUI() {
 			if (!message) return;
 			if (message.length > MAX_CHARS) return;
 
-			// null target means global chat, otherwise it's a DM to that user ID
-			const target = activeChannel === "global" ? null : activeChannel;
+			// null recipient means global chat, otherwise it's a DM to that user ID
+			const recipient = activeChannel === "global" ? null : activeChannel;
 			// Clear "Seen" when we send a new message — it's no longer valid
-			if (target) seenBy[target] = false;
-			sendChatMessage(message, target);
+			if (recipient) seenBy[recipient] = false;
+			sendChatMessage(message, recipient);
 
 			chatInput.value = "";
 			// Reset counter after sending
@@ -742,6 +802,7 @@ export function initChatUI() {
 			charCounter.classList.remove("text-red-500");
 			charCounter.classList.add("text-gray-400");
 			sendChatBtn.disabled = false;
+			// Move cursor back into the textarea after sending so the user can keep typing.
 			chatInput.focus();
 		};
 
@@ -760,7 +821,7 @@ export function initChatUI() {
 
 	// ── Global tab click ──────────────────────────────────────────────────────
 
-	const globalTab = document.querySelector('[data-channel="global"]');
+	const globalTab = document.querySelector('[data-id="global"]');
 	if (globalTab) {
 		globalTab.addEventListener("click", () => switchChannel("global"));
 	}

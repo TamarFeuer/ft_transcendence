@@ -16,6 +16,9 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Communication Channels](#communication-channels)
 - [Technical Stack](#technical-stack)
 - [Database Schema](#database-schema)
+  - [Chat, Friends & Block](#chat-friends--block)
+  - [Pong Stats & Chess](#pong-stats--chess)
+  - [Tournament](#tournament)
 - [Feature List](#feature-list)
   - [Authentication & Security](#authentication--security)
   - [User Management](#user-management)
@@ -31,6 +34,7 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Block](#block)
     - [Block REST API](#block-rest-api)
   - [Chat System](#chat-system)
+    - [UI](#ui)
     - [WebSocket Message Protocol](#websocket-message-protocol)
   - [Additional Games](#additional-games)
   - [Graphics & UI](#graphics--ui)
@@ -55,6 +59,9 @@ run the project>
 ### Resources
 <classic references related to the topic (documentation, articles, tutorials, etc.), as well as a description of how AI was used —
 specifying for which tasks and which parts of the project>
+
+- [MDN — WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) — browser-side WebSocket interface (`readyState`, `send`, `onmessage`, etc.)
+- [Django Channels](https://channels.readthedocs.io/en/latest/) — async WebSocket support for Django (`AsyncWebsocketConsumer`, channel layers, `database_sync_to_async`)
 
 
 ### Team Information
@@ -100,9 +107,32 @@ As the team grew over the course of the project, onboarding new members was hand
 
 
 ### Database Schema
-<◦ Visual representation or description of the database structure.
-◦ Tables/collections and their relationships.
-◦ Key fields and data types>
+
+The database is PostgreSQL. The schema is split into three diagrams by domain.
+
+#### Chat, Friends & Block
+
+Centres on `auth_user`. Friend requests and blocks are direct user-to-user relationships. Chat is built around a `Conversation` container — messages, participants, and game invites all hang off it. `ConversationParticipant` tracks per-user state (unread count, read timestamp, tab visibility).
+
+![Chat, Friends & Block](docs/images/chat_diagram.png)
+
+##### Example Data
+
+Sample data from a test session (users: tamar=1, Alascode331=2, The_cat=3, PongLover59=4):
+
+![Chat Tables](docs/images/chat_tables.png)
+
+#### Pong Stats & Chess
+
+Each user gets a `stats_players` profile (auto-created on registration) that accumulates pong stats and ELO. Matches reference players, not users directly. Achievements are defined once in `stats_achievements` and linked to players via `stats_player_achievements`. Chess has its own parallel player and match tables with separate ELO tracking.
+
+![Pong Stats & Chess](docs/images/stats-chess_diagram.png)
+
+#### Tournament
+
+A `Tournament` is created by a user and has many `TournamentParticipant` rows (one per registered player) and many `TournamentGame` rows (one per match in the bracket). Games reference users directly and track round, status, and the external `game_id` used to link to the live pong session.
+
+![Tournament](docs/images/tournament_diagram.png)
 
 
 ### Feature List
@@ -415,6 +445,20 @@ Response: {
 
 #### Block
 
+Blocking is available from the chat context menu (right-click an online user). Blocks are stored as a `Block` row in the database.
+
+**Business rules:**
+
+- Blocking a user removes any existing friendship between the two users.
+- Once blocked, neither the blocker nor the blocked user can send messages to each other. The chat input is replaced with a notice: _"You have blocked this user."_ for the blocker and _"You have been blocked."_ for the blocked user.
+- If either user closes the DM tab after a block, they cannot reopen it until the block is lifted.
+- Blocking does not interrupt an ongoing game. If a game is already in progress, it continues to completion. This prevents blocking from being used as a way to abandon a losing game.
+- Users you have blocked are still visible in the online users list so you can unblock them. Users who blocked you are hidden from your list.
+
+**Real-time updates:** After a block is saved via the REST API, the frontend calls `reportBlockedUser()` over the chat WebSocket. This notifies the consumer to cancel any pending game invites between the two users, broadcast an updated online users list, and send `friendListChanged` to both users.
+
+---
+
 ##### Block REST API
 
 All endpoints are under `/api/block/`. Authentication via JWT cookie (`access_token`).
@@ -437,7 +481,55 @@ Response: { "success": true }
 
 #### Chat System
 
-The chat system is a persistent WebSocket overlay that stays alive across SPA navigation. It handles global chat, direct messages, online presence, game invites, typing indicators, and friend/block events.
+The chat system is a persistent WebSocket overlay that stays alive across SPA navigation. It handles global chat, direct messages (with the last 50 messages persisted), online presence, game invites, typing indicators, read receipts, block events, game results broadcast to global chat, and profile viewing.
+
+##### UI
+
+![Chat UI](docs/images/chat-ui.png)
+
+**DOM structure of `chatContainer`:**
+```
+chatContainer
+├── chatHeader
+│   ├── channelTabs        (Global tab + DM tabs)
+│   └── closeChatBtn
+└── chatContent
+    ├── usersSidebar
+    │   └── onlineUsersList
+    └── chatPanel
+        ├── channelTitle
+        ├── chatMessages
+        ├── typingIndicator
+        └── chatInputWrapper
+            ├── chatInput
+            ├── blockNotice
+            ├── charCounter
+            └── sendChatBtn
+```
+
+The chat window is a fixed overlay rendered in `index.html`, outside the SPA's `#app-root`. It stays mounted and connected across all page navigations. Everything inside it is dynamically rendered by JavaScript:
+
+- **Online users list**: rebuilt every time someone connects, disconnects, or changes game status. Users who blocked you are hidden; users you blocked are still shown so you can unblock them.
+- **Channel tabs**: the Global tab is always present. DM tabs are created on the fly when you open a conversation or receive a message from someone you don't have a tab open for yet. Tabs persist across navigation and show an unread badge when new messages arrive.
+- **Messages**: kept in memory per channel for the session. When a DM tab is opened, the backend returns up to the last 50 messages — that's the initial seed for the in-memory store; new messages received afterwards are appended on top, so the store grows beyond 50 over the lifetime of the session. Global messages are ephemeral — they are not persisted and are lost on refresh or reconnect. The message list (`renderMessages()`) re-renders in six situations:
+  1. The user switches to a different tab.
+  2. The UI language is changed (to update invite card text, Accept/Reject buttons, and the "Me" label).
+  3. A new message arrives for the currently-viewed channel.
+  4. DM history is received from the backend for the active tab.
+  5. A game invite card is removed from history (because the invite expired or was cancelled).
+  6. The DM partner reads your messages (updates the "Seen" indicator).
+- **Channel title**: updates dynamically when switching between Global and DM tabs.
+- **Typing indicator**: appears when the other person is typing, cleared automatically when they stop.
+- **Read receipts**: a checkmark or indicator updates when your DM partner has read your messages.
+- **Block notice**: replaces the input area when either user has blocked the other, preventing new messages.
+- **Character counter**: shows the current character count against the 300 character limit as you type.
+- **Game invite UI**: inline invite cards appear in the DM with accept/decline actions. Expired or cancelled invites are cleaned up automatically.
+- **Context menu**: clicking an online user opens a menu with four actions:
+  - **View Profile**: navigates to that user's profile page.
+  - **Chat**: opens a DM tab with that user.
+  - **Invite to Game**: opens a game picker submenu (Pong or Chess). Sends a game invite to the user's DM; the invite appears as a card with Accept/Decline. If accepted, both users are navigated to the game. Invites expire if the sender cancels or either user goes offline.
+  - **Block**: blocks the user (see [Block](#block)).
+- **Game results**: when a Pong or Chess game ends, the result is broadcast to all connected users as a message in Global chat (e.g. _"tamar beat rik in Chess"_).
 
 ##### WebSocket Message Protocol
 
@@ -448,69 +540,47 @@ All messages are JSON. The `type` field determines the message kind.
 - Backend → Frontend: `camelCase`
 - Internal Django Channels routing (`group_send`): `dot.separated` — never reaches the frontend
 
----
+**Frontend → Backend**
 
-##### Frontend → Backend
-
-###### `send_message`
-Send a global or DM message. Omit `recipient_id` for global.
+###### `get_open_dms_metadata`
+Request metadata for all open DM tabs — user_name, unread count, and seen status per tab (sent on connect to restore tabs). Does not include the messages themselves.
 ```json
-{ "type": "send_message", "message": "hello", "recipient_id": "42" }
+{ "type": "get_open_dms_metadata" }
 ```
+**Frontend:** `fetchOpenDmsMetadata()` in `chat.js`, called automatically after `selfId` is received  
+**Backend:** `receive()` → `get_open_dms_metadata` branch → `get_open_dms_metadata()` in `db.py`
 
 ###### `fetch_history`
 Request the last 50 messages from a DM conversation.
 ```json
 { "type": "fetch_history", "dm_partner_id": "42" }
 ```
-
-###### `get_open_dms`
-Request all open DM tabs (sent on connect to restore tabs).
-```json
-{ "type": "get_open_dms" }
-```
+**Frontend:** `fetchDMHistory()` in `chat.js`  
+**Backend:** `receive()` → `fetch_history` branch → `get_dm_history()` in `db.py`
 
 ###### `set_active_conversation`
 Tell the backend which conversation is currently open. Send `null` partner_id when switching to global.
 ```json
 { "type": "set_active_conversation", "partner_id": "42" }
 ```
+**Frontend:** `setActiveConversation()` in `chat.js`  
+**Backend:** `receive()` → `set_active_conversation` branch in `consumers.py`
 
 ###### `mark_read`
 Reset unread count for a DM conversation.
 ```json
 { "type": "mark_read", "dm_partner_id": "42" }
 ```
+**Frontend:** `markRead()` in `chat.js`  
+**Backend:** `receive()` → `mark_read` branch → `mark_read()` in `db.py`
 
-###### `hide_dm`
-Hide a DM tab — it won't reappear on refresh unless a new message arrives.
+###### `send_message`
+Send a global or DM message. Omit `recipient_id` for global.
 ```json
-{ "type": "hide_dm", "dm_partner_id": "42" }
+{ "type": "send_message", "message": "hello", "recipient_id": "42" }
 ```
-
-###### `send_game_invite`
-Send a game invite. `game_type` is `"pong"` or `"chess"`.
-```json
-{ "type": "send_game_invite", "invitee_id": "42", "game_type": "pong", "game_id": "abc-123" }
-```
-
-###### `cancel_game_invite`
-Cancel a sent invite.
-```json
-{ "type": "cancel_game_invite", "invitee_id": "42", "game_id": "abc-123" }
-```
-
-###### `accept_game_invite`
-Accept a received invite — deletes it from DB and notifies the sender.
-```json
-{ "type": "accept_game_invite", "game_id": "abc-123" }
-```
-
-###### `report_blocked_user`
-Notify the backend a user was blocked. Triggers invite cleanup and online users broadcast.
-```json
-{ "type": "report_blocked_user", "recipient_id": "42" }
-```
+**Frontend:** `sendChatMessage()` in `chat.js`  
+**Backend:** `receive()` → `send_message` branch in `consumers.py`
 
 ###### `notify_typing` / `notify_stop_typing`
 Notify that the current user started or stopped typing. Omit `typing_recipient_id` for global.
@@ -518,22 +588,86 @@ Notify that the current user started or stopped typing. Omit `typing_recipient_i
 { "type": "notify_typing", "typing_recipient_id": "42" }
 { "type": "notify_stop_typing", "typing_recipient_id": "42" }
 ```
+**Frontend:** `initTyping()` in `chat.js`  
+**Backend:** `receive()` → `notify_typing` / `notify_stop_typing` branch in `consumers.py`
 
----
+###### `hide_dm`
+Hide a DM tab, it won't reappear on refresh unless a new message arrives.
+```json
+{ "type": "hide_dm", "dm_partner_id": "42" }
+```
+**Frontend:** `hideDm()` in `chat.js`  
+**Backend:** `receive()` → `hide_dm` branch → `hide_dm()` in `db.py`
 
-##### Backend → Frontend
+###### `send_game_invite`
+Send a game invite. `game_type` is `"pong"` or `"chess"`.
+```json
+{ "type": "send_game_invite", "invitee_id": "42", "game_type": "pong", "game_id": "abc-123" }
+```
+**Frontend:** `sendGameInvite()` in `chat.js`  
+**Backend:** `receive()` → `send_game_invite` branch → `save_invite()` in `db.py`
+
+###### `cancel_game_invite`
+Cancel a sent invite.
+```json
+{ "type": "cancel_game_invite", "invitee_id": "42", "game_id": "abc-123" }
+```
+**Frontend:** `cancelGameInvite()` in `chat.js`  
+**Backend:** `receive()` → `cancel_game_invite` branch → `delete_invite()` in `db.py`
+
+###### `accept_game_invite`
+Accept a received invite — deletes it from DB and notifies the sender.
+```json
+{ "type": "accept_game_invite", "game_id": "abc-123" }
+```
+**Frontend:** `acceptGameInvite()` in `chat.js`  
+**Backend:** `receive()` → `accept_game_invite` branch → `delete_invite()` in `db.py`
+
+###### `report_blocked_user`
+Notify the backend a user was blocked. Triggers invite cleanup and online users broadcast.
+```json
+{ "type": "report_blocked_user", "recipient_id": "42" }
+```
+**Frontend:** `reportBlockedUser()` in `chat.js`  
+**Backend:** `receive()` → `report_blocked_user` branch in `consumers.py`
+
+**Backend → Frontend**
 
 ###### `selfId`
 Sent on connect to confirm the user's identity.
 ```json
 { "type": "selfId", "user_id": "42", "user_name": "tamar" }
 ```
+**Backend:** `connect()` in `consumers.py`  
+**Frontend:** `case "selfId"` in `chatSocket.onmessage` in `chat.js`
 
-###### `chatMessage`
-Delivers a message. `private: true` for DMs. Sent to all tabs of both sender and recipient.
+###### `openDmsMetadata`
+Metadata for all open DM tabs — user_name, unread count, and seen status per tab. Key is the other user's user_id. `unread_count` is the unread message count. `seen` indicates whether the other user has read your last message. Does not include the messages themselves.
 ```json
-{ "type": "chatMessage", "message": "hello", "sender_id": "42", "sender_name": "tamar", "private": true, "recipient_id": "7" }
+{
+  "type": "openDmsMetadata",
+  "dms_metadata": {
+    "42": { "user_name": "tamar", "unread_count": 3, "seen": false },
+    "7":  { "user_name": "rik",   "unread_count": 0, "seen": true  }
+  }
+}
 ```
+**Backend:** `get_open_dms_metadata` branch → `get_open_dms_metadata()` in `db.py`  
+**Frontend:** `case "openDmsMetadata"` → dispatches `openDmsMetadataReceived` event → `ensureDMTab()` in `chat-ui.js`
+
+###### `onlineUsers`
+Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
+```json
+{
+  "type": "onlineUsers",
+  "users": { "42": "tamar", "7": "rik" },
+  "blocked_by_me_ids": ["7"],
+  "blocked_me_ids": [],
+  "in_game_ids": ["42"]
+}
+```
+**Backend:** `broadcast_online_users()` → `online_users()` in `consumers.py`  
+**Frontend:** `case "onlineUsers"` → dispatches `onlineUsersUpdated` event → `renderOnlineUsers()` in `chat-ui.js`
 
 ###### `dmHistory`
 Last 50 messages of a DM conversation, oldest first. `seen` indicates whether the other user has read your last sent message. Invite messages have an empty `message` and an `invite` object instead.
@@ -548,78 +682,24 @@ Last 50 messages of a DM conversation, oldest first. `seen` indicates whether th
   ]
 }
 ```
-
-###### `openDms`
-All open DM tabs. Key is the other user's user_id. `unread` is the unread message count. `seen` indicates whether the other user has read your last message.
-```json
-{
-  "type": "openDms",
-  "dms": {
-    "42": { "user_name": "tamar", "unread": 3, "seen": false },
-    "7":  { "user_name": "rik",   "unread": 0, "seen": true  }
-  }
-}
-```
+**Backend:** `fetch_history` branch → `get_dm_history()` in `db.py`  
+**Frontend:** `case "dmHistory"` → dispatches `dmHistoryReceived` event in `chat.js`
 
 ###### `messagesSeenByDmPartner`
 Your DM partner has read your messages.
 ```json
-{ "type": "messagesSeenByDmPartner", "by": "42" }
+{ "type": "messagesSeenByDmPartner", "read_by": "42" }
 ```
+**Backend:** `messages_read()` in `consumers.py`  
+**Frontend:** `case "messagesSeenByDmPartner"` in `chat.js`
 
-###### `onlineUsers`
-Personalized online users list sent to every user on connect/disconnect/game status change. `users` excludes users who blocked you. Users you blocked are still included so you can unblock them.
+###### `chatMessage`
+Delivers a message. `private: true` for DMs. Sent to all tabs of both sender and recipient.
 ```json
-{
-  "type": "onlineUsers",
-  "users": { "42": "tamar", "7": "rik" },
-  "blocked_by_me_ids": ["7"],
-  "blocked_me_ids": [],
-  "in_game_ids": ["42"]
-}
+{ "type": "chatMessage", "message": "hello", "sender_id": "42", "sender_name": "tamar", "private": true, "recipient_id": "7" }
 ```
-
-###### `gameInvite`
-You received a game invite.
-```json
-{ "type": "gameInvite", "sender_id": "42", "sender_name": "tamar", "game_type": "pong", "game_id": "abc-123" }
-```
-
-###### `gameInviteExpired`
-An invite you received was cancelled by the sender.
-```json
-{ "type": "gameInviteExpired", "game_id": "abc-123" }
-```
-
-###### `gameInviteAccepted`
-An invite you sent was accepted.
-```json
-{ "type": "gameInviteAccepted", "game_id": "abc-123" }
-```
-
-###### `gameInviteBlocked`
-An invite was cancelled because you blocked the other user.
-```json
-{ "type": "gameInviteBlocked", "game_id": "abc-123" }
-```
-
-###### `gameInviteRejected`
-Your invite was rejected because one of the users is already in a game.
-```json
-{ "type": "gameInviteRejected", "reason": "in_game" }
-```
-
-###### `gameResult`
-A game ended. Broadcast to all connected users. For draws, `winner` and `loser` are `null` and `draw_players` contains both usernames.
-```json
-{ "type": "gameResult", "winner": "tamar", "loser": "rik", "draw_players": null, "game_type": "pong" }
-```
-
-###### `friendListChanged`
-Your friend list changed. Frontend should re-fetch.
-```json
-{ "type": "friendListChanged" }
-```
+**Backend:** `chat_message()` in `consumers.py`  
+**Frontend:** `case "chatMessage"` → dispatches `chatMessageReceived` event → `addMessage()` in `chat-ui.js`
 
 ###### `otherTyping` / `otherStoppedTyping`
 Someone started or stopped typing. `private: true` for DMs, `false` for global.
@@ -627,6 +707,64 @@ Someone started or stopped typing. `private: true` for DMs, `false` for global.
 { "type": "otherTyping", "typer_id": "42", "typer_name": "tamar", "private": true }
 { "type": "otherStoppedTyping", "typer_id": "42", "typer_name": "tamar", "private": false }
 ```
+**Backend:** `typing_notification()` in `consumers.py`  
+**Frontend:** `case "otherTyping"` / `case "otherStoppedTyping"` → dispatches `typingStarted` / `typingStopped` event in `chat.js`
+
+###### `gameInvite`
+You received a game invite.
+```json
+{ "type": "gameInvite", "sender_id": "42", "sender_name": "tamar", "game_type": "pong", "game_id": "abc-123" }
+```
+**Backend:** `game_invite()` in `consumers.py`  
+**Frontend:** `case "gameInvite"` → dispatches `gameInviteReceived` event in `chat.js`
+
+###### `gameInviteExpired`
+An invite you received was cancelled by the sender.
+```json
+{ "type": "gameInviteExpired", "game_id": "abc-123" }
+```
+**Backend:** `game_invite_expired()` in `consumers.py`  
+**Frontend:** `case "gameInviteExpired"` → dispatches `gameInviteExpired` event in `chat.js`
+
+###### `gameInviteAccepted`
+An invite you sent was accepted.
+```json
+{ "type": "gameInviteAccepted", "game_id": "abc-123" }
+```
+**Backend:** `game_invite_accepted()` in `consumers.py`  
+**Frontend:** `case "gameInviteAccepted"` → dispatches `gameInviteAccepted` event in `chat.js`
+
+###### `gameInviteBlocked`
+An invite was cancelled because you blocked the other user.
+```json
+{ "type": "gameInviteBlocked", "game_id": "abc-123" }
+```
+**Backend:** `game_invite_blocked()` in `consumers.py`  
+**Frontend:** `case "gameInviteBlocked"` → dispatches `gameInviteBlocked` event in `chat.js`
+
+###### `gameInviteRejected`
+Your invite was rejected because one of the users is already in a game.
+```json
+{ "type": "gameInviteRejected", "reason": "in_game" }
+```
+**Backend:** `receive()` → `send_game_invite` branch in `consumers.py`  
+**Frontend:** `case "gameInviteRejected"` → dispatches `gameInviteRejected` event in `chat.js`
+
+###### `gameResult`
+A game ended. Broadcast to all connected users. For draws, `winner` and `loser` are `null` and `draw_players` contains both usernames.
+```json
+{ "type": "gameResult", "winner": "tamar", "loser": "rik", "draw_players": null, "game_type": "pong" }
+```
+**Backend:** `game_result()` in `consumers.py`  
+**Frontend:** `case "gameResult"` → dispatches `chatMessageReceived` event → renders in Global chat in `chat.js`
+
+###### `friendListChanged`
+Your friend list changed. Frontend should re-fetch.
+```json
+{ "type": "friendListChanged" }
+```
+**Backend:** `friend_list_changed()` in `consumers.py`  
+**Frontend:** `case "friendListChanged"` → dispatches `friendListChanged` event in `chat.js`
 
 #### Additional Games
 
@@ -667,12 +805,64 @@ Frontend bottom-left corner has a language selector dropdown.
 
 
 ### Modules
-<◦ List of all chosen modules (Major and Minor).
-◦ Point calculation (Major = 2pts, Minor = 1pt).
-◦ Justification for each module choice, especially for custom "Modules of
-choice".
-◦ How each module was implemented.
-◦ Which team member(s) worked on each module>
+
+#### Major: User Interaction (2 pts)
+**Team members:** Tamar (chat), Stan (profile), Niko (friends)
+
+Covers the social layer of the application: a chat system, user profiles, and a friends system. See [Chat System](#chat-system), [Friends](#friends), and the profile page (`/profile`) for full details.
+
+---
+
+#### Minor: Advanced Chat Features (1 pt)
+**Team member:** Tamar
+
+Enhances the base chat module with the following:
+
+- **Block** — users can block each other from the chat context menu. Blocked users cannot send or receive messages; the input is replaced with a notice. See [Block](#block).
+- **Game invites from chat** — the context menu lets you invite any online user to Pong or Chess directly from chat. Invites appear as cards in the DM with Accept/Decline; accepting navigates both users to the game.
+
+  Invites are persisted in their own `GameInvite` table while pending, then deleted once resolved — so unlike regular DM messages (which live in `Message` forever) and global messages (which are ephemeral and never written), invites are persisted-but-transient:
+  - **Created** by `save_invite()` in `db.py` when a `send_game_invite` arrives.
+  - **Deleted** by `delete_invite()` when the invite is accepted, cancelled, expires, or the sender disconnects.
+  - **Bulk-deleted** by `cleanup_stale_invites()` on every reconnect — any invite that survived a server restart is invalid, since the game session no longer exists in memory.
+  - **Surfaced in DM history** by `get_dm_history()` — invites belonging to the conversation are appended to the messages list, so when you reopen a DM tab the invite card appears alongside the messages.
+
+  This is why, when the user clicks Accept on an invite card, the frontend removes the card from both the DOM and the in-memory `messageHistory`: the backend also deletes the DB row, so on the next history fetch the invite genuinely isn't there anymore.
+- **Game/tournament notifications** — when a Pong or Chess game ends the result is broadcast to all connected users as a message in Global chat (e.g. _"tamar beat rik in a game of chess"_).
+- **Profile access from chat** — the context menu on any online user includes a View Profile action that navigates to their profile page.
+- **Chat history persistence** — the last 50 messages of each DM conversation are stored in the database and restored when the tab is reopened.
+- **Typing indicators and read receipts** — a typing indicator appears while the other user is composing a message; a read receipt updates when your DM partner has read your messages.
+
+---
+
+#### Minor: ORM for Database Access (1 pt)
+**Team members:** all (Tamar — chat, Niko — friends/block, Rik — game stats, and others)
+
+The project uses Django's ORM throughout instead of writing raw SQL. The ORM sits as an abstraction layer above the database driver (`psycopg2`) — it generates and executes SQL for you and maps rows back to Python objects, which eliminates manual query construction and protects against SQL injection by default.
+
+Without the ORM, talking to PostgreSQL from Python requires a driver like `psycopg2` directly:
+```python
+cursor.execute("SELECT * FROM auth_user WHERE id = %s", [user_id])
+```
+With the ORM, the same query is:
+```python
+User.objects.get(id=user_id)
+```
+
+ORM operations used across the project:
+
+| Operation | Used in |
+|-----------|---------|
+| `.objects.get()` / `.objects.filter()` | all apps |
+| `.objects.create()` / `.objects.get_or_create()` | chat, friends, block, game, chess, tournament |
+| `.objects.delete()` | chat, friends, block |
+| `.objects.exists()` / `.objects.count()` | friends, block, tournament |
+| `.objects.values()` / `.objects.values_list()` | chat, friends, game |
+| `.select_related()` | chat, game, chess (JOIN in a single query instead of N+1) |
+| `.order_by()` / `.exclude()` | game, chess, tournament |
+| `Q()` — complex OR/AND conditions | friends, block, chat |
+| `F()` — atomic in-DB increments | chat (unread counts, avoiding race conditions) |
+| `.union()` — combining querysets | game (match history from both player perspectives) |
 
 
 ### Individual Contributions
