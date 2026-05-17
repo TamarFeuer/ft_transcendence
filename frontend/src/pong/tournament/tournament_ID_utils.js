@@ -3,7 +3,7 @@ import * as tournamentAPI from './tournament_api.js';
 import { showMessage } from "../../utils/utils.js"
 import { checkAuthRequired } from '../../users_friends/usermanagement.js';
 import { stopTournamentAutoRefresh } from './tournament_lobby_utils.js';
-import { t } from '../../i18n/index.js';
+import { t, TranslationKey } from '../../i18n/index.js';
 import { joinOnlineGame } from '../game/game.js';
 
 const activeGameTimers = new Map();
@@ -141,10 +141,10 @@ async function loadReadyGames() {
             <div class="flex justify-between items-center">
             <div class="text-white">
             <div class="font-bold text-lg">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-zinc-400 text-sm">Round ${game.round}</div>
+                <div class="text-zinc-400 text-sm">${t(TranslationKey.TOURNAMENT_ROUND)} ${game.round}</div>
                 </div>
                 <button class="start-game-btn bg-violet-600 hover:bg-violet-500 rounded-xl px-6 h-10 lg:h-12 flex items-center justify-center font-semibold text-white text-sm lg:text-base transition-colors duration-200 shadow-lg shadow-violet-500/20" data-game-id="${game.id}">
-                Start Game
+                ${t(TranslationKey.TOURNAMENT_START_GAME)}
                 </button>
                 </div>
                 `;
@@ -156,7 +156,7 @@ async function loadReadyGames() {
                     return;
                 }
                 startBtn.disabled = true;
-                startBtn.textContent = 'Starting...';
+                startBtn.textContent = t(TranslationKey.TOURNAMENT_STARTING_GAME);
 
                 const result = await tournamentAPI.startTournamentGame(game.id);
                 if (result.ok) {
@@ -167,7 +167,7 @@ async function loadReadyGames() {
                 }
                 showMessage(result.data?.error || t('TOURN_GAME_START_FAILED'), 'error');
                 startBtn.disabled = false;
-                startBtn.textContent = 'Start Game';
+                startBtn.textContent = t(TranslationKey.TOURNAMENT_START_GAME);
             });
         }
         else
@@ -176,7 +176,7 @@ async function loadReadyGames() {
             <div class="flex justify-between items-center">
             <div class="text-white">
             <div class="font-bold text-lg">${game.player1_username} vs ${game.player2_username}</div>
-                <div class="text-zinc-400 text-sm">Round ${game.round}</div>
+                <div class="text-zinc-400 text-sm">${t(TranslationKey.TOURNAMENT_ROUND)} ${game.round}</div>
                 </div>
 
                 </div>
@@ -187,7 +187,7 @@ async function loadReadyGames() {
         });
         listEl.replaceChildren(fragment);
     } else {
-        document.getElementById('readyGamesList').innerHTML = '<p class="text-zinc-400">No ready games for you.</p>';
+        document.getElementById('readyGamesList').innerHTML = `<p class="text-zinc-400">${t(TranslationKey.TOURNAMENT_NO_READY_GAMES)}</p>`;
     }
 }
 
@@ -226,7 +226,7 @@ async function loadAllGamesStatus() {
         }
 
         if (futureGames.length === 0) {
-            futureList.innerHTML = '<p class="text-zinc-400">No future round games</p>';
+            futureList.innerHTML = `<p class="text-zinc-400">${t(TranslationKey.TOURNAMENT_NO_FUTURE_GAMES)}</p>`;
         } else {
             const fragment = document.createDocumentFragment();
             futureGames
@@ -237,7 +237,7 @@ async function loadAllGamesStatus() {
                 gameDiv.innerHTML = `
                 <div class="text-white">
                     <div class="font-bold">${game.player1_username} vs ${game.player2_username}</div>
-                    <div class="text-zinc-400 text-sm">Round ${game.round} - ${game.status === 'ready' ? 'Scheduled' : 'Pending'}</div>
+                    <div class="text-zinc-400 text-sm">${t(TranslationKey.TOURNAMENT_ROUND)} ${game.round} - ${game.status === 'ready' ? t(TranslationKey.TOURNAMENT_SCHEDULED) : t(TranslationKey.TOURNAMENT_PENDING)}</div>
                 </div>
                 `;
                 fragment.appendChild(gameDiv);

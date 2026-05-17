@@ -166,6 +166,7 @@ export const nl = {
   // User Management
   [TranslationKey.UM_LOGIN_TITLE]: 'Inloggen',
   [TranslationKey.UM_REGISTER_TITLE]: 'Registreren',
+  [TranslationKey.UM_EMAIL_PLACEHOLDER]: 'e-mail',
   [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'gebruikersnaam',
   [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'wachtwoord',
   [TranslationKey.UM_SIGN_IN]: 'Inloggen',
@@ -222,9 +223,15 @@ export const nl = {
   [TranslationKey.TOURNAMENT_TH_SCORE]: 'Score',
   [TranslationKey.TOURNAMENT_LOADING_MSG]: 'Laden...',
   [TranslationKey.TOURNAMENT_READY_GAMES]: 'Jouw Klare Spellen',
+  [TranslationKey.TOURNAMENT_START_GAME]: 'Start spel',
+  [TranslationKey.TOURNAMENT_STARTING_GAME]: 'Starten...',
+  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'Geen speelklare spellen voor jou.',
   [TranslationKey.TOURNAMENT_LOADING_GAMES]: 'Spellen laden...',
   [TranslationKey.TOURNAMENT_ONGOING_GAMES]: 'Lopende Spellen',
   [TranslationKey.TOURNAMENT_NO_ONGOING]: 'Geen lopende spellen',
+  [TranslationKey.TOURNAMENT_NO_FUTURE_GAMES]: 'Geen wedstrijden in toekomstige rondes',
+  [TranslationKey.TOURNAMENT_SCHEDULED]: 'Gepland',
+  [TranslationKey.TOURNAMENT_PENDING]: 'In afwachting',
   [TranslationKey.TOURNAMENT_COMPLETED_GAMES]: 'Afgeronde Spellen',
   [TranslationKey.TOURNAMENT_NO_COMPLETED]: 'Geen afgeronde spellen',
 
@@ -271,6 +278,8 @@ export const nl = {
   [TranslationKey.CHAT_INVITE_RECEIVED]: '{name} heeft je uitgenodigd voor {game}',
   [TranslationKey.CHAT_CREATE_GAME_ERROR]: 'Kon het spel niet aanmaken. Probeer opnieuw.',
   [TranslationKey.CHAT_USER_IN_GAME]: 'Die gebruiker speelt momenteel een spel.',
+  [TranslationKey.CHAT_TYPING_SINGLE]: '{name} is aan het typen...',
+  [TranslationKey.CHAT_TYPING_PLURAL]: '{count} personen zijn aan het typen...',
 
   // Chat system/broadcast/global messages
   [TranslationKey.CHAT_SYSTEM_MESSAGE]: '[Systeem] {text}',
@@ -306,7 +315,13 @@ export const nl = {
   // Pong waiting modal
   [TranslationKey.PONG_WAITING]: 'Wachten op tegenstander...',
   [TranslationKey.PONG_GAME_STARTING]: 'Het spel begint binnenkort',
+  [TranslationKey.PONG_AUTO_STARTS]: 'Het spel gaat automatisch verder wanneer de timer afloopt',
   [TranslationKey.PONG_LEAVE_GAME]: 'Spel verlaten',
+  [TranslationKey.PONG_PHYSICS_LOCAL]: 'Lokale fysica',
+  [TranslationKey.PONG_PHYSICS_HINT]: 'Gemarkeerde rijen hebben veel invloed op zijspin en hoge bogen',
+  [TranslationKey.PONG_PHYSICS_DRAG]: 'Slepen',
+  [TranslationKey.PONG_PHYSICS_RESET]: 'Standaardwaarden herstellen',
+  [TranslationKey.PONG_PHYSICS_HIGH_IMPACT]: 'Instelling met grote impact',
 
   // Game names
   [TranslationKey.GAME_NAME_CHESS]: 'schaken',
@@ -332,4 +347,6 @@ export const nl = {
   [TranslationKey.ACHIEVEMENT_PONG_EXPERT]: 'Pong Expert: Jouw rating heeft 1050 bereikt!',
   [TranslationKey.ACHIEVEMENT_PONG_MASTER]: 'Pong Master: Jouw rating heeft 1100 bereikt!',
   [TranslationKey.ACHIEVEMENT_PONG_GURU]: 'Pong Guru: Jouw rating heeft 1150 bereikt!',
+  [TranslationKey.ACHIEVEMENT_UNLOCKED_SINGLE]: '🏆 Prestatie ontgrendeld!',
+  [TranslationKey.ACHIEVEMENT_UNLOCKED_MULTI]: '🏆 {count} prestaties ontgrendeld!',
 };

@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.db.models import Q
+from django.utils.translation import gettext as _
 import json
 import jwt
 import logging

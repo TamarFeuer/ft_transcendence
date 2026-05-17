@@ -11,7 +11,7 @@ import { updatePageTranslations, t, TranslationKey } from '../i18n/index.js';
 import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, stopTournamentAutoRefresh, loadCompletedTournaments, loadOngoingTournaments,
   loadUpcomingTournaments
  } from '../pong/tournament/tournament_lobby_utils.js';
-import { loadTournamentGames, handleTournamentSocketEvent, resetTournamentTimers } from '../pong/tournament/tournament:ID_utils.js';
+import { loadTournamentGames, handleTournamentSocketEvent, resetTournamentTimers } from '../pong/tournament/tournament_ID_utils.js';
 import { startTournamentUpdatesSocket } from '../pong/tournament/tournament_ws.js';
 import { showMessage, arrowHomeButton } from "../utils/utils.js";
 import { initChessGame } from '../chess/chess.js';

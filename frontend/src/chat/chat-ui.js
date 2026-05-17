@@ -330,9 +330,9 @@ export function initChatUI() {
 		}
 		if (typers.size === 1) {
 			const name = [...typers.values()][0];
-			typingIndicator.textContent = `${name} is typing...`;
+			typingIndicator.textContent = t('CHAT_TYPING_SINGLE', { name: name });
 		} else {
-			typingIndicator.textContent = `${typers.size} people are typing...`;
+			typingIndicator.textContent = t('CHAT_TYPING_PLURAL', { count: typers.size });
 		}
 	}
 

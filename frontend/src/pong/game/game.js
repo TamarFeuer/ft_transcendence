@@ -16,16 +16,37 @@ import { updateTournamentGameResult } from "../tournament/tournament_api.js";
 import "../../styles.css";
 import { Engine, Scene } from "@babylonjs/core";
 import { showMessage } from "../../utils/utils.js"
-import { t } from "../../i18n/index.js";
+import { t, TranslationKey } from "../../i18n/index.js";
 import { handleRoute, navigate } from "../../routes/route_helpers.js";
+
+const achievementKeyMap = {
+    'First Game':        TranslationKey.ACHIEVEMENT_FIRST_GAME,
+    'Third Game':        TranslationKey.ACHIEVEMENT_THIRD_GAME,
+    'Tenth Game':        TranslationKey.ACHIEVEMENT_TENTH_GAME,
+    'Twentieth Game':    TranslationKey.ACHIEVEMENT_TWENTIETH_GAME,
+    'First Win':         TranslationKey.ACHIEVEMENT_FIRST_WIN,
+    'Winning Streak 1':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_1,
+    'Winning Streak 2':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_2,
+    'Winning Streak 3':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_3,
+    'Winning Streak 4':  TranslationKey.ACHIEVEMENT_WINNING_STREAK_4,
+    'Pong Expert':       TranslationKey.ACHIEVEMENT_PONG_EXPERT,
+    'Pong Master':       TranslationKey.ACHIEVEMENT_PONG_MASTER,
+    'Pong Guru':         TranslationKey.ACHIEVEMENT_PONG_GURU,
+};
 
 function showAchievements(achievements) {
     if (!achievements || achievements.length === 0) return;
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;color:#fff;padding:16px 20px;border-radius:10px;z-index:9999;max-width:320px;box-shadow:0 4px 16px rgba(0,0,0,0.5);';
-    const title = achievements.length === 1 ? '🏆 Achievement Unlocked!' : `🏆 ${achievements.length} Achievements Unlocked!`;
+  const title = achievements.length === 1
+    ? t(TranslationKey.ACHIEVEMENT_UNLOCKED_SINGLE)
+    : t(TranslationKey.ACHIEVEMENT_UNLOCKED_MULTI, { count: achievements.length });
     overlay.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;">${title}</div><ul style="margin:0;padding-left:20px;">` +
-        achievements.map(a => `<li style="margin-bottom:4px;"><b>${a.name}</b>: ${a.description}</li>`).join('') +
+        achievements.map(a => {
+            const key = achievementKeyMap[a.name];
+            const text = key ? t(key) : `${a.name}: ${a.description}`;
+            return `<li style="margin-bottom:4px;">${text}</li>`;
+        }).join('') +
         '</ul>';
     document.body.appendChild(overlay);
     setTimeout(() => overlay.remove(), 6000);
