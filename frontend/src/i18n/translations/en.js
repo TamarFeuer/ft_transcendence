@@ -167,7 +167,7 @@ export const en = {
   // User Management
   [TranslationKey.UM_LOGIN_TITLE]: 'Login',
   [TranslationKey.UM_REGISTER_TITLE]: 'Register',
-  [TranslationKey.UM_EMAIL_PLACEHOLDER]: 'email',
+  [TranslationKey.UM_EMAIL_OR_USERNAME_PLACEHOLDER]: 'email or username',
   [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'username',
   [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'password',
   [TranslationKey.UM_SIGN_IN]: 'Sign in',
