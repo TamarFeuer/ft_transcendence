@@ -993,4 +993,5 @@ tournament pong
 - Also an invisible wall is above the paddle was needed, otherwise balls bouncing above are unreaceable.
 2D online pong
 User authentication / user management
+- jwt tokens for authentication, access and refresh token made in backend. Refresh token is used to request and make a new access token.
 Custom user model for unique email authentication
