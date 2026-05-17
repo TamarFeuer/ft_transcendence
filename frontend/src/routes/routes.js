@@ -64,7 +64,7 @@ export function disposeCurrentEngine() {
 export async function redirectIfNotLoggedIn() {
   const noAuth = await checkAuthRequired();
   if (noAuth) {
-    navigate('/login');
+    navigate('/login', { replace: true });
     return true;
   }
   return false;
@@ -73,7 +73,7 @@ export async function redirectIfNotLoggedIn() {
 export async function redirectIfLoggedIn() {
   const noAuth = await checkAuthRequired();
   if (!noAuth) {
-    navigate('/');
+    navigate('/', { replace: true });
     return true;
   }
   return false;
