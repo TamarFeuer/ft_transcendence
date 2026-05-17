@@ -58,8 +58,10 @@ def register(request):
 
         if not username or not password or not email:
             return JsonResponse({'error': _('username and password and email required')}, status=400)
-        if UserProfile.objects.filter(email=email).exists() or UserProfile.objects.filter(username=username).exists():
+        if UserProfile.objects.filter(email=email).exists():
             return JsonResponse({'error': _('email taken')}, status=400)
+        if UserProfile.objects.filter(username=username).exists():
+            return JsonResponse({'error': 'username taken'}, status=400)
         user = UserProfile.objects.create_user(email=email, username=username, password=password)
         access_token, refresh_token = generate_tokens(user)
         
