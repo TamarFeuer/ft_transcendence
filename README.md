@@ -1,9 +1,7 @@
-This project has been created as part
-of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
+# Ft_transcendence
+This project has been created as part of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
 
-# Transcendence
-Description:
-Online pong games and tournaments, chess games
+
 
 # Documentation
 
@@ -99,30 +97,25 @@ Online pong games and tournaments, chess games
 
 
 ### Description
-<clear name for the project and its
-key features>
-
+Online pong games and tournaments, chess games
 
 ### Instructions
-<all the needed prerequisites (software,
-tools, versions, configuration like .env setup, etc.), and step-by-step instructions to
-run the project>
 
-**Currently we build and run by: docker compose -d --build**
+The project can be built by:
+
+```
+docker compose -d --build**
+```
 
 
 ### Resources
-<classic references related to the topic (documentation, articles, tutorials, etc.), as well as a description of how AI was used —
-specifying for which tasks and which parts of the project>
 
 - [MDN — WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) — browser-side WebSocket interface (`readyState`, `send`, `onmessage`, etc.)
 - [Django Channels](https://channels.readthedocs.io/en/latest/) — async WebSocket support for Django (`AsyncWebsocketConsumer`, channel layers, `database_sync_to_async`)
 
 
 ### Team Information
-<For each team member mentioned at the top of the README.md, you must provide:
-◦ Assigned role(s): PO, PM, Tech Lead, Developers, etc.
-◦ Brief description of their responsibilities>
+
 Product owner; Niko
 - Makes decisions on features and priorities.
 - Validates completed work
@@ -166,17 +159,31 @@ As the team grew over the course of the project, onboarding new members was hand
 
 ### Technical Stack
 ◦ Frontend technologies and frameworks used.
+
 ◦ Backend technologies and frameworks used.
+
 Django
+
 ◦ Database system
+
+Django channels
+
+◦ Real time asynchronous connections
 Daphne
+
 ◦ Any other significant technologies or libraries.
-Tailwand
+
+Tailwind
+
 ◦ Justification for major technical choices
-Django because it is well structured way of working. It is well documented framework and large community.
-Also Rik was familiar with it.
-Tailwind because people working on frontend found it easier to use.
-We were most familiar with Daphne that why it was chosen.
+
+Nginx
+
+◦ Working proxy
+
+Vite
+
+◦ Creates a bundle .dist folder
 
 ### Database Schema
 
@@ -208,9 +215,6 @@ A `Tournament` is created by a user and has many `TournamentParticipant` rows (o
 
 
 ### Feature List
-<◦ Complete list of implemented features.
-◦ Which team member(s) worked on each feature.
-◦ Brief description of each feature’s functionality>
 
 The following features are implemented:
 #### Authentication & Security
