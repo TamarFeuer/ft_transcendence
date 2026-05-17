@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 class FriendRequest(models.Model):
 	"""Stores friend requests between users"""
@@ -14,7 +15,7 @@ class FriendRequest(models.Model):
 	status = models.CharField(
 		max_length = 10,
 		choices=[
-			('pending', 'Pending'), ('accepted', 'Accepted'), ('declined', 'Declined')
+			('pending', _('Pending')), ('accepted', _('Accepted')), ('declined', _('Declined'))
 		],
 		default='pending'
 	)

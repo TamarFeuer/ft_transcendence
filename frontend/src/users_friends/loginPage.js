@@ -18,9 +18,9 @@ export function initLoginPage(){
         const result = await loginUser(identifier, password);
         if(result.username)
             window.location.href = "/";
-        else if (result.error === 'Too many failed attempts. Try again in 3 minutes')
+        else if (result.status === 429)
             showError(t('LOGIN_TOO_MANY'));
-        else if (result.error === 'invalid credentials')
+        else if (result.status === 401)
             showError(t('LOGIN_INVALID'));
         else if (result.error)
             showError(result.error);

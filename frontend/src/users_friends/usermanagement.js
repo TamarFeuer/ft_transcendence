@@ -101,16 +101,16 @@ export async function loginUser(identifier, password) {
         body: JSON.stringify(payload)
     });
     const text = await res.text();
-    if (!text) return { error: 'empty response from server' };
+    if (!text) return { status: res.status, error: 'empty response from server' };
 
     if (res.status === 429)
-        return {error: 'Too many failed attempts. Try again in 3 minutes'};
+        return { status: res.status, error: 'Too many failed attempts. Try again in 3 minutes' };
     const data = JSON.parse(text);
     if (res.ok && data.username) {
         localStorage.setItem('username', data.username);
         localStorage.setItem('user_id', data.user_id ?? data.id);
     }
-    return data;
+    return { ...data, status: res.status };
 }
 
 export async function logoutUser() {

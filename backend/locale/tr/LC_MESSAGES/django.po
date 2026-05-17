@@ -208,3 +208,12 @@ msgstr "Oyuncu bulunamadi"
 
 msgid "User not found"
 msgstr "Kullanici bulunamadi"
+
+msgid "Pending"
+msgstr "Beklemede"
+
+msgid "Accepted"
+msgstr "Kabul Edildi"
+
+msgid "Declined"
+msgstr "Reddedildi"

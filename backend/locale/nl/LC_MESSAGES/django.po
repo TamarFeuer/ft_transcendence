@@ -209,3 +209,12 @@ msgstr "Speler niet gevonden"
 
 msgid "User not found"
 msgstr "Gebruiker niet gevonden"
+
+msgid "Pending"
+msgstr "In behandeling"
+
+msgid "Accepted"
+msgstr "Geaccepteerd"
+
+msgid "Declined"
+msgstr "Geweigerd"

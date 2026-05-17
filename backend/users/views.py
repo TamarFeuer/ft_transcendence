@@ -226,13 +226,13 @@ def current_user_view(request):
     access_token = request.COOKIES.get('access_token')
     logger.debug(f"current_user_view: access_token: {access_token}")
     if not access_token:
-        return JsonResponse({'authenticated': False}, status=401)
+        return JsonResponse({'authenticated': False, 'error': _('authentication required')}, status=401)
     
     try:
         payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
         logger.debug(f"current_user_view: decoded payload: {payload}")
         if payload.get('type') != 'access':
-            return JsonResponse({'authenticated': False}, status=401)
+            return JsonResponse({'authenticated': False, 'error': _('invalid token type')}, status=401)
         
         user_id = payload.get('user_id')
         username = payload.get('username')
@@ -256,4 +256,4 @@ def current_user_view(request):
     except jwt.ExpiredSignatureError:
         return JsonResponse({'authenticated': False, 'error': 'token_expired'}, status=401)
     except jwt.DecodeError:
-        return JsonResponse({'authenticated': False}, status=401)
+        return JsonResponse({'authenticated': False, 'error': _('invalid token')}, status=401)

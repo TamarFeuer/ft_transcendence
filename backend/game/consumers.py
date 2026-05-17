@@ -380,8 +380,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                     self.game.state['score']['p1'] = 0
                     self.game.state['score']['p2'] = 1
                 new_achievements = {}
-                left_player = self.game.players.get('left')
-                right_player = self.game.players.get('right')
+                left_player = players_before.get('left')
+                right_player = players_before.get('right')
                 # One side is disconnected here; protect stats update so game_over is always sent.
                 if left_player is not None and right_player is not None:
                     try:

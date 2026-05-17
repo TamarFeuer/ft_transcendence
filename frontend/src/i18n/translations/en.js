@@ -167,6 +167,7 @@ export const en = {
   // User Management
   [TranslationKey.UM_LOGIN_TITLE]: 'Login',
   [TranslationKey.UM_REGISTER_TITLE]: 'Register',
+  [TranslationKey.UM_EMAIL_PLACEHOLDER]: 'email',
   [TranslationKey.UM_USERNAME_PLACEHOLDER]: 'username',
   [TranslationKey.UM_PASSWORD_PLACEHOLDER]: 'password',
   [TranslationKey.UM_SIGN_IN]: 'Sign in',
@@ -223,9 +224,14 @@ export const en = {
   [TranslationKey.TOURNAMENT_TH_SCORE]: 'Score',
   [TranslationKey.TOURNAMENT_LOADING_MSG]: 'Loading...',
   [TranslationKey.TOURNAMENT_READY_GAMES]: 'Your Ready Games',
+  [TranslationKey.TOURNAMENT_START_GAME]: 'Start Game',
+  [TranslationKey.TOURNAMENT_STARTING_GAME]: 'Starting...',
   [TranslationKey.TOURNAMENT_LOADING_GAMES]: 'Loading games...',
   [TranslationKey.TOURNAMENT_ONGOING_GAMES]: 'Ongoing Games',
   [TranslationKey.TOURNAMENT_NO_ONGOING]: 'No ongoing games',
+  [TranslationKey.TOURNAMENT_NO_FUTURE_GAMES]: 'No future round games',
+  [TranslationKey.TOURNAMENT_SCHEDULED]: 'Scheduled',
+  [TranslationKey.TOURNAMENT_PENDING]: 'Pending',
   [TranslationKey.TOURNAMENT_COMPLETED_GAMES]: 'Completed Games',
   [TranslationKey.TOURNAMENT_NO_COMPLETED]: 'No completed games',
 
@@ -272,6 +278,8 @@ export const en = {
   [TranslationKey.CHAT_INVITE_RECEIVED]: '{name} invited you to a game of {game}',
   [TranslationKey.CHAT_CREATE_GAME_ERROR]: 'Could not create game. Please try again.',
   [TranslationKey.CHAT_USER_IN_GAME]: 'That user is currently in a game.',
+  [TranslationKey.CHAT_TYPING_SINGLE]: '{name} is typing...',
+  [TranslationKey.CHAT_TYPING_PLURAL]: '{count} people are typing...',
 
   // Chat system/broadcast/global messages
   [TranslationKey.CHAT_SYSTEM_MESSAGE]: '[System] {text}',
@@ -307,7 +315,13 @@ export const en = {
   // Pong waiting modal
   [TranslationKey.PONG_WAITING]: 'Waiting for opponent...',
   [TranslationKey.PONG_GAME_STARTING]: 'Game will start soon',
+  [TranslationKey.PONG_AUTO_STARTS]: 'Game will proceed automatically when timer expires',
   [TranslationKey.PONG_LEAVE_GAME]: 'Leave Game',
+  [TranslationKey.PONG_PHYSICS_LOCAL]: 'Local Physics',
+  [TranslationKey.PONG_PHYSICS_HINT]: 'Highlighted rows strongly affect side-spin and high arcs',
+  [TranslationKey.PONG_PHYSICS_DRAG]: 'Drag',
+  [TranslationKey.PONG_PHYSICS_RESET]: 'Reset Defaults',
+  [TranslationKey.PONG_PHYSICS_HIGH_IMPACT]: 'High-impact control',
 
   // Game names
   [TranslationKey.GAME_NAME_CHESS]: 'chess',
@@ -333,4 +347,6 @@ export const en = {
   [TranslationKey.ACHIEVEMENT_PONG_EXPERT]: 'Pong Expert: Your rating reached 1050!',
   [TranslationKey.ACHIEVEMENT_PONG_MASTER]: 'Pong Master: Your rating reached 1100!',
   [TranslationKey.ACHIEVEMENT_PONG_GURU]: 'Pong Guru: Your rating reached 1150!',
+  [TranslationKey.ACHIEVEMENT_UNLOCKED_SINGLE]: '🏆 Achievement Unlocked!',
+  [TranslationKey.ACHIEVEMENT_UNLOCKED_MULTI]: '🏆 {count} Achievements Unlocked!',
 };
