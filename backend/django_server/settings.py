@@ -3,10 +3,11 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR.parent / '.env')
-SECRET_KEY = 'your-secret-key-change-in-production'
+SECRET_KEY = get_random_secret_key()
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
