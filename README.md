@@ -1,6 +1,9 @@
 This project has been created as part
 of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
 
+# Transcendence
+Description:
+Online pong games and tournaments, chess games
 
 # Documentation
 
@@ -120,7 +123,18 @@ specifying for which tasks and which parts of the project>
 <For each team member mentioned at the top of the README.md, you must provide:
 ◦ Assigned role(s): PO, PM, Tech Lead, Developers, etc.
 ◦ Brief description of their responsibilities>
-
+Product owner; Niko
+- Makes decisions on features and priorities.
+- Validates completed work
+Product manager; Tamar
+- organizing meetings, organizing sprints, user stories & scrum methods, keeping track of progress
+- Ensuring team communication
+Tech Lead; Rik
+- making descisions about frameworks, for example django and tailwindcss
+- Reviews critical code changes & Ensures code quality and best practices
+Developers; all
+- Developing code/features
+- Code reviewing
 
 ### Project Management
 
@@ -151,12 +165,18 @@ As the team grew over the course of the project, onboarding new members was hand
 
 
 ### Technical Stack
-<◦ Frontend technologies and frameworks used.
+◦ Frontend technologies and frameworks used.
 ◦ Backend technologies and frameworks used.
-◦ Database system and why it was chosen.
+Django
+◦ Database system
+Daphne
 ◦ Any other significant technologies or libraries.
-◦ Justification for major technical choices>
-
+Tailwand
+◦ Justification for major technical choices
+Django because it is well structured way of working. It is well documented framework and large community.
+Also Rik was familiar with it.
+Tailwind because people working on frontend found it easier to use.
+We were most familiar with Daphne that why it was chosen.
 
 ### Database Schema
 
@@ -1139,6 +1159,8 @@ The project implements a comprehensive internationalization (i18n) system that e
 
 Modules follow the [ft_transcendence subject](https://cdn.intra.42.fr/pdf/pdf/201363/en.subject.pdf) (v21). **Major = 2 points**, **minor = 1 point**. Minimum to pass: **14 points**. Only modules demonstrated live and meeting the subject requirements count.
 
+
+
 #### Point summary
 
 | | Count | Points |
@@ -1350,24 +1372,3 @@ ORM operations used across the project:
 | `Q()` — complex OR/AND conditions | friends, block, chat |
 | `F()` — atomic in-DB increments | chat (unread counts, avoiding race conditions) |
 | `.union()` — combining querysets | game (match history from both player perspectives) |
-
-
-### Individual Contributions
-<◦ Detailed breakdown of what each team member contributed.
-◦ Specific features, modules, or components implemented by each person.
-◦ Any challenges faced and how they were overcome.
-Any other useful or relevant information is welcome (usage documentation, known
-limitations, license, credits, etc.)>
-
-
-Rik:
-tournament pong
-- playing tournament with timers was difficult, they had to be made visable
-3D local pong
-- gameplay was difficult to make playable with normal phyics, 
-- so speedmultiplier, friction, collision energy absorsion, physics had to be tuned.
-- Also an invisible wall is above the paddle was needed, otherwise balls bouncing above are unreaceable.
-2D online pong
-User authentication / user management
-- jwt tokens for authentication, access and refresh token made in backend. Refresh token is used to request and make a new access token.
-Custom user model for unique email authentication
