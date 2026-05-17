@@ -195,9 +195,16 @@ A `Tournament` is created by a user and has many `TournamentParticipant` rows (o
 The following features are implemented:
 #### Authentication & Security
 
+JWT-based authentication protects the private APIs and WebSocket connections. User sessions are stored in cookies, and protected routes reject requests without a valid access token.
+
 #### User Management
 
+Users can register, log in, update their profile information, and manage their account data. The user system also powers stats, friends, blocking, and in-game identity across the platform.
+
 #### Local Pong
+
+Local Pong lets two players play on the same device with immediate match start and no network dependency. The whole game is only in frontend code.
+![Tournament](docs/images/flowchart_3d_pong.png)
 
 #### Online Pong
 
@@ -337,6 +344,7 @@ Response: {
 ```
 
 ---
+Online Pong matches two remote players through the backend and WebSocket layer. The game receives player actions and calculates game data.
 
 #### AI Player
 
@@ -365,6 +373,95 @@ The AI opponent is implemented with a decision-making system that evaluates:
 The AI logic adjusts paddle position dynamically to intercept the ball while introducing realistic timing delays and occasional suboptimal choices to maintain human-like behavior. This ensures matches feel competitive but fair, rather than feeling like playing against an unbeatable algorithm.
 
 #### Tournaments
+
+Tournaments implement a round-robin format where players compete against each other in organized matches. A tournament creator sets up a tournament with a name, description, and maximum player capacity. Players join during the registration phase, and once the creator initiates the tournament, a complete bracket is generated where every participant plays every other participant exactly once.
+
+**Tournament Lifecycle:**
+
+| Status | Description |
+|--------|-------------|
+| Registration | Tournament is open for players to join; creator can cancel at this stage |
+| Upcoming | Registration is closed; tournament is scheduled to start |
+| Ongoing | Tournament is active; games are being played across multiple rounds |
+| Completed | All rounds finished; results are finalized |
+| Cancelled | Tournament was cancelled by the creator |
+
+**Bracket Generation:**
+
+When a tournament starts, a round-robin bracket is automatically generated. Players are randomly shuffled, and pairings are created such that every player plays every other player once. Games are organized into sequential rounds, with each round containing multiple matches.
+
+**Game States:**
+
+Round 1 games begin in `waiting_active_round` status, signaling that the tournament has started and matches can begin, `waiting_active_round` is only for the active round because when a game is made(1/2 person clicked start game), a timer is started with limited time for other player to join, all players should be done with previous round. Later rounds begin in `ready` status and transition to `waiting_active_round` once the previous round completes. During play, games progress through states like `ready`, `1/2 players ready`, `ongoing`, and finally `completed`.
+
+For the timers, when in a 1/2-ready game a player leaves and remakes a game, old timer is not displayed, just the new timer, to avoid duplicates in UI.
+
+##### Tournament REST API
+
+All endpoints are under `/api/tournament/`. Authentication via JWT cookie (`access_token`), same as other protected APIs.
+
+###### `POST /api/tournament/create/`
+
+Create a new tournament.
+
+```json
+Request: {
+  "name": "Spring Championship",
+  "description": "Annual spring tournament",
+  "max_players": 8
+}
+Response: { "id": 1, "name": "Spring Championship", "status": "registration", ... }
+```
+
+###### `POST /api/tournament/join/`
+
+Join an open tournament during registration.
+
+```json
+Request: { "tournament_id": 1 }
+Response: { "message": "joined successfully" }
+```
+
+###### `POST /api/tournament/start/`
+
+Start the tournament and generate the bracket (creator only). Requires at least 2 participants.
+
+```json
+Request: { "tournament_id": 1 }
+Response: { "message": "tournament started" }
+```
+
+###### `GET /api/tournament/registration/`
+
+List all tournaments open for registration (public).
+
+```json
+Response: [
+  { "id": 1, "name": "Spring Championship", "max_players": 8, "participants_count": 5, ... }
+]
+```
+
+###### `GET /api/tournament/ongoing/`
+
+List ongoing tournaments for the authenticated user.
+
+```json
+Response: [
+  { "id": 1, "name": "Spring Championship", "status": "ongoing", "participants": [...], ... }
+]
+```
+
+###### `POST /api/tournament/cancel/`
+
+Cancel a tournament (creator only).
+
+```json
+Request: { "tournament_id": 1 }
+Response: { "message": "tournament cancelled" }
+```
+
+Tournament results are tracked through participant scores and rankings, which are updated as games complete. The tournament system integrates with the Pong game backend to link actual game sessions to tournament matches.
+
 
 #### Chess
 
@@ -1019,6 +1116,19 @@ Achievements are displayed on player profiles and contribute to overall progress
 
 See [Chess](#chess) for the second implemented game (local, online, ELO, and chat invites).
 
+### 3D pong
+Uses BabylonJs for graphics & rendering
+
+How to play:
+player1;
+'a' & ' d' = left & right paddle move
+'space' = forward swing
+'q & ' e' = side Swing(more spin) & Lob(more upwards motion) move
+player2:
+'j' & ' l = left & right paddle move
+'space' = forward swing
+'u' & ' o' = side Swing(more spin) & Lob(more upwards motion) move
+
 #### Graphics & UI
 
 #### Internationalization (i18n)
@@ -1229,3 +1339,16 @@ ORM operations used across the project:
 ◦ Any challenges faced and how they were overcome.
 Any other useful or relevant information is welcome (usage documentation, known
 limitations, license, credits, etc.)>
+
+
+Rik:
+tournament pong
+- playing tournament with timers was difficult, they had to be made visable
+3D local pong
+- gameplay was difficult to make playable with normal phyics, 
+- so speedmultiplier, friction, collision energy absorsion, physics had to be tuned.
+- Also an invisible wall is above the paddle was needed, otherwise balls bouncing above are unreaceable.
+2D online pong
+User authentication / user management
+- jwt tokens for authentication, access and refresh token made in backend. Refresh token is used to request and make a new access token.
+Custom user model for unique email authentication
