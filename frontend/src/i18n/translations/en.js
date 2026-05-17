@@ -226,7 +226,6 @@ export const en = {
   [TranslationKey.TOURNAMENT_READY_GAMES]: 'Your Ready Games',
   [TranslationKey.TOURNAMENT_START_GAME]: 'Start Game',
   [TranslationKey.TOURNAMENT_STARTING_GAME]: 'Starting...',
-  [TranslationKey.TOURNAMENT_NO_READY_GAMES]: 'No ready games for you.',
   [TranslationKey.TOURNAMENT_LOADING_GAMES]: 'Loading games...',
   [TranslationKey.TOURNAMENT_ONGOING_GAMES]: 'Ongoing Games',
   [TranslationKey.TOURNAMENT_NO_ONGOING]: 'No ongoing games',
