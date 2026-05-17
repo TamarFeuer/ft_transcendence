@@ -152,7 +152,7 @@ Users can register, log in, update their profile information, and manage their a
 #### Local Pong
 
 Local Pong lets two players play on the same device with immediate match start and no network dependency. The whole game is only in frontend code.
-
+![Tournament](docs/images/flowchart_3d_pong.png)
 
 #### Online Pong
 
