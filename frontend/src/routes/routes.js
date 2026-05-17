@@ -13,7 +13,7 @@ import { createTournamentBtn, loadAllTournaments, startTournamentAutoRefresh, st
  } from '../pong/tournament/tournament_lobby_utils.js';
 import { loadTournamentGames, handleTournamentSocketEvent, resetTournamentTimers } from '../pong/tournament/tournament:ID_utils.js';
 import { startTournamentUpdatesSocket } from '../pong/tournament/tournament_ws.js';
-import { showMessage } from "../utils/utils.js";
+import { showMessage, arrowHomeButton } from "../utils/utils.js";
 import { initChessGame } from '../chess/chess.js';
 import { initProfilePage } from "../users_friends/profilePage.js"
 import { initLoginPage } from "../users_friends/loginPage.js"
@@ -203,16 +203,14 @@ export function setupRoutes() {
 			return;
 
     await loadTemplate('tournament');
-    
+    arrowHomeButton();
+
     // Get current user for checking if they're tournament creato
     console.log("All cookies:", document.cookie);
-    
+
     // Load tournaments on page load
     await loadAllTournaments();
-    
-    // Back button
-    document.getElementById('backBtn')?.addEventListener('click', () => navigate('/pong'));
-    
+
     // Create tournament button
     document.getElementById('createTournamentBtn')?.addEventListener('click', async () => createTournamentBtn());
 
@@ -488,13 +486,12 @@ if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500" data-i18
 			return;
     
     await loadTemplate('tournament-games');
-    
+    arrowHomeButton();
+
     // Store tournament ID for use in callbacks
     window.currentTournamentId = tournamentId;
     resetTournamentTimers();
-    
-    document.getElementById('backBtn')?.addEventListener('click', () => navigate('/tournament'));
-    
+
     // Load tournament games and leaderboard
     await loadTournamentGames();
 

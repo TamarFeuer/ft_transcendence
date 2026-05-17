@@ -1,6 +1,5 @@
-import { fetchWithRefreshAuth } from '../../users_friends/usermanagement.js';
 import * as tournamentAPI from './tournament_api.js';
-import { showMessage } from "../../utils/utils.js"
+import { showMessage } from "../../utils/utils.js";
 import { getCurrentUser } from '../../users_friends/usermanagement.js';
 import { navigate } from '../../routes/route_helpers.js';
 import { t } from '../../i18n/index.js';
@@ -8,25 +7,24 @@ import { stopTournamentUpdatesSocket } from './tournament_ws.js';
 
 let tournamentAutoRefreshInterval = null;
 
-function stopOnlyTournamentAutoRefreshInterval() {
-    if (tournamentAutoRefreshInterval) {
+function stopOnlyTournamentAutoRefreshInterval(){
+    if (tournamentAutoRefreshInterval){
         clearInterval(tournamentAutoRefreshInterval);
         tournamentAutoRefreshInterval = null;
     }
 }
 
-export function stopTournamentAutoRefresh() {
+export function stopTournamentAutoRefresh(){
     stopTournamentUpdatesSocket();
     stopOnlyTournamentAutoRefreshInterval();
 }
 
-export function startTournamentAutoRefresh(callback, intervalMs = 500) {
+export function startTournamentAutoRefresh(callback, intervalMs = 500){
     stopOnlyTournamentAutoRefreshInterval();
-  tournamentAutoRefreshInterval = setInterval(callback, intervalMs);
+    tournamentAutoRefreshInterval = setInterval(callback, intervalMs);
 }
 
-// Load all tournament lists
-export async function loadAllTournaments() {
+export async function loadAllTournaments(){
     await Promise.all([
         loadRegistrationTournaments(),
         loadOngoingTournaments(),
@@ -35,263 +33,216 @@ export async function loadAllTournaments() {
     ]);
 }
 
-// Load user's completed tournaments
-export async function loadCompletedTournaments() {
-    const result = await tournamentAPI.listCompletedTournaments();
-    const listEl = document.getElementById('completedTournaments');
-    if (!listEl) return;
-    
-    if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = `<p class="text-gray-400 text-sm" data-i18n="TOURNAMENT_NONE">${t('TOURNAMENT_NONE')}</p>`;
-    return;
-    }
-    
-    const fragment = document.createDocumentFragment();
-    result.data.forEach(tournament => {
-    const div = document.createElement('div');
-    div.className = 'bg-gray-800 rounded p-2 text-sm';
-    div.innerHTML = `
-        <div class="text-white font-semibold">${tournament.name}</div>
-        <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} ${t('TOURNAMENT_PLAYERS_PLACEHOLDER')}</div>
-        <button class="view-games-btn mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold w-full" data-tournament-id="${tournament.id}">
-        ${t('TOURNAMENT_VIEW_GAMES')}
-        </button>
-    `;
-    fragment.appendChild(div);
-    });
-    listEl.replaceChildren(fragment);
-    // Add event listeners
-    listEl.querySelectorAll('.view-games-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        const tournamentId = e.target.dataset.tournamentId;
-        console.log("Viewing tournament ID:", tournamentId);
-        navigate(`/tournament/${tournamentId}`);
-    });
-    });
-}
-
-// Load user's upcoming tournaments
-export async function loadUpcomingTournaments() {
-    const result = await tournamentAPI.listUpcomingTournaments();
-    const listEl = document.getElementById('upcomingTournaments');
-    if (!listEl) return;
-    
-    if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = `<p class="text-gray-400 text-sm" data-i18n="TOURNAMENT_NONE">${t('TOURNAMENT_NONE')}</p>`;
-    return;
-    }
-    
-    const fragment = document.createDocumentFragment();
-    result.data.forEach(tournament => {
-    const div = document.createElement('div');
-    div.className = 'bg-gray-800 rounded p-2 text-sm';
-    div.innerHTML = `
-        <div class="text-white font-semibold">${tournament.name}</div>
-        <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} ${t('TOURNAMENT_PLAYERS_PLACEHOLDER')}</div>
-    `;
-    fragment.appendChild(div);
-    });
-    listEl.replaceChildren(fragment);
-}
-
-// Load user's ongoing tournaments
-export async function loadOngoingTournaments() {
+export async function loadOngoingTournaments(){
     const result = await tournamentAPI.listOngoingTournaments();
-    const listEl = document.getElementById('ongoingTournaments');
-    if (!listEl) return;
-    
-    if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = `<p class="text-gray-400 text-sm" data-i18n="TOURNAMENT_NONE">${t('TOURNAMENT_NONE')}</p>`;
-    return;
+    renderMyTournaments(result, "ongoingTournaments", true);
+}
+
+export async function loadUpcomingTournaments(){
+    const result = await tournamentAPI.listUpcomingTournaments();
+    renderMyTournaments(result, "upcomingTournaments", false);
+}
+
+export async function loadCompletedTournaments(){
+    const result = await tournamentAPI.listCompletedTournaments();
+    renderMyTournaments(result, "completedTournaments", true);
+}
+
+function renderMyTournaments(result, containerId, withViewButton){
+    const container = document.getElementById(containerId);
+    const template = document.getElementById("my-tournament-card-template");
+    if (!container) return;
+
+    if (!result.ok || !result.data || result.data.length === 0){
+        container.innerHTML = `<p class="text-zinc-400 text-sm" data-i18n="TOURNAMENT_NONE">${t('TOURNAMENT_NONE')}</p>`;
+        return;
     }
-    
+
     const fragment = document.createDocumentFragment();
     result.data.forEach(tournament => {
-    const div = document.createElement('div');
-    div.className = 'bg-gray-800 rounded p-2 text-sm';
-    div.innerHTML = `
-        <div class="text-white font-semibold">${tournament.name}</div>
-        <div class="text-gray-400 text-xs">👤 ${tournament.participant_count} players</div>
-        <button class="view-games-btn mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold w-full" data-tournament-id="${tournament.id}">
-        View Games
-        </button>
-    `;
-    fragment.appendChild(div);
+        const wrapDiv = document.createElement("div");
+        wrapDiv.innerHTML = template.innerHTML;
+        const card = wrapDiv.firstElementChild;
+
+        card.querySelector(".my-tournament-name").textContent = tournament.name;
+        card.querySelector(".my-tournament-info").textContent = `${tournament.participant_count} ${t('TOURNAMENT_PLAYERS_PLACEHOLDER')}`;
+
+        const viewBtn = card.querySelector(".view-games-btn");
+        if (withViewButton)
+            viewBtn.addEventListener("click", () => navigate(`/tournament/${tournament.id}`));
+        else
+            viewBtn.remove();
+
+        fragment.appendChild(card);
     });
-    listEl.replaceChildren(fragment);
-    
-    // Add event listeners
-    listEl.querySelectorAll('.view-games-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        const tournamentId = e.target.dataset.tournamentId;
-        console.log("Viewing tournament ID:", tournamentId);
-        navigate(`/tournament/${tournamentId}`);
-        });
-    });
+    container.replaceChildren(fragment);
 }
-    
-// Load tournaments open for registration
-async function loadRegistrationTournaments() {
+
+async function loadRegistrationTournaments(){
     const result = await tournamentAPI.listRegistrationTournaments();
-    const listEl = document.getElementById('tournamentsList');
-    if (!listEl) return;
-    
-    if (!result.ok || !result.data || result.data.length === 0) {
-    listEl.innerHTML = `<p class="text-gray-400" data-i18n="TOURNAMENT_NO_REGISTRATION">${t('TOURNAMENT_NO_REGISTRATION')}</p>`;
-    return;
+    const container = document.getElementById("tournamentsList");
+    const template = document.getElementById("tournament-card-template");
+    if (!container) return;
+
+    if (!result.ok || !result.data || result.data.length === 0){
+        container.innerHTML = `<p class="text-zinc-400" data-i18n="TOURNAMENT_NO_REGISTRATION">${t('TOURNAMENT_NO_REGISTRATION')}</p>`;
+        return;
     }
-    console.log("Registration tournaments:", result.data);
+
     const currentUser = await getCurrentUser();
     const currentUsername = currentUser?.username || localStorage.getItem('username');
+
     const fragment = document.createDocumentFragment();
+    result.data.forEach(tournament => {
+        const wrapDiv = document.createElement("div");
+        wrapDiv.innerHTML = template.innerHTML;
+        const card = wrapDiv.firstElementChild;
 
-    result.data.forEach((tournament) => {
-    const tournamentDiv = document.createElement('div');
-    tournamentDiv.className = 'bg-gray-800 rounded-lg p-4 border border-gray-700';
+        const isCreator = tournament.creator_username === currentUsername;
+        const isFull = tournament.participant_count >= tournament.max_players;
+        const isRegistered = (tournament.participants || []).some(p => p.username === currentUsername);
 
-    const isCreator = tournament.creator_username === currentUsername;
-    const isFull = tournament.participant_count >= tournament.max_players;
-    const isRegistered = (tournament.participants || []).some((p) => p.username === currentUsername);
-    console.log("isRegistered:", isRegistered);
+        fillTournamentCard(card, tournament);
+        wireTournamentCardButtons(card, tournament, isCreator, isFull, isRegistered);
 
-    tournamentDiv.innerHTML = `
-        <div class="flex justify-between items-start">
-        <div class="flex-1">
-            <h3 class="text-white font-bold text-lg">${tournament.name}</h3>
-            ${tournament.description ? `<p class="text-gray-400 text-sm mt-1">${tournament.description}</p>` : ''}
-            <div class="flex gap-4 mt-2 text-sm">
-            <span class="text-gray-300">👤 ${tournament.participant_count}/${tournament.max_players}</span>
-            <span class="text-gray-300">👑 ${tournament.creator_username}</span>
-            <span class="text-yellow-400">⏳ ${t('TOURNAMENT_STATUS_' + tournament.status.toUpperCase())}</span>
-            </div>
-        </div>
-        <div class="flex gap-2">
-            ${!isCreator && !isFull && !isRegistered ? `
-            <button class="join-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                ${t('TOURNAMENT_JOIN')}
-            </button>
-            ` : ''}
-            ${isRegistered && !isCreator ? `
-            <div class="px-4 py-2 bg-blue-500 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                ${t('TOURNAMENT_JOINED')}
-            </div>
-            ` : ''}
-            ${isCreator ? `
-            <button class="start-btn px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                ${t('TOURNAMENT_START')}
-            </button>
-            <button class="cancel-btn px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-semibold" data-id="${tournament.id}">
-                ${t('TOURNAMENT_CANCEL')}
-            </button>
-            ` : ''}
-            ${isFull && !isCreator ? `
-            <span class="px-4 py-2 bg-gray-600 text-gray-300 rounded text-sm">${t('TOURNAMENT_FULL')}</span>
-            ` : ''}
-        </div>
-        </div>
-    `;
-    
-    fragment.appendChild(tournamentDiv);
+        fragment.appendChild(card);
     });
-    listEl.replaceChildren(fragment);
-    
-    // Add event listeners for join/start/cancel buttons
-    listEl.querySelectorAll('.join-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        const tournamentId = e.target.dataset.id;
-        btn.disabled = true;
-        btn.textContent = t('TOURNAMENT_JOINING');
-        
-        const result = await tournamentAPI.joinTournament(tournamentId);
-        if (result.ok) {
-        showMessage(t('TOURN_JOINED'), 'success');
-        await loadAllTournaments();
-        } else {
-        showMessage(result.data?.error || t('TOURN_JOIN_FAILED'), 'error');
-        btn.disabled = false;
-        btn.textContent = t('TOURNAMENT_JOIN');
-        }
-    });
-    });
-    
-    listEl.querySelectorAll('.start-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        const tournamentId = e.target.dataset.id;
-        if (!confirm(t('TOURNAMENT_CONFIRM_START'))) return;
-        
-        btn.disabled = true;
-        btn.textContent = t('TOURNAMENT_STARTING');
-        
-        const result = await tournamentAPI.startTournament(tournamentId);
-        // result.ok = false; // TEMPORARY DISABLE STARTING TO PREVENT ISSUES WHILE TESTING
-        if (result.ok) {
-        showMessage(t('TOURN_STARTED'), 'success');
-        await loadAllTournaments();
-        } else {
-        showMessage(result.data?.error || t('TOURN_START_FAILED'), 'error');
-        btn.disabled = false;
-        btn.textContent = t('TOURNAMENT_START');
-        }
-    });
-    });
-    
-    listEl.querySelectorAll('.cancel-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        const tournamentId = e.target.dataset.id;
-        if (!confirm(t('TOURNAMENT_CONFIRM_CANCEL'))) return;
-        
-        btn.disabled = true;
-        btn.textContent = t('TOURNAMENT_CANCELLING');
-        
-        const result = await tournamentAPI.cancelTournament(tournamentId);
-        if (result.ok) {
-        showMessage(t('TOURN_CANCELLED'), 'success');
-        await loadAllTournaments();
-        } else {
-        showMessage(result.data?.error || t('TOURN_CANCEL_FAILED'), 'error');
-        btn.disabled = false;
-        btn.textContent = t('TOURNAMENT_CANCEL');
-        }
-    });
-    });
+    container.replaceChildren(fragment);
 }
 
-export async function createTournamentBtn()
-{
+function fillTournamentCard(card, tournament){
+    card.querySelector(".tournament-name").textContent = tournament.name;
+
+    const desc = card.querySelector(".tournament-description");
+    if (tournament.description)
+        desc.textContent = tournament.description;
+    else
+        desc.remove();
+
+    card.querySelector(".tournament-players").textContent = `${tournament.participant_count}/${tournament.max_players} ${t('TOURNAMENT_PLAYERS_PLACEHOLDER')}`;
+    card.querySelector(".tournament-creator").textContent = `by ${tournament.creator_username}`;
+    card.querySelector(".tournament-status").textContent = t('TOURNAMENT_STATUS_' + tournament.status.toUpperCase());
+}
+
+function wireTournamentCardButtons(card, tournament, isCreator, isFull, isRegistered){
+    const joinBtn = card.querySelector(".join-btn");
+    const joinedBadge = card.querySelector(".joined-badge");
+    const startBtn = card.querySelector(".start-btn");
+    const cancelBtn = card.querySelector(".cancel-btn");
+    const fullBadge = card.querySelector(".full-badge");
+
+    if (isCreator){
+        joinBtn.remove();
+        joinedBadge.remove();
+        fullBadge.remove();
+        startBtn.addEventListener("click", () => handleStart(tournament.id, startBtn));
+        cancelBtn.addEventListener("click", () => handleCancel(tournament.id, cancelBtn));
+        return;
+    }
+
+    startBtn.remove();
+    cancelBtn.remove();
+
+    if (isRegistered){
+        joinBtn.remove();
+        fullBadge.remove();
+        return;
+    }
+
+    joinedBadge.remove();
+
+    if (isFull){
+        joinBtn.remove();
+        return;
+    }
+
+    fullBadge.remove();
+    joinBtn.addEventListener("click", () => handleJoin(tournament.id, joinBtn));
+}
+
+async function handleJoin(tournamentId, btn){
+    btn.disabled = true;
+    btn.textContent = t('TOURNAMENT_JOINING');
+
+    const result = await tournamentAPI.joinTournament(tournamentId);
+    if (result.ok){
+        showMessage(t('TOURN_JOINED'), 'success');
+        await loadAllTournaments();
+        return;
+    }
+    showMessage(result.data?.error || t('TOURN_JOIN_FAILED'), 'error');
+    btn.disabled = false;
+    btn.textContent = t('TOURNAMENT_JOIN');
+}
+
+async function handleStart(tournamentId, btn){
+    if (!confirm(t('TOURNAMENT_CONFIRM_START')))
+        return;
+
+    btn.disabled = true;
+    btn.textContent = t('TOURNAMENT_STARTING');
+
+    const result = await tournamentAPI.startTournament(tournamentId);
+    if (result.ok){
+        showMessage(t('TOURN_STARTED'), 'success');
+        await loadAllTournaments();
+        return;
+    }
+    showMessage(result.data?.error || t('TOURN_START_FAILED'), 'error');
+    btn.disabled = false;
+    btn.textContent = t('TOURNAMENT_START');
+}
+
+async function handleCancel(tournamentId, btn){
+    if (!confirm(t('TOURNAMENT_CONFIRM_CANCEL')))
+        return;
+
+    btn.disabled = true;
+    btn.textContent = t('TOURNAMENT_CANCELLING');
+
+    const result = await tournamentAPI.cancelTournament(tournamentId);
+    if (result.ok){
+        showMessage(t('TOURN_CANCELLED'), 'success');
+        await loadAllTournaments();
+        return;
+    }
+    showMessage(result.data?.error || t('TOURN_CANCEL_FAILED'), 'error');
+    btn.disabled = false;
+    btn.textContent = t('TOURNAMENT_CANCEL');
+}
+
+export async function createTournamentBtn(){
     const name = document.getElementById('tournamentName').value.trim();
     const description = document.getElementById('tournamentDescription').value.trim();
     const maxPlayers = parseInt(document.getElementById('tournamentMaxPlayers').value);
-    
-    if (!name) {
+
+    if (!name){
         showStatus('createStatus', t('TOURN_NAME_REQUIRED'), 'error');
         return;
     }
-    
+
     showStatus('createStatus', t('TOURN_CREATING'), 'info');
     const result = await tournamentAPI.createTournament(name, description, maxPlayers);
-    
-    if (result.ok) {
+
+    if (result.ok){
         showStatus('createStatus', t('TOURN_CREATED'), 'success');
-        // Clear form
         document.getElementById('tournamentName').value = '';
         document.getElementById('tournamentDescription').value = '';
-        // Refresh lists
         setTimeout(() => loadAllTournaments(), 500);
-    } else {
-        showStatus('createStatus', result.data?.error || t('TOURN_CREATE_FAILED'), 'error');
+        return;
     }
+    showStatus('createStatus', result.data?.error || t('TOURN_CREATE_FAILED'), 'error');
 }
 
-// Helper function to show status messages
-function showStatus(elementId, message, type) {
+function showStatus(elementId, message, type){
     const statusEl = document.getElementById(elementId);
     if (!statusEl) return;
-    
+
     const colors = {
-    success: 'text-green-400',
-    error: 'text-red-400',
-    info: 'text-blue-400'
+        success: 'text-green-400',
+        error: 'text-red-400',
+        info: 'text-violet-400'
     };
-    
+
     statusEl.innerHTML = `<p class="${colors[type] || 'text-white'}">${message}</p>`;
 }
