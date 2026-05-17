@@ -155,6 +155,10 @@ msgstr "fout bij weigeren van vriendschapsverzoek"
 msgid "username and password and email required"
 msgstr "gebruikersnaam, wachtwoord en e-mail zijn vereist"
 
+
+msgid "username taken"
+msgstr "username is al in gebruik"
+
 msgid "email taken"
 msgstr "e-mail al in gebruik"
 
