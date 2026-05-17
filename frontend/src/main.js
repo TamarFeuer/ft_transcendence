@@ -94,7 +94,7 @@ window.addEventListener("load", async () => {
 		langBtn.style.display = "block";
 	}
 	if (currentUser.authenticated) {
-		initChat();
+		await initChat();
 		initChatUI();
 	}
 

@@ -2,6 +2,7 @@
 // The chat panel is a persistent overlay in index.html — it is NOT a route.
 // It stays alive across SPA navigation because it lives outside #app-root.
 import { t, TranslationKey } from '../i18n/index.js';
+import { navigate } from '../routes/route_helpers.js';
 
 function formatGameResultMessage(data) {
 	const { winner, loser, draw_players, game_type = 'game' } = data;
@@ -41,7 +42,24 @@ let reconnectTimer = null;
 
 // ── Connection lifecycle ───────────────────────────────────────────────────────
 
-export function initChat() {
+export async function initChat() {
+	// The WS handshake authenticates via the access_token cookie. That token expires
+	// every 2 min and WebSockets have no equivalent of fetchWithRefreshAuth, so we
+	// refresh it ourselves before each connect (including every reconnect attempt).
+	try {
+		const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+		// 401 = refresh token expired; 400 = refresh cookie missing (e.g. user wiped by `down -v`).
+		// Either way the session is dead: clear cookies on the server and send the user to /login.
+		if (res.status === 401 || res.status === 400) {
+			await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+			closeChat();
+			navigate('/login');
+			return;
+		}
+	} catch (err) {
+		// Server unreachable — fall through and let the WS attempt + reconnect loop handle it.
+	}
+
 	const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
 	chatSocket = new WebSocket(`${wsProtocol}//${location.host}/ws/chat/`);
 
@@ -52,14 +70,18 @@ export function initChat() {
 
 	chatSocket.onclose = () => {
 		console.log(`Chat WebSocket disconnected — reconnecting in ${reconnectDelay / 1000}s`);
+		// Clear cached state so the UI doesn't show stale online users while disconnected.
+		onlineUsers = {};
+		blockedByMeIds = new Set();
+		blockedMeIds = new Set();
+		inGameIds = new Set();
+		window.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
+		// Tell chat-ui to wipe DM tabs / message history — we'll repopulate from the server on reconnect.
+		window.dispatchEvent(new CustomEvent("wsDisconnected"));
 		reconnectTimer = setTimeout(() => {
 			reconnectDelay = Math.min(reconnectDelay * 2, 30000);
 			initChat();
 		}, reconnectDelay);
-	};
-
-	chatSocket.onerror = (err) => {
-		console.error("Chat WebSocket error:", err);
 	};
 
 	// Fires whenever the backend sends a message over the WebSocket.
@@ -122,7 +144,6 @@ export function initChat() {
 
 			// Server sends the full list of online users whenever someone joins/leaves
 			case "onlineUsers":
-				console.log("Received onlineUsers message:", data.users);
 				onlineUsers = data.users;
 				blockedByMeIds = new Set(data.blocked_by_me_ids || []);
 				blockedMeIds = new Set(data.blocked_me_ids || []);
@@ -211,8 +232,6 @@ export function initChat() {
 				break;
 			}
 
-			default:
-				console.warn("Unknown chat message type:", data.type);
 		}
 	};
 }
@@ -266,10 +285,7 @@ export function markRead(dmPartnerId) {
  * @param {string|null} recipientId - User ID to send a private DM, or null for global chat
  */
 export function sendChatMessage(message, recipientId = null) {
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-		console.warn("sendChatMessage: WebSocket not ready (state:", chatSocket?.readyState, ")");
-		return;
-	}
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 
 	const payload = {
 		type: "send_message",
@@ -309,14 +325,7 @@ export function reportBlockedUser(blockedUserId = null) {
  * @param {Function} getActiveChannel - Returns the current DM partner user ID, or null for global.
  */
 export function initTyping(chatInput, getActiveChannel = () => null) {
-	if (!chatInput) {
-		console.warn("initTyping: no chatInput element provided");
-		return;
-	}
-	if (!chatSocket) {
-		console.warn("Typing init: chatSocket not ready yet");
-		return;
-	}
+	if (!chatInput || !chatSocket) return;
 
 	// Stores the ID of the current countdown timer.
 	// Declared outside the event listener so it persists between keystrokes —
@@ -365,11 +374,7 @@ export function initTyping(chatInput, getActiveChannel = () => null) {
 // ── Game invites ───────────────────────────────────────────────────────────────
 
 export function sendGameInvite(inviteeId, gameType, gameId) {
-	console.log('[invite] sendGameInvite — WS state:', chatSocket?.readyState, '(1=OPEN), gameId:', gameId, 'invitee:', inviteeId);
-	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-		console.warn('[invite] DROPPED — WS not open');
-		return;
-	}
+	if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
 	chatSocket.send(JSON.stringify({
 		type: "send_game_invite",
 		invitee_id: inviteeId,

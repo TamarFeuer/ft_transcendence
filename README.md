@@ -511,7 +511,13 @@ The chat window is a fixed overlay rendered in `index.html`, outside the SPA's `
 
 - **Online users list**: rebuilt every time someone connects, disconnects, or changes game status. Users who blocked you are hidden; users you blocked are still shown so you can unblock them.
 - **Channel tabs**: the Global tab is always present. DM tabs are created on the fly when you open a conversation or receive a message from someone you don't have a tab open for yet. Tabs persist across navigation and show an unread badge when new messages arrive.
-- **Messages**: kept in memory per channel for the session. DM history (last 50 messages) is fetched from the database when a tab is opened. Global messages are ephemeral — they are not persisted and are lost on refresh or reconnect.
+- **Messages**: kept in memory per channel for the session. When a DM tab is opened, the backend returns up to the last 50 messages — that's the initial seed for the in-memory store; new messages received afterwards are appended on top, so the store grows beyond 50 over the lifetime of the session. Global messages are ephemeral — they are not persisted and are lost on refresh or reconnect. The message list (`renderMessages()`) re-renders in six situations:
+  1. The user switches to a different tab.
+  2. The UI language is changed (to update invite card text, Accept/Reject buttons, and the "Me" label).
+  3. A new message arrives for the currently-viewed channel.
+  4. DM history is received from the backend for the active tab.
+  5. A game invite card is removed from history (because the invite expired or was cancelled).
+  6. The DM partner reads your messages (updates the "Seen" indicator).
 - **Channel title**: updates dynamically when switching between Global and DM tabs.
 - **Typing indicator**: appears when the other person is typing, cleared automatically when they stop.
 - **Read receipts**: a checkmark or indicator updates when your DM partner has read your messages.
@@ -814,6 +820,14 @@ Enhances the base chat module with the following:
 
 - **Block** — users can block each other from the chat context menu. Blocked users cannot send or receive messages; the input is replaced with a notice. See [Block](#block).
 - **Game invites from chat** — the context menu lets you invite any online user to Pong or Chess directly from chat. Invites appear as cards in the DM with Accept/Decline; accepting navigates both users to the game.
+
+  Invites are persisted in their own `GameInvite` table while pending, then deleted once resolved — so unlike regular DM messages (which live in `Message` forever) and global messages (which are ephemeral and never written), invites are persisted-but-transient:
+  - **Created** by `save_invite()` in `db.py` when a `send_game_invite` arrives.
+  - **Deleted** by `delete_invite()` when the invite is accepted, cancelled, expires, or the sender disconnects.
+  - **Bulk-deleted** by `cleanup_stale_invites()` on every reconnect — any invite that survived a server restart is invalid, since the game session no longer exists in memory.
+  - **Surfaced in DM history** by `get_dm_history()` — invites belonging to the conversation are appended to the messages list, so when you reopen a DM tab the invite card appears alongside the messages.
+
+  This is why, when the user clicks Accept on an invite card, the frontend removes the card from both the DOM and the in-memory `messageHistory`: the backend also deletes the DB row, so on the next history fetch the invite genuinely isn't there anymore.
 - **Game/tournament notifications** — when a Pong or Chess game ends the result is broadcast to all connected users as a message in Global chat (e.g. _"tamar beat rik in a game of chess"_).
 - **Profile access from chat** — the context menu on any online user includes a View Profile action that navigates to their profile page.
 - **Chat history persistence** — the last 50 messages of each DM conversation are stored in the database and restored when the tab is reopened.
