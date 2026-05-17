@@ -279,8 +279,7 @@ export function setupRoutes() {
       return;
 
     await loadTemplate('stats');
-
-    document.getElementById('stats-back-btn')?.addEventListener('click', () => navigate('/profile'));
+    arrowHomeButton('/profile');
 
     fetchWithRefreshAuth('/api/player/me/stats')
       .then(r => r.json())
@@ -304,10 +303,10 @@ export function setupRoutes() {
         }
         tbody.innerHTML = data.leaderboard
           .map((p, i) => {
-            const medal = i === 0 ? '#1' : i === 1 ? '#2' : i === 2 ? '#3' : `#${i + 1}`;
+            const medal = i + 1;
             return `<tr class="border-t border-zinc-700">
-              <td class="py-1 pr-3">${medal}</td>
-              <td class="py-1 pr-3 font-semibold">${p.username}</td>
+              <td class="py-1 pr-3 text-white">${medal}</td>
+              <td class="py-1 pr-3 text-white font-semibold">${p.username}</td>
               <td class="py-1 pr-3 text-violet-400">${p.elo_rating}</td>
               <td class="py-1 pr-3 text-green-400">${p.total_wins}</td>
               <td class="py-1 text-yellow-400">${p.current_win_streak}</td>
@@ -343,8 +342,8 @@ export function setupRoutes() {
                   : '<span class="text-zinc-400">-</span>';
                 const date = new Date(m.timestamp).toLocaleDateString();
                 return `<tr class="border-t border-zinc-700">
-                  <td class="py-1 pr-3">${opponent}</td>
-                  <td class="py-1 pr-3 font-semibold">${myScore}-${oppScore}</td>
+                  <td class="py-1 pr-3 text-white">${opponent}</td>
+                  <td class="py-1 pr-3 text-white font-semibold">${myScore}-${oppScore}</td>
                   <td class="py-1 pr-3">${result}</td>
                   <td class="py-1 text-zinc-400">${date}</td>
                 </tr>`;
@@ -400,8 +399,7 @@ export function setupRoutes() {
       return;
 
     await loadTemplate('stats_chess');
-
-    document.getElementById('stats-back-btn')?.addEventListener('click', () => navigate('/profile'));
+    arrowHomeButton('/profile');
 
     fetchWithRefreshAuth('/api/chess/stats/')
       .then(r => r.json())
@@ -425,10 +423,10 @@ export function setupRoutes() {
         }
         tbody.innerHTML = data.leaderboard
           .map((p, i) => {
-            const medal = i === 0 ? '#1' : i === 1 ? '#2' : i === 2 ? '#3' : `#${i + 1}`;
+            const medal = i + 1;
             return `<tr class="border-t border-zinc-700">
-              <td class="py-1 pr-3">${medal}</td>
-              <td class="py-1 pr-3 font-semibold">${p.username}</td>
+              <td class="py-1 pr-3 text-white">${medal}</td>
+              <td class="py-1 pr-3 text-white font-semibold">${p.username}</td>
               <td class="py-1 pr-3 text-violet-400">${p.elo_rating}</td>
               <td class="py-1 pr-3 text-green-400">${p.total_wins}</td>
               <td class="py-1 text-yellow-400">${p.total_games}</td>
@@ -467,8 +465,8 @@ export function setupRoutes() {
             const date = new Date(m.timestamp).toLocaleDateString();
             return `<tr class="border-t border-zinc-700">
               <td class="py-1 pr-3">${colorDot(yourColor)}</td>
-              <td class="py-1 pr-3 flex items-center gap-2">${colorDot(opponentColor)} ${m.opponent}</td>
-              <td class="py-1 pr-3 font-semibold">${m.result}</td>
+              <td class="py-1 pr-3 text-white flex items-center gap-2">${colorDot(opponentColor)} ${m.opponent}</td>
+              <td class="py-1 pr-3 text-white font-semibold">${m.result}</td>
               <td class="py-1 pr-3">${resultLabel}</td>
               <td class="py-1 text-zinc-400">${date}</td>
             </tr>`;
@@ -486,7 +484,7 @@ if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-zinc-500" data-i18
 			return;
     
     await loadTemplate('tournament-games');
-    arrowHomeButton();
+    arrowHomeButton('/tournament');
 
     // Store tournament ID for use in callbacks
     window.currentTournamentId = tournamentId;
