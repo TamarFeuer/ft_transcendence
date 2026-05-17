@@ -17,7 +17,7 @@ export function initLoginPage(){
         
         const result = await loginUser(identifier, password);
         if(result.username)
-            window.location.href = "/";
+            window.location.replace("/");
         else if (result.status === 429)
             showError(t('LOGIN_TOO_MANY'));
         else if (result.status === 401)

@@ -6,7 +6,7 @@ import { closeChessConnection } from "../chess/chess-online.js";
 import { isGameActive } from "../pong/game/game.js";
 import { closeGameConnection } from "../pong/game/game.js";
 
-export function navigate(path) {
+export function navigate(path, { replace = false } = {}) {
     const currentPath = window.location.pathname;
     //close chess socket when leaving chess online path
     if (currentPath === '/chess-online' && path !== '/chess-online'){
@@ -19,7 +19,12 @@ export function navigate(path) {
         sessionStorage.removeItem('activeGameId');
         sessionStorage.removeItem('activeTournamentId');
     }
-    window.history.pushState({}, path, window.location.origin + path);
+    const url = window.location.origin + path;
+    if (replace) {
+        window.history.replaceState({}, path, url);
+    } else {
+        window.history.pushState({}, path, url);
+    }
     handleRoute(path);
 }
 

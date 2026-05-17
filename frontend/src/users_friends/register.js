@@ -59,7 +59,7 @@ export function registerPage(){
             return;
         }
         if(result.username)
-            window.location.href = "/";
+            window.location.replace("/");
     })
 
     const backLoginBtn = document.getElementById("register-back-login");
