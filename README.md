@@ -1353,24 +1353,3 @@ ORM operations used across the project:
 | `Q()` — complex OR/AND conditions | friends, block, chat |
 | `F()` — atomic in-DB increments | chat (unread counts, avoiding race conditions) |
 | `.union()` — combining querysets | game (match history from both player perspectives) |
-
-
-### Individual Contributions
-<◦ Detailed breakdown of what each team member contributed.
-◦ Specific features, modules, or components implemented by each person.
-◦ Any challenges faced and how they were overcome.
-Any other useful or relevant information is welcome (usage documentation, known
-limitations, license, credits, etc.)>
-
-
-Rik:
-tournament pong
-- playing tournament with timers was difficult, they had to be made visable
-3D local pong
-- gameplay was difficult to make playable with normal phyics, 
-- so speedmultiplier, friction, collision energy absorsion, physics had to be tuned.
-- Also an invisible wall is above the paddle was needed, otherwise balls bouncing above are unreaceable.
-2D online pong
-User authentication / user management
-- jwt tokens for authentication, access and refresh token made in backend. Refresh token is used to request and make a new access token.
-Custom user model for unique email authentication
