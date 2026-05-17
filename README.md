@@ -26,7 +26,7 @@ of the 42 curriculum by rverhoev, akaya-oz, tfeuer, nsarmada, snijhuis.
   - [Online Pong](#online-pong)
   - [AI Player](#ai-player)
   - [Tournaments](#tournaments)
-  - [ ](#chess)
+  - [Chess](#chess)
     - [Chess REST API](#chess-rest-api)
     - [Chess WebSocket Protocol](#chess-websocket-protocol)
   - [Friends](#friends)
@@ -780,43 +780,156 @@ Supported Languages:
 - Dutch (nl)
 - Turkish (tr)
 
-**TODO (remove before final submission)**  
-How to add new translatable text:
-
-1. Add your translation key to: `frontend/src/i18n/keys.js`
-   Example: `MY_NEW_TEXT = 'MY_NEW_TEXT',`
-
-2. Add the English text for this key to: `frontend/src/i18n/translations/en.js`
-   Example: `[TranslationKey.MY_NEW_TEXT]: 'My English text',`
-
-3. (if possible) add translations for all other languages (nl.js, tr.js)
-
-How to use translations in Javascript:
-```javascript
-import { initI18n, t, TranslationKey, updatePageTranslations, setLanguage, getCurrentLanguage, Language } from "./i18n";
-```
-
-How to use translations in HTML:
-```html
-<button data-i18n="BTN_START_GAME">START GAME</button>
-```
-The text will automatically update when language changes.
-Frontend bottom-left corner has a language selector dropdown.
-
-
 ### Modules
 
-#### Major: User Interaction (2 pts)
-**Team members:** Tamar (chat), Stan (profile), Niko (friends)
+Modules follow the [ft_transcendence subject](https://cdn.intra.42.fr/pdf/pdf/201363/en.subject.pdf) (v21). **Major = 2 points**, **minor = 1 point**. Minimum to pass: **14 points**. Only modules demonstrated live and meeting the subject requirements count.
 
-Covers the social layer of the application: a chat system, user profiles, and a friends system. See [Chat System](#chat-system), [Friends](#friends), and the profile page (`/profile`) for full details.
+#### Point summary
+
+| | Count | Points |
+|---|-------|--------|
+| Major modules | 8 | 16 |
+| Minor modules | 7 | 7 |
+| **Total claimed** | | **23** |
+
+Bonus: validated points above **14** count toward up to **5 bonus points** (subject Chapter VII).
+
+| # | Module (subject v21) | Section | Type | Pts |
+|---|----------------------|---------|------|-----|
+| 1 | Implement real-time features (WebSockets) | IV.1 Web | Major | 2 |
+| 2 | Allow users to interact (chat, profile, friends) | IV.1 Web | Major | 2 |
+| 3 | Standard user management and authentication | IV.3 User Mgmt | Major | 2 |
+| 4 | Implement a complete web-based game (Pong) | IV.6 Gaming | Major | 2 |
+| 5 | Remote players | IV.6 Gaming | Major | 2 |
+| 6 | Add another game with user history and matchmaking (Chess) | IV.6 Gaming | Major | 2 |
+| 7 | Advanced 3D graphics (Babylon.js) | IV.6 Gaming | Major | 2 |
+| 8 | Introduce an AI Opponent | IV.4 AI | Major | 2 |
+| 9 | Use a backend framework (Django) | IV.1 Web | **Minor** | **1** |
+| 10 | Use an ORM for the database | IV.1 Web | Minor | 1 |
+| 11 | Support for multiple languages (≥3) | IV.2 A11y/i18n | Minor | 1 |
+| 12 | Game statistics and match history | IV.3 User Mgmt | Minor | 1 |
+| 13 | Advanced chat features | IV.6 Gaming | Minor | 1 |
+| 14 | Implement a tournament system | IV.6 Gaming | **Minor** | **1** |
+| 15 | Gamification system | IV.6 Gaming | Minor | 1 |
 
 ---
 
-#### Minor: Advanced Chat Features (1 pt)
-**Team member:** Tamar
+#### Major: Implement real-time features (WebSockets) (2 pts)
+**Section:** IV.1 Web · **Team members:** Tamar, Rik, Niko
 
-Enhances the base chat module with the following:
+Users interact in real time over WebSockets:
+
+| Channel | Endpoint | Purpose |
+|---------|----------|---------|
+| Global chat | `ws/chat/` | Messages, presence, invites |
+| Pong | `ws/game/<game_id>/` | Paddle input, ball state sync |
+| Chess | `ws/chess/<game_id>/` | Moves, game start/end |
+| Tournament lobby | `ws/tournament/<id>/` | Round/timer updates |
+
+JWT authentication on connect via `TokenAuthMiddleware` (`users/token_auth.py`).
+
+---
+
+#### Major: Allow users to interact with other users (2 pts)
+**Section:** IV.1 Web · **Team members:** Tamar (chat), Stan (profile), Niko (friends)
+
+Subject minimum: **basic chat** (global + DMs → [Chat System](#chat-system)), **profile system** (`/profile`, `/profile/:username`), **friends system** ([Friends](#friends)).
+
+---
+
+#### Major: Standard user management and authentication (2 pts)
+**Section:** IV.3 User Management · **Team members:** Stan, Niko, Rik
+
+- Email + password signup/login; `set_password()` (PBKDF2).
+- JWT access + refresh cookies.
+- Profile updates; **default avatar** (username initial).
+- Friends + online status via chat presence.
+- See [Authentication & Security](#authentication--security).
+
+---
+
+#### Major: Implement a complete web-based game — Pong (2 pts)
+**Section:** IV.6 Gaming · **Team members:** Rik
+
+Live 1v1 Pong (local, online, tournaments), clear win/loss, Babylon.js 3D arena. See [Local Pong](#local-pong), [Online Pong](#online-pong).
+
+---
+
+#### Major: Remote players (2 pts)
+**Section:** IV.6 Gaming · **Team members:** Rik, Tamar
+
+Two players on separate machines: `POST /api/game/join/`, WebSocket play, server `tick()` / `handle_paddle_move()`, disconnect handling. See [Online Pong](#online-pong).
+
+---
+
+#### Major: Add another game with user history and matchmaking — Chess (2 pts)
+**Section:** IV.6 Gaming · **Team members:** Niko, Tamar
+
+**Chess** mirrors Pong’s online model: local hot-seat (`/chess`), matchmaking (`/chess-online`), friend invites from chat, ELO and match history, server-side move validation with `python-chess`. Full API and WS docs: [Chess](#chess).
+
+---
+
+#### Major: Advanced 3D graphics — Babylon.js (2 pts)
+**Section:** IV.6 Gaming · **Team members:** Rik
+
+Pong in a **Babylon.js** 3D scene (`@babylonjs/core`): arena, camera, paddle/ball meshes (`frontend/src/pong/game/local_game/`, Engine/Scene in `routes.js`).
+
+---
+
+#### Major: Introduce an AI Opponent (2 pts)
+**Section:** IV.4 Artificial Intelligence · **Team members:** Goksu, Niko
+
+`/ai` — timer-driven AI paddle (~15 Hz), prediction + error, beatable. `frontend/src/pong/ai/ai.js`. See [AI Player](#ai-player).
+
+---
+
+#### Minor: Use a backend framework — Django (1 pt)
+**Section:** IV.1 Web · **Team members:** Rik, Tamar, Stan
+
+**Django** + **Daphne**, PostgreSQL, apps: `users`, `game`, `chessgame`, `chat`, `friends`, `block`, `tournament`.
+
+---
+
+#### Minor: Use an ORM for the database (1 pt)
+**Section:** IV.1 Web · **Team members:** all
+
+Django ORM — see [ORM for Database Access](#minor-orm-for-database-access-1-pt) below.
+
+---
+
+#### Minor: Support for multiple languages (1 pt)
+**Section:** IV.2 Accessibility and Internationalization · **Team members:** Stan
+**Team members:** Stan
+
+English, Dutch, Turkish — [Internationalization (i18n)](#internationalization-i18n).
+
+---
+
+#### Minor: Game statistics and match history (1 pt)
+**Section:** IV.3 User Management · **Team members:** Rik, Niko
+
+Wins/losses/ELO, match history on profile and `/stats`, `/chess-stats`, Pong achievements, chess leaderboard. Requires at least one game (Pong + Chess).
+
+---
+
+#### Minor: Implement a tournament system (1 pt)
+**Section:** IV.6 Gaming · **Team members:** Rik, Tamar
+
+Brackets, registration, rounds, `TournamentGame` + lobby WebSocket — [Tournaments](#tournaments).
+
+---
+
+#### Minor: Gamification system (1 pt)
+**Section:** IV.6 Gaming · **Team members:** Rik, Stan
+
+Three persistent features: **achievements** (`Achievement` / `PlayerAchievement`), **leaderboards** (Pong ELO, chess API), **ELO progression** after matches.
+
+---
+
+#### Minor: Advanced chat features (1 pt)
+**Section:** IV.6 Gaming · **Team member:** Tamar
+
+Enhances basic chat from *Allow users to interact* (required first):
 
 - **Block** — users can block each other from the chat context menu. Blocked users cannot send or receive messages; the input is replaced with a notice. See [Block](#block).
 - **Game invites from chat** — the context menu lets you invite any online user to Pong or Chess directly from chat. Invites appear as cards in the DM with Accept/Decline; accepting navigates both users to the game.
@@ -835,7 +948,7 @@ Enhances the base chat module with the following:
 
 ---
 
-#### Minor: ORM for Database Access (1 pt)
+#### Minor: ORM for database access (1 pt)
 **Team members:** all (Tamar — chat, Niko — friends/block, Rik — game stats, and others)
 
 The project uses Django's ORM throughout instead of writing raw SQL. The ORM sits as an abstraction layer above the database driver (`psycopg2`) — it generates and executes SQL for you and maps rows back to Python objects, which eliminates manual query construction and protects against SQL injection by default.
