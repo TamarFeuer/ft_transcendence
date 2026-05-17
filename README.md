@@ -1144,8 +1144,8 @@ Modules follow the [ft_transcendence subject](https://cdn.intra.42.fr/pdf/pdf/20
 | | Count | Points |
 |---|-------|--------|
 | Major modules | 8 | 16 |
-| Minor modules | 7 | 7 |
-| **Total claimed** | | **23** |
+| Minor modules | 8 | 8 |
+| **Total claimed** | | **24** |
 
 Bonus: validated points above **14** count toward up to **5 bonus points** (subject Chapter VII).
 
@@ -1166,6 +1166,7 @@ Bonus: validated points above **14** count toward up to **5 bonus points** (subj
 | 13 | Advanced chat features | IV.6 Gaming | Minor | 1 |
 | 14 | Implement a tournament system | IV.6 Gaming | **Minor** | **1** |
 | 15 | Gamification system | IV.6 Gaming | Minor | 1 |
+| 16 | Support for additional browsers | IV.2 A11y/i18n | Minor | 1 |
 
 ---
 
@@ -1254,9 +1255,27 @@ Django ORM — see [ORM for Database Access](#minor-orm-for-database-access-1-pt
 
 #### Minor: Support for multiple languages (1 pt)
 **Section:** IV.2 Accessibility and Internationalization · **Team members:** Stan
-**Team members:** Stan
 
 English, Dutch, Turkish — [Internationalization (i18n)](#internationalization-i18n).
+
+---
+
+#### Minor: Support for additional browsers (1 pt)
+**Section:** IV.2 Accessibility and Internationalization · **Team members:** all
+
+The app is tested beyond mandatory Chrome on **two additional browsers**, using the same Docker deploy (`https://<host>:8443`).
+
+| Browser | Role | Status |
+|---------|------|--------|
+| Google Chrome | Primary (mandatory) | Supported |
+| Mozilla Firefox | Additional | Supported |
+| Apple Safari | Additional | Supported |
+
+**Flows checked in each browser:** registration/login, SPA navigation, global chat and DMs (WebSocket), online Pong and Chess, profile and friends, tournaments.
+
+**Known limitations:** none blocking core flows in the browsers above; minor rendering differences may exist in Babylon.js canvas sizing.
+
+**How we tested:** each team member ran the smoke checklist on at least one non-Chrome browser during integration; issues found (e.g. WebSocket cookies, `pagehide` cleanup) were fixed in shared frontend code.
 
 ---
 
