@@ -1280,7 +1280,7 @@ Django ORM — see [ORM for Database Access](#minor-orm-for-database-access-1-pt
 ---
 
 #### Minor: Support for multiple languages (1 pt)
-**Section:** IV.2 Accessibility and Internationalization · **Team members:** Stan
+**Section:** IV.2 Accessibility and Internationalization · **Team members:** Goksu
 
 English, Dutch, Turkish — [Internationalization (i18n)](#internationalization-i18n).
 
@@ -1306,7 +1306,7 @@ The app is tested beyond mandatory Chrome on **two additional browsers**, using 
 ---
 
 #### Minor: Game statistics and match history (1 pt)
-**Section:** IV.3 User Management · **Team members:** Rik, Niko
+**Section:** IV.3 User Management · **Team members:** Goksu
 
 Wins/losses/ELO, match history on profile and `/stats`, `/chess-stats`, Pong achievements, chess leaderboard. Requires at least one game (Pong + Chess).
 
@@ -1320,7 +1320,7 @@ Brackets, registration, rounds, `TournamentGame` + lobby WebSocket — [Tourname
 ---
 
 #### Minor: Gamification system (1 pt)
-**Section:** IV.6 Gaming · **Team members:** Rik, Stan
+**Section:** IV.6 Gaming · **Team members:** Rik, Stan, Goksu
 
 Three persistent features: **achievements** (`Achievement` / `PlayerAchievement`), **leaderboards** (Pong ELO, chess API), **ELO progression** after matches.
 
